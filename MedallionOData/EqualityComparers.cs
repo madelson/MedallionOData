@@ -8,14 +8,14 @@ namespace Medallion.OData
 {
     internal static class EqualityComparers
     {
-        public static EqualityComparer<T> Create<T>(Func<T, T, bool> equals, Func<T, int> hash = null)
+        public static EqualityComparer<T> Create<T>(Func<T, T, bool> equals, Func<T, int> hash = null, T schema = default(T))
         {
             Throw.IfNull(equals, "equals");
 
             return new FuncEqualityComparer<T>(equals, hash);
         }
 
-        public static EqualityComparer<T> Create<T, TKey>(Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer = null)
+        public static EqualityComparer<T> Create<T, TKey>(Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer = null, T schema = default(T))
         {
             Throw.IfNull(keySelector, "keySelector");
 
