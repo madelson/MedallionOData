@@ -150,8 +150,8 @@ namespace Medallion.OData
         public static IEnumerable<Tuple<TEnum, FieldInfo>> GetValuesAndFields<TEnum>()
             where TEnum : struct
         {
-            return GetValues<TEnum>().Join(typeof(TEnum).GetFields(BindingFlags.Public | BindingFlags.Static), e => e.ToString(), f => f.Name, (e, f) => Tuple.Create(e, f));
-
+            var result = GetValues<TEnum>().Join(typeof(TEnum).GetFields(BindingFlags.Public | BindingFlags.Static), e => e.ToString(), f => f.Name, (e, f) => Tuple.Create(e, f));
+            return result;
         }
 
         public static HashSet<T> ToSet<T>(this IEnumerable<T> @this, IEqualityComparer<T> comparer = null)

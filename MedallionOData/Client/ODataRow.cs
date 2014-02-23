@@ -116,7 +116,7 @@ namespace Medallion.OData.Client
 
 			public override ParameterInfo[] GetIndexParameters()
 			{
-				return new ParameterInfo[0];
+				return Empty<ParameterInfo>.Array;
 			}
 
 			public override MethodInfo GetSetMethod(bool nonPublic)

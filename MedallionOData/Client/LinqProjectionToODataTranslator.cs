@@ -305,7 +305,7 @@ namespace Medallion.OData.Client
 				// to translate the projected value directly (e. g. a => a.Id + 2)
 				var simpleResult = new Dictionary<MemberPath, ODataExpression>(MemberPathComparer)
 				{
-					{ new MemberInfo[0], this._translator.TranslateInternal(body) }
+					{ Empty<MemberInfo>.Array, this._translator.TranslateInternal(body) }
 				};
 				return simpleResult;
 			}
