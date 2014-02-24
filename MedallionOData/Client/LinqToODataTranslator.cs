@@ -440,15 +440,7 @@ namespace Medallion.OData.Client
 			return expression.TryGetValue(LinqHelpers.GetValueOptions.ConstantsFieldsAndProperties, out value);
 		}
 
-		//private Expression MapProjectedProperty(ODataExpression instance, PropertyInfo property)
-		//{
-		//	if (this._propertyMapping.Count == 0)
-		//	{
-		//		return 
-		//	}
-		//	return null;
-		//}
-
+        // TODO are these comments still relevant?
 		// to use: when translating parameter => ParameterExp, shift, translate ParameterExp, shift back
 		// OR, just translate everything upfront! (props too!)
 		// at all times, need to know the current mapping for each property + the whole parameter + previous mappings for any prop that IS a parameter
