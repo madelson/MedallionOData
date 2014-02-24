@@ -100,6 +100,8 @@ namespace Medallion.OData.Client
 				}
 				if ((property.GetMethod ?? property.SetMethod).IsStatic)
 				{
+                    // we don't really expect to hit this case in practice, because static properties should be evaluated in memory 
+                    // rather than translated
 					throw new ODataCompileException("Static properties are not supported. Found: " + property);
 				}
 				if (instance == null || instance.Kind == ODataExpressionKind.MemberAccess)
