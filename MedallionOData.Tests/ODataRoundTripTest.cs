@@ -238,7 +238,7 @@ namespace Medallion.OData.Tests
 
 		private void VerifyQuery<TClient, TClientResult, TResult>(Func<IQueryable<TClient>, IQueryable<TClientResult>> clientQueryTransform, Func<IQueryable<A>, IQueryable<TResult>> expectedTransform, bool requireNonEmpty = true)
 		{
-            var comparer = this.GetComparer<TResult>();
+            var comparer = GetComparer<TResult>();
 
 			Func<object, object> resultTranslator;
 			IQueryable rootQuery;
@@ -290,26 +290,26 @@ namespace Medallion.OData.Tests
 			return result.AsQueryable();
 		}
 
-        private EqualityComparer<T> GetComparer<T>()
+        internal static EqualityComparer<T> GetComparer<T>()
         {
             if (typeof(T).IsClass && typeof(T) != typeof(string))
             {
                 var props = typeof(T).GetProperties();
                 return EqualityComparers.Create<T>((t1, t2) =>
                 {
-                    var result = props.All(p => this.GetComparer(p.PropertyType).Equals(p.GetValue(t1), p.GetValue(t2)));
+                    var result = props.All(p => GetComparer(p.PropertyType).Equals(p.GetValue(t1), p.GetValue(t2)));
                     return result;
                 });
             }
             return EqualityComparer<T>.Default;
         }
 
-        private IEqualityComparer GetComparer(Type type)
+        internal static IEqualityComparer GetComparer(Type type)
         {
-            return (IEqualityComparer)Helpers.GetMethod((ODataRoundTripTest t) => t.GetComparer<object>())
+            return (IEqualityComparer)Helpers.GetMethod(() => GetComparer<object>())
                 .GetGenericMethodDefinition()
                 .MakeGenericMethod(type)
-                .Invoke(this, Empty<object>.Array);
+                .Invoke(null, Empty<object>.Array);
         }
 
 		private class A

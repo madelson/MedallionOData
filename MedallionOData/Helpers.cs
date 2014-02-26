@@ -54,6 +54,15 @@ namespace Medallion.OData
                         return method1.GetGenericArguments().SequenceEqual(method2.GetGenericArguments());
                     }
                 }
+                else if (m1.MemberType == MemberTypes.TypeInfo || m1.MemberType == MemberTypes.NestedType)
+                {
+                    var type1 = (Type)m1;
+                    var type2 = (Type)m2;
+                    if (type1.IsGenericType)
+                    {
+                        return type1.GetGenericArguments().SequenceEqual(type2.GetGenericArguments());
+                    }
+                }
 
                 return true;
             },
