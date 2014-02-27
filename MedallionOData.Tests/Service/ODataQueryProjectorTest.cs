@@ -44,7 +44,7 @@ namespace Medallion.OData.Tests.Service
             );
         }
 
-        private static MemberExpression Select<TColumn>(Expression<Func<A, TColumn>> exp) 
+        internal static MemberExpression Select<TColumn>(Expression<Func<A, TColumn>> exp) 
         {
             return exp.Body as MemberExpression;
         }
@@ -52,13 +52,13 @@ namespace Medallion.OData.Tests.Service
         private void TestProjection(params MemberExpression[] selections)
         {
             // convert selections to expressions
-            var selectColumns = selections.Select(this.ToODataExpression).ToArray();
+            var selectColumns = selections.Select(ToODataExpression).ToArray();
 
             // get query
             var items = Enumerable.Range(0, 10).Select(_ => new A()).ToArray();
             
             // project
-            var result = new ODataQueryProjector().Project(items.AsQueryable(), selectColumns);
+            var result = ODataQueryProjector.Project(items.AsQueryable(), selectColumns);
             var resultItems = result.Query.Cast<object>().ToArray();
 
             // validate
@@ -85,7 +85,7 @@ namespace Medallion.OData.Tests.Service
             }
         }
 
-        private ODataSelectColumnExpression ToODataExpression(MemberExpression selection)
+        internal static ODataSelectColumnExpression ToODataExpression(MemberExpression selection)
         {
             Func<Expression, ODataMemberAccessExpression> translate = null;
             translate = exp => (exp as MemberExpression) == null ? null : ODataExpression.MemberAccess(translate(((MemberExpression)exp).Expression), (PropertyInfo)((MemberExpression)exp).Member);
@@ -95,13 +95,13 @@ namespace Medallion.OData.Tests.Service
         }
 
         #region ---- Data Classes ----
-        private abstract class Base
+        internal abstract class Base
         {
-            private static int counter;
+            public static int Counter;
 
             protected Base() 
             {
-                this.Id = ++counter;
+                this.Id = ++Counter;
                 this.Name = this.Id.ToString();
             }
 
@@ -116,7 +116,7 @@ namespace Medallion.OData.Tests.Service
             }
         }
 
-        private class A : Base
+        internal class A : Base
         {
             public A()
             {
@@ -128,7 +128,7 @@ namespace Medallion.OData.Tests.Service
             public C C { get; set; }
         }
 
-        private class B : Base
+        internal class B : Base
         {
             public B()
             {
@@ -138,7 +138,7 @@ namespace Medallion.OData.Tests.Service
             public C C { get; set; }
         }
 
-        private class C : Base 
+        internal class C : Base 
         {
         }
         #endregion
