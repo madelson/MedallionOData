@@ -55,7 +55,6 @@
     <Compile Include="Client\ODataRow.cs" />
     <Compile Include="EqualityComparers.cs" />
     <Compile Include="Helpers.cs" />
-    <Compile Include="MemberPathHelpers.cs" />
     <Compile Include="Parser\ODataExpressionLanguageParser.cs" />
     <Compile Include="Parser\ODataExpressionLanguageTokenizer.cs" />
     <Compile Include="Parser\ODataParseException.cs" />
