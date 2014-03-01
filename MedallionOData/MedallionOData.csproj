@@ -46,8 +46,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\IODataClientQueryPipeline.cs" />
     <Compile Include="Client\LinqProjectionToODataTranslator.cs" />
     <Compile Include="Client\LinqToODataTranslator.cs" />
+    <Compile Include="Client\ODataQueryable.cs" />
+    <Compile Include="Client\ODataQueryOptions.cs" />
+    <Compile Include="Client\ODataQueryProvider.cs" />
     <Compile Include="Client\ODataRow.cs" />
     <Compile Include="EqualityComparers.cs" />
     <Compile Include="Helpers.cs" />

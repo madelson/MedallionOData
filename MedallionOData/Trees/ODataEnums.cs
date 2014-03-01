@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Trees
 {
-	internal enum ODataExpressionKind
+	public enum ODataExpressionKind
 	{
 		Query,
 
@@ -22,7 +22,7 @@ namespace Medallion.OData.Trees
 		SelectColumn,
 	}
 
-	internal enum ODataExpressionType
+	public enum ODataExpressionType
 	{
 		// primitives (based on http://www.odata.org/documentation/odata-v3-documentation/)
 		[ODataName("'Edm.Binary'")] Binary,
@@ -54,7 +54,7 @@ namespace Medallion.OData.Trees
 		Complex,
 	}
 
-	internal enum ODataBinaryOp
+	public enum ODataBinaryOp
 	{
 		// MA: organized into groups by increasing precedence level
 
@@ -77,18 +77,18 @@ namespace Medallion.OData.Trees
 		[ODataName("mod")] Modulo,
 	}
 
-	internal enum ODataUnaryOp
+	public enum ODataUnaryOp
 	{
 		[ODataName("not")] Not,
 	}
 
-	internal enum ODataSortDirection
+	public enum ODataSortDirection
 	{
 		[ODataName("asc")] Ascending,
 		[ODataName("desc")] Descending,
 	}
 
-	internal enum ODataInlineCountOption
+	public enum ODataInlineCountOption
 	{
 		[ODataName("none")] None,
 		[ODataName("allpages")] AllPages,	
@@ -97,7 +97,7 @@ namespace Medallion.OData.Trees
 	/// <summary>
 	/// From http://www.odata.org/documentation/uri-conventions/#SystemQueryOptions
 	/// </summary>
-	internal enum ODataFunction
+	public enum ODataFunction
 	{
 		[ODataFunction(ODataExpressionType.String, ODataExpressionType.String, Returns = ODataExpressionType.Boolean)] 
 		SubstringOf,

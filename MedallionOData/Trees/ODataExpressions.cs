@@ -9,7 +9,7 @@ using System.Web;
 
 namespace Medallion.OData.Trees
 {
-	internal sealed class ODataBinaryOpExpression : ODataExpression
+	public sealed class ODataBinaryOpExpression : ODataExpression
 	{
 		// TODO implicit cast checks (& insertions), static factory methods
 		internal ODataBinaryOpExpression(ODataExpression left, ODataBinaryOp @operator, ODataExpression right)
@@ -67,7 +67,7 @@ namespace Medallion.OData.Trees
 		}
 	}
 
-	internal sealed class ODataUnaryOpExpression : ODataExpression
+    public sealed class ODataUnaryOpExpression : ODataExpression
 	{
 		internal ODataUnaryOpExpression(ODataExpression operand, ODataUnaryOp @operator)
 			: base(ODataExpressionKind.UnaryOp, operand.Type)
@@ -85,7 +85,7 @@ namespace Medallion.OData.Trees
 		}
 	}
 
-	internal sealed class ODataCallExpression : ODataExpression
+    public sealed class ODataCallExpression : ODataExpression
 	{
 		internal ODataCallExpression(ODataFunction function, IReadOnlyList<ODataExpression> arguments, ODataExpressionType returnType)
 			: base(ODataExpressionKind.Call, returnType)
@@ -103,7 +103,7 @@ namespace Medallion.OData.Trees
 		}
 	}
 
-	internal sealed class ODataConstantExpression : ODataExpression
+    public sealed class ODataConstantExpression : ODataExpression
 	{
 		internal ODataConstantExpression(object value, ODataExpressionType type)
 			: base(ODataExpressionKind.Constant, type)
@@ -172,7 +172,7 @@ namespace Medallion.OData.Trees
 		}
 	}
 
-	internal sealed class ODataMemberAccessExpression : ODataExpression
+    public sealed class ODataMemberAccessExpression : ODataExpression
 	{
 		public ODataMemberAccessExpression(ODataMemberAccessExpression expression, PropertyInfo member)
 			: base(ODataExpressionKind.MemberAccess, member.PropertyType.ToODataExpressionType())
@@ -192,7 +192,7 @@ namespace Medallion.OData.Trees
 		}
 	}
 
-	internal sealed class ODataConvertExpression : ODataExpression
+    public sealed class ODataConvertExpression : ODataExpression
 	{
 		internal ODataConvertExpression(ODataExpression expression, ODataExpressionType type)
 			: base(ODataExpressionKind.Convert, type)
@@ -210,7 +210,7 @@ namespace Medallion.OData.Trees
 		}
 	}
 
-	internal sealed class ODataSortKeyExpression : ODataExpression
+    public sealed class ODataSortKeyExpression : ODataExpression
 	{
 		internal ODataSortKeyExpression(ODataExpression expression, ODataSortDirection direction)
 			: base(ODataExpressionKind.SortKey, expression.Type)
@@ -228,7 +228,7 @@ namespace Medallion.OData.Trees
 		}
 	}
 
-	internal sealed class ODataSelectColumnExpression : ODataExpression
+    public sealed class ODataSelectColumnExpression : ODataExpression
 	{
 		internal ODataSelectColumnExpression(ODataMemberAccessExpression expression, bool allColumns)
 			: base(ODataExpressionKind.SelectColumn, expression != null ? expression.Type : ODataExpressionType.Complex)
@@ -255,7 +255,7 @@ namespace Medallion.OData.Trees
 		}
 	}
 
-	internal class ODataQueryExpression : ODataExpression
+	public class ODataQueryExpression : ODataExpression
 	{
 		// TODO expand
 		// TODO select

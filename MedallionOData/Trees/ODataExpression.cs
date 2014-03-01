@@ -11,7 +11,7 @@ namespace Medallion.OData.Trees
 	/// Represents a node in the OData "language". This class also contains static factories
 	/// for specific expression types, much like <see cref="System.Linq.Expressions.Expression"/>
 	/// </summary>
-	internal abstract class ODataExpression
+	public abstract class ODataExpression
 	{
 		protected ODataExpression(ODataExpressionKind kind, ODataExpressionType type)
 		{
