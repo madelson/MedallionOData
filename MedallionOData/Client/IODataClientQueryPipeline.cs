@@ -18,23 +18,23 @@ namespace Medallion.OData.Client
         /// <summary>
         /// Step 1: translates a Linq expression to the information needed to make a request to the remote service
         /// </summary>
-        ITranslationResult Translate(Expression expression, ODataQueryOptions options);
+        IODataTranslationResult Translate(Expression expression, ODataQueryOptions options);
 
         /// <summary>
         /// Step 2: makes the request to the remote service
         /// </summary>
-        Task<IWebResponse> ReadAsync(Uri url);
+        Task<IODataWebResponse> ReadAsync(Uri url);
 
         /// <summary>
         /// Step 3: serialize results
         /// </summary>
-        Task<IDeserializationResult> DeserializeAsync(ITranslationResult translation, Stream response);
+        Task<IODataDeserializationResult> DeserializeAsync(IODataTranslationResult translation, Stream response);
     }
 
     /// <summary>
     /// Represents the result of translating a linq expression to OData
     /// </summary>
-    public interface ITranslationResult 
+    public interface IODataTranslationResult 
     {
         /// <summary>
         /// The root <see cref="IQueryable"/> of the original query expression
@@ -53,7 +53,7 @@ namespace Medallion.OData.Client
     /// <summary>
     /// Provides a generic interface which could be used to wrap the various implementations of web responses in .NET
     /// </summary>
-    public interface IWebResponse : IDisposable
+    public interface IODataWebResponse : IDisposable
     {
         Task<Stream> GetResponseStreamAsync();
     }
@@ -61,7 +61,7 @@ namespace Medallion.OData.Client
     /// <summary>
     /// Represents the result of deserializing the response
     /// </summary>
-    public interface IDeserializationResult
+    public interface IODataDeserializationResult
     {
         /// <summary>
         /// Contains the result of the inline count option, if available
@@ -79,7 +79,7 @@ namespace Medallion.OData.Client
     /// </summary>
     public sealed class DefaultODataQueryPipeline : IODataClientQueryPipeline
     {
-        ITranslationResult IODataClientQueryPipeline.Translate(Expression expression, ODataQueryOptions options)
+        IODataTranslationResult IODataClientQueryPipeline.Translate(Expression expression, ODataQueryOptions options)
         {
             Throw.IfNull(expression, "expression");
             Throw.IfNull(options, "options");
@@ -95,19 +95,19 @@ namespace Medallion.OData.Client
             return new TranslationResult(rootQuery, oDataQueryWithOptions, postProcessor);
         }
 
-        private sealed class TranslationResult : Tuple<IQueryable, ODataQueryExpression, Func<object, object>>, ITranslationResult
+        private sealed class TranslationResult : Tuple<IQueryable, ODataQueryExpression, Func<object, object>>, IODataTranslationResult
         {
             public TranslationResult(IQueryable rootQuery, ODataQueryExpression oDataQuery, Func<object, object> postProcessor)
                 : base(rootQuery, oDataQuery, postProcessor)
             {
             }
 
-            IQueryable ITranslationResult.RootQuery { get { return this.Item1; } }
-            ODataQueryExpression ITranslationResult.ODataQuery { get { return this.Item2; } }
-            Func<object, object> ITranslationResult.PostProcessor { get { return this.Item3; } }
+            IQueryable IODataTranslationResult.RootQuery { get { return this.Item1; } }
+            ODataQueryExpression IODataTranslationResult.ODataQuery { get { return this.Item2; } }
+            Func<object, object> IODataTranslationResult.PostProcessor { get { return this.Item3; } }
         }
 
-        async Task<IWebResponse> IODataClientQueryPipeline.ReadAsync(Uri url)
+        async Task<IODataWebResponse> IODataClientQueryPipeline.ReadAsync(Uri url)
         {
             Throw.IfNull(url, "url");
 
@@ -116,7 +116,7 @@ namespace Medallion.OData.Client
             return new HttpWebResponseWebResponse(response);
         }
 
-        private sealed class HttpWebResponseWebResponse : IWebResponse
+        private sealed class HttpWebResponseWebResponse : IODataWebResponse
         {
             private HttpWebResponse _response;
 
@@ -125,7 +125,7 @@ namespace Medallion.OData.Client
                 this._response = response;
             }
 
-            Task<Stream> IWebResponse.GetResponseStreamAsync()
+            Task<Stream> IODataWebResponse.GetResponseStreamAsync()
             {
                 return Task.FromResult(this._response.GetResponseStream());
             }
@@ -136,7 +136,7 @@ namespace Medallion.OData.Client
             }
         }
 
-        async Task<IDeserializationResult> IODataClientQueryPipeline.DeserializeAsync(ITranslationResult translation, Stream response)
+        async Task<IODataDeserializationResult> IODataClientQueryPipeline.DeserializeAsync(IODataTranslationResult translation, Stream response)
         {
             Throw.IfNull(translation, "translation");
             Throw.IfNull(response, "response");
@@ -166,15 +166,15 @@ namespace Medallion.OData.Client
             }
         }
 
-        private class JsonDeserializationResult : Tuple<int?, IReadOnlyList<object>>, IDeserializationResult
+        private class JsonDeserializationResult : Tuple<int?, IReadOnlyList<object>>, IODataDeserializationResult
         {
             public JsonDeserializationResult(int? inlineCount, IReadOnlyList<object> values)
                 : base(inlineCount, values)
             {
             }
 
-            int? IDeserializationResult.InlineCount { get { return this.Item1; } }
-            IReadOnlyList<object> IDeserializationResult.Values { get { return this.Item2; } }
+            int? IODataDeserializationResult.InlineCount { get { return this.Item1; } }
+            IReadOnlyList<object> IODataDeserializationResult.Values { get { return this.Item2; } }
         }
     }
 }
