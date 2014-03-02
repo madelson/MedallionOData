@@ -40,8 +40,13 @@ namespace Medallion.OData.Tests
         private void TestFilterQuery(string filter, string orderBy, string skip, string top, int[] expectedIds)
 		{
 			var query = ODataQueryParser.Parse(typeof(A), new NameValueCollection { { "$filter", filter }, { "$orderby", orderBy }, { "$skip", skip }, { "$top", top } });
-			var results = ODataQueryFilter.Apply(this._records, query);
+            IQueryable<A> inlineCountQuery;
+            var results = ODataQueryFilter.Apply(this._records, query, out inlineCountQuery);
 			results.Select(a => a.Id).CollectionShouldEqual(expectedIds, orderMatters: true);
+
+            IQueryable<A> ignored;
+            var equivalentToInlineCountResults = ODataQueryFilter.Apply(this._records, query.Update(top: null, skip: 0), out ignored);
+            inlineCountQuery.Select(a => a.Id).CollectionShouldEqual(equivalentToInlineCountResults.Select(a => a.Id));
 		}
 
 		private class A

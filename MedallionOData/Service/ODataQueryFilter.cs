@@ -11,7 +11,7 @@ namespace Medallion.OData.Service
 {
 	internal static class ODataQueryFilter
 	{
-		public static IQueryable<TElement> Apply<TElement>(IQueryable<TElement> query, ODataQueryExpression oDataQuery)
+		public static IQueryable<TElement> Apply<TElement>(IQueryable<TElement> query, ODataQueryExpression oDataQuery, out IQueryable<TElement> inlineCountQuery)
 		{
 			var finalQuery = query;
 
@@ -21,6 +21,8 @@ namespace Medallion.OData.Service
 				var predicate = Expression.Lambda<Func<TElement, bool>>(Translate(parameter, oDataQuery.Filter), parameter);
 				finalQuery = finalQuery.Where(predicate);
 			}
+
+            inlineCountQuery = finalQuery;
 
 			for (var i = 0; i < oDataQuery.OrderBy.Count; ++i)
 			{

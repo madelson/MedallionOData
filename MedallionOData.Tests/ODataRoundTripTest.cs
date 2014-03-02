@@ -256,7 +256,8 @@ namespace Medallion.OData.Tests
                 wasNonEmpty |= expected.Any();
 				Console.WriteLine("original = " + transformed);
 				Console.WriteLine("odata = " + HttpUtility.UrlDecode(translated.ToString()));
-				var rawApplied = ODataQueryFilter.Apply(randomQuery, ODataQueryParser.Parse(randomQuery.ElementType, translated.ToString()));
+                IQueryable<A> inlineCountQuery;
+				var rawApplied = ODataQueryFilter.Apply(randomQuery, ODataQueryParser.Parse(randomQuery.ElementType, translated.ToString()), out inlineCountQuery);
 				var applied = (IEnumerable<TResult>)resultTranslator(rawApplied);
 				Console.WriteLine("applied = " + rawApplied);
                 applied.ToArray().CollectionShouldEqual(expected, comparer: comparer, orderMatters: true);
