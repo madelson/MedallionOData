@@ -102,7 +102,7 @@ namespace Medallion.OData.Tests.Service
 
             var projectionResult = ODataQueryProjector.Project(enumerable.AsQueryable(), oDataExpressions);
 
-            var serialized = new ODataJsonSerializer().As<IODataQuerySerializer>().Serialize(projectionResult);
+            var serialized = new ODataJsonSerializer().Serialize(projectionResult.Query, projectionResult.Mapping);
             return serialized;
         }
 

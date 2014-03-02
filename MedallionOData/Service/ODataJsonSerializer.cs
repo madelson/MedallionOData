@@ -12,23 +12,21 @@ using System.IO;
 
 namespace Medallion.OData.Service
 {
-	internal interface IODataQuerySerializer
+	internal class ODataJsonSerializer
 	{
-		string Serialize(ODataQueryProjector.Result projectedQuery);
-	}
-
-	internal class ODataJsonSerializer : IODataQuerySerializer
-	{
-        string IODataQuerySerializer.Serialize(ODataQueryProjector.Result projectedQuery)
+        public string Serialize(IQueryable projectedQuery, IReadOnlyDictionary<ODataSelectColumnExpression, PropertyPath> projectMapping)
         {
-            var node = Node.Create(projectedQuery.Mapping.Select(kvp => KeyValuePair.Create(kvp.Key, new ValueRetriever(kvp.Value))));
+            Throw.IfNull(projectedQuery, "projectedQuery");
+            Throw.IfNull(projectMapping, "projectMapping");
+
+            var node = Node.Create(projectMapping.Select(kvp => KeyValuePair.Create(kvp.Key, new ValueRetriever(kvp.Value))));
 
             using (var stringWriter = new StringWriter())
             {
                 using (var writer = new JsonTextWriter(stringWriter))
                 {
                     writer.WriteStartArray();
-                    foreach (var item in projectedQuery.Query)
+                    foreach (var item in projectedQuery)
                     {
                         WriteNode(item, node, writer);
                     }
