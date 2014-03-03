@@ -9,12 +9,44 @@ using Newtonsoft.Json;
 
 using PropertyPath = System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo>;
 using System.IO;
+using System.Collections;
 
 namespace Medallion.OData.Service
 {
-	internal class ODataJsonSerializer
+	public sealed class ODataJsonSerializer : IODataSerializer
 	{
-        public string Serialize(IQueryable projectedQuery, IReadOnlyDictionary<ODataSelectColumnExpression, PropertyPath> projectMapping)
+        object IODataSerializer.Serialize<TElement>(IODataProjectResult<TElement> projectResult)
+        {
+            Throw.IfNull(projectResult, "projectResult");
+
+            int? inlineCount;
+            IEnumerable projectedQuery;
+            if (projectResult.ODataQuery.InlineCount == ODataInlineCountOption.AllPages)
+            {
+                // if we're not skipping or taking, then we can do the inlineCount "for free"
+                if (projectResult.ODataQuery.Skip == 0 && !projectResult.ODataQuery.Top.HasValue)
+                {
+                    // use Enumerable.Cast<> because we want an in-memory cast
+                    var projectedQueryArray = Enumerable.Cast<object>(projectResult.ProjectedResultQuery).ToArray();
+                    projectedQuery = projectedQueryArray;
+                    inlineCount = projectedQueryArray.Length;
+                }
+                else
+                {
+                    projectedQuery = projectResult.ProjectedResultQuery;
+                    inlineCount = projectResult.InlineCountQuery.Count();
+                }
+            }
+            else
+            {
+                projectedQuery = projectResult.ProjectedResultQuery;
+                inlineCount = null;
+            }
+
+            return this.Serialize(projectedQuery, projectResult.ProjectMapping, inlineCount);
+        }
+
+        internal string Serialize(IEnumerable projectedQuery, IReadOnlyDictionary<ODataSelectColumnExpression, PropertyPath> projectMapping, int? inlineCount)
         {
             Throw.IfNull(projectedQuery, "projectedQuery");
             Throw.IfNull(projectMapping, "projectMapping");
@@ -25,12 +57,23 @@ namespace Medallion.OData.Service
             {
                 using (var writer = new JsonTextWriter(stringWriter))
                 {
+                    writer.WriteStartObject();
+
+                    if (inlineCount.HasValue) 
+                    {
+                        writer.WritePropertyName("odata.count");
+                        writer.WriteValue(inlineCount.Value);
+                    }
+
+                    writer.WritePropertyName("value");
                     writer.WriteStartArray();
                     foreach (var item in projectedQuery)
                     {
                         WriteNode(item, node, writer);
                     }
                     writer.WriteEndArray();
+
+                    writer.WriteEndObject();
                 }
                 var result = stringWriter.ToString();
                 return result;

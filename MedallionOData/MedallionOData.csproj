@@ -60,6 +60,7 @@
     <Compile Include="Parser\ODataParseException.cs" />
     <Compile Include="Parser\ODataQueryParser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Service\IODataSerializer.cs" />
     <Compile Include="Service\IODataServiceQueryPipeline.cs" />
     <Compile Include="Service\ODataQueryFilter.cs" />
     <Compile Include="Service\ODataJsonSerializer.cs" />

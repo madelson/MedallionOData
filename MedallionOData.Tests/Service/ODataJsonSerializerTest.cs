@@ -102,14 +102,14 @@ namespace Medallion.OData.Tests.Service
 
             var projectionResult = ODataQueryProjector.Project(enumerable.AsQueryable(), oDataExpressions);
 
-            var serialized = new ODataJsonSerializer().Serialize(projectionResult.Query, projectionResult.Mapping);
+            var serialized = new ODataJsonSerializer().Serialize(projectionResult.Query, projectionResult.Mapping, inlineCount: null);
             return serialized;
         }
 
         private void Compare(string json1, string json2)
         {
             var standardJson1 = Standardize(json1);
-            var standardJson2 = Standardize(json2);
+            var standardJson2 = Standardize("{ 'value': " + json2 + "}");
             standardJson1.ShouldEqual(standardJson2);
         }
 

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service
 {
+    #region ---- Interfaces ----
     /// <summary>
     /// Provides a pipeline of steps to be performed by an OData service endpoint
     /// </summary>
@@ -34,7 +35,7 @@ namespace Medallion.OData.Service
         /// Step 4
         /// Serializes the results of the query
         /// </summary>
-        string Serialize<TElement>(IODataProjectResult<TElement> projectResult);
+        object Serialize<TElement>(IODataProjectResult<TElement> projectResult);
     }
 
     public interface IODataParseResult
@@ -68,9 +69,32 @@ namespace Medallion.OData.Service
         /// </summary>
         IReadOnlyDictionary<ODataSelectColumnExpression, IReadOnlyList<PropertyInfo>> ProjectMapping { get; }
     }
+    #endregion
 
+    #region ---- Implementation ----
     public sealed class DefaultODataServiceQueryPipeline : IODataServiceQueryPipeline
     {
+        private readonly IReadOnlyDictionary<string, IODataSerializer> _serializersByFormat;
+
+        public DefaultODataServiceQueryPipeline(IEnumerable<KeyValuePair<string, IODataSerializer>> serializersByFormat = null)
+        {
+            var dict = new Dictionary<string, IODataSerializer>(StringComparer.OrdinalIgnoreCase);
+            if (serializersByFormat == null)
+            {
+                dict.Add("json", new ODataJsonSerializer());
+            }
+            else
+            {
+                foreach (var kvp in serializersByFormat)
+                {
+                    Throw<ArgumentException>.If(string.IsNullOrWhiteSpace(kvp.Key), () => string.Format("Invalid format '{0}'", kvp.Key));
+                    Throw.IfNull(kvp.Value, "serializer");
+                    dict[kvp.Key] = kvp.Value;
+                }
+            }
+            this._serializersByFormat = dict;
+        }
+
         IODataParseResult IODataServiceQueryPipeline.Parse<TElement>(NameValueCollection urlQuery)
         {
             Throw.IfNull(urlQuery, "urlQuery");
@@ -103,13 +127,14 @@ namespace Medallion.OData.Service
             );
         }
 
-        string IODataServiceQueryPipeline.Serialize<TElement>(IODataProjectResult<TElement> projectResult)
+        object IODataServiceQueryPipeline.Serialize<TElement>(IODataProjectResult<TElement> projectResult)
         {
             Throw.IfNull(projectResult, "projectResult");
-            Throw<NotSupportedException>.If(!StringComparer.OrdinalIgnoreCase.Equals(projectResult.ODataQuery.Format, "json"), "Only json is supported");
+            IODataSerializer serializer;
+            Throw<NotSupportedException>.If(!this._serializersByFormat.TryGetValue(projectResult.ODataQuery.Format, out serializer), "No serializer is available for the given format");
 
-            var serialized = new ODataJsonSerializer().Serialize(projectResult.ProjectedResultQuery, projectResult.ProjectMapping);
-            return serialized;
+            var result = serializer.Serialize(projectResult);
+            return result;
         }
 
         private class Result<TElement> : IODataProjectResult<TElement>
@@ -169,4 +194,5 @@ namespace Medallion.OData.Service
             }
         }
     }
+    #endregion
 }
