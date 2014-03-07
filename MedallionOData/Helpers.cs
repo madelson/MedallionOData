@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -71,6 +72,7 @@ namespace Medallion.OData
         public static EqualityComparer<MemberInfo> MemberComparer { get { return MemberComparerField; } }
         #endregion
 
+        [DebuggerStepThrough]
         public static T As<T>(this T @this) { return @this; }
 
         public static string ToDelimitedString<T>(this IEnumerable<T> @this, string separator = ",")

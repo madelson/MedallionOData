@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace Medallion.OData.Client
 {
@@ -25,9 +27,7 @@ namespace Medallion.OData.Client
         {
             Throw.IfNull(url, "url");
 
-            var result = this.As<IQueryProvider>()
-                .CreateQuery<TElement>(Expression.Call(Expression.Constant(this), QueryMethod.MakeGenericMethod(typeof(TElement)), Expression.Constant(url)));
-            return result;
+            return new ODataQuery<TElement>(this, url);
         }
 
         public IQueryable<TElement> Query<TElement>(string url)
@@ -41,7 +41,7 @@ namespace Medallion.OData.Client
         IQueryable<TElement> IQueryProvider.CreateQuery<TElement>(Expression expression)
         {
             Throw.IfNull(expression, "expression");
-            throw new NotImplementedException();
+            return new ODataQuery<TElement>(this, expression);
         }
 
         IQueryable IQueryProvider.CreateQuery(Expression expression)
@@ -86,11 +86,22 @@ namespace Medallion.OData.Client
             );
             Throw<InvalidOperationException>.If(rootQuery.Url == null, "Invalid root query");
 
-            using (var response = await this._pipeline.ReadAsync(rootQuery.Url).ConfigureAwait(false))
+            // build the final url
+            var url = new UriBuilder(rootQuery.Url);
+            var baseQueryParams = HttpUtility.ParseQueryString(url.Query);
+            var oDataQueryParams = translationResult.ODataQuery.ToNameValueCollection();
+            foreach (string key in oDataQueryParams)
+            {
+                baseQueryParams[key] = oDataQueryParams[key];
+            }
+            // see http://stackoverflow.com/questions/3865975/namevaluecollection-to-url-query
+            url.Query = baseQueryParams.ToString();
+
+            using (var response = await this._pipeline.ReadAsync(url.Uri).ConfigureAwait(false))
             {
                 var responseStream = await response.GetResponseStreamAsync().ConfigureAwait(false);
                 var deserialized = await this._pipeline.DeserializeAsync(translationResult, responseStream).ConfigureAwait(false);
-                var result = translationResult.PostProcessor(deserialized);
+                var result = translationResult.PostProcessor(deserialized.Values);
                 return new ExecuteResult(result, deserialized.InlineCount);
             }
         }
@@ -135,6 +146,7 @@ namespace Medallion.OData.Client
 
             Type IQueryable.ElementType
             {
+                [DebuggerStepThrough]
                 get { return this.ElementType; }
             }
 
@@ -142,11 +154,13 @@ namespace Medallion.OData.Client
 
             Expression IQueryable.Expression
             {
+                [DebuggerStepThrough]
                 get { return this._expression; }
             }
 
             IQueryProvider IQueryable.Provider
             {
+                [DebuggerStepThrough]
                 get { return this._provider; }
             }
         }

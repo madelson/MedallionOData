@@ -108,6 +108,7 @@ namespace Medallion.OData.Trees
 				.ToList()
 				.AsReadOnly();
 
+            // the ?? here on return type handles cast, whose return type is dynamic depending on its arguments
 			return new ODataCallExpression(function, castArguments, match.ReturnType ?? ((Type)((ODataConstantExpression)castArguments[1]).Value).ToODataExpressionType());
 		}
 

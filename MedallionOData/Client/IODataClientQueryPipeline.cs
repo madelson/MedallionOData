@@ -161,7 +161,9 @@ namespace Medallion.OData.Client
                     inlineCount = null;
                 }
 
-                var values = (IReadOnlyList<object>)result["values"].ToObject(translation.RootQuery.ElementType.MakeArrayType());
+                var jValues = result["value"];
+                Throw<InvalidOperationException>.If(!(jValues is JArray), () => "Expected 'value' json array property. Found '" + jValues + "'");
+                var values = (IReadOnlyList<object>)jValues.ToObject(translation.RootQuery.ElementType.MakeArrayType());
                 return new JsonDeserializationResult(inlineCount, values);
             }
         }

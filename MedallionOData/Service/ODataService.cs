@@ -17,7 +17,6 @@ namespace Medallion.OData.Service
 
         public ODataService(IODataServiceQueryPipeline pipeline = null)
         {
-            Throw.IfNull(pipeline, "pipeline");
             this._pipeline = pipeline ?? new DefaultODataServiceQueryPipeline();
         }
 

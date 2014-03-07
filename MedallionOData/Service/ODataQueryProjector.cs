@@ -24,7 +24,7 @@ string.Format(
          */
         private static readonly object Projection = new { T1 = default(int), T2 = default(int), T3 = default(int), T4 = default(int), T5 = default(int), T6 = default(int), T7 = default(int), T8 = default(int), T9 = default(int), T10 = default(int) }; 
         private static readonly Type ProjectionType = Projection.GetType().GetGenericTypeDefinition();
-        private static readonly IReadOnlyList<PropertyInfo> ProjectionTypeProperties = ProjectionType.GetProperties();
+        private static readonly IReadOnlyList<PropertyInfo> ProjectionTypeProperties = ProjectionType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
         private static readonly IEqualityComparer<PropertyPath> PathComparer = EqualityComparers.Create<PropertyPath>(
             (p1, p2) => p1.SequenceEqual(p2, Helpers.MemberComparer),
             p => p.Aggregate(0, (h, pi) => h ^ Helpers.MemberComparer.GetHashCode(pi))
@@ -85,7 +85,8 @@ string.Format(
             var parameterizedType = ProjectionType.MakeGenericType(arguments.Select(a => a.Type).ToArray());
             var newExpression = Expression.New(
                 parameterizedType.GetConstructors().Single(),
-                arguments
+                arguments,
+                members: parameterizedType.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             );
             return newExpression;
         }
