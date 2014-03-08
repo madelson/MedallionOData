@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +15,9 @@ namespace Medallion.OData.Client
 	/// <summary>
 	/// A dynamic row type to provide support for dynamic client queries
 	/// </summary>
-	public sealed class ODataRow
+	[JsonConverter(typeof(ODataRow.JsonConverter))]
+    public sealed class ODataRow
 	{
-		private static readonly MethodInfo GetMethod = Helpers.GetMethod((ODataRow r) => r.Get<int>(null))
-			.GetGenericMethodDefinition();
 		private static readonly IEqualityComparer<string> KeyComparer = StringComparer.OrdinalIgnoreCase;
 
 		private readonly IReadOnlyDictionary<string, object> _values;
@@ -40,7 +41,7 @@ namespace Medallion.OData.Client
 			{
 				throw new ArgumentException("The row does not contain a value for column '" + columnName + "'!");
 			}
-			if (!typeof(TColumn).IsInstanceOfType(result))
+			if (!(result is TColumn))
 			{
 				throw new InvalidCastException(string.Format("value '{0}' for column '{1}' is not of type {2}", result ?? "null", columnName, typeof(TColumn)));
 			}
@@ -48,24 +49,90 @@ namespace Medallion.OData.Client
 			return (TColumn)result;
 		}
 
-		internal static bool TryConvertMethodCallToRowProperty(MethodCallExpression methodCall, out PropertyInfo property)
-		{
-			object value;
-			if (methodCall.Method.MetadataToken != GetMethod.MetadataToken
-				|| !Equals(methodCall.Method.Module, GetMethod.Module)
-				|| !LinqHelpers.TryGetValue(methodCall.Arguments.Single(), LinqHelpers.GetValueOptions.ConstantsFieldsAndProperties, out value)
-				|| value == null)
-			{
-				property = null;
-				return false;
-			}
+        #region ---- Translation ----
+        private static readonly MethodInfo GetMethod = Helpers.GetMethod((ODataRow r) => r.Get<int>(null))
+            .GetGenericMethodDefinition();
 
-			property = RowPropertyInfo.For(name: (string)value, type: methodCall.Method.GetGenericArguments().Single());
-			return true;
-		}
+        /// <summary>
+        /// Replaces calls to <see cref="ODataRow.Get{T}"/> with property accesses
+        /// </summary>
+        public static Expression Normalize(Expression expression)
+        {
+            var result = Normalizer.Instance.Visit(expression);
+            return result;
+        }
 
-		#region ---- Fake property implementation ----
-		private TColumn FakeGetter<TColumn>()
+        #region ---- Normalizer ----
+        private sealed class Normalizer : ExpressionVisitor
+        {
+            public static readonly Normalizer Instance = new Normalizer();
+
+            protected override Expression VisitMethodCall(MethodCallExpression methodCall)
+            {
+                if (methodCall.Method.MetadataToken == GetMethod.MetadataToken
+                    && Equals(methodCall.Method.Module, GetMethod.Module))
+                {
+                    object value;
+                    Throw<ODataCompileException>.If(
+                        !LinqHelpers.TryGetValue(methodCall.Arguments[0], LinqHelpers.GetValueOptions.All, out value),
+                        () => string.Format(
+                            "Unable to extract value for parameter '{0}' of {1}. Ensure that the value for the parameter can be statically determined",
+                            methodCall.Method.GetParameters()[0].Name,
+                            methodCall.Method
+                        )
+                    );
+                    var columnName = (string)value;
+                    Throw<ODataCompileException>.If(
+                        string.IsNullOrWhiteSpace(columnName),
+                        () => string.Format(
+                            "'{0}' value for {1} must not be null or whitespace",
+                            methodCall.Method.GetParameters()[0].Name,
+                            methodCall.Method
+                        )
+                    );
+
+                    var property = RowPropertyInfo.For(name: columnName, type: methodCall.Method.GetGenericArguments()[0]);
+                    return Expression.Property(this.Visit(methodCall.Object), property);
+                }
+
+                return base.VisitMethodCall(methodCall);
+            }
+        }
+        #endregion
+
+        /// <summary>
+        /// Reverts changes to an expression made by <see cref="ODataRow.Normalize"/>
+        /// </summary>
+        public static Expression Denormalize(Expression expression)
+        {
+            var result = Denormalizer.Instance.Visit(expression);
+            return result;
+        }
+
+        #region ---- Denormalizer ----
+        private sealed class Denormalizer : ExpressionVisitor
+        {
+            public static Denormalizer Instance = new Denormalizer();
+
+            protected override Expression VisitMember(MemberExpression node)
+            {
+                var rowProp = node.Member as RowPropertyInfo;
+                if (rowProp != null)
+                {
+                    return Expression.Call(
+                        this.Visit(node.Expression),
+                        GetMethod.MakeGenericMethod(rowProp.PropertyType),
+                        Expression.Constant(rowProp.Name)
+                    );
+                }
+                return base.VisitMember(node);
+            }
+        }
+        #endregion
+
+
+        #region ---- Fake property implementation ----
+        private TColumn FakeGetter<TColumn>()
 		{
 			throw new InvalidOperationException("This getter is not valid");
 		}
@@ -228,5 +295,56 @@ namespace Medallion.OData.Client
 			public static readonly Module Instance = new RowModule();
 		}
 		#endregion
-	}
+        #endregion
+
+        #region ---- Serialization ----
+        private sealed class JsonConverter : Newtonsoft.Json.JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return objectType == typeof(ODataRow);
+            }
+
+            #region ---- Read ----
+            public override bool CanRead { get { return true; } }
+
+            public override object ReadJson(Newtonsoft.Json.JsonReader reader, Type objectType, object existingValue, Newtonsoft.Json.JsonSerializer serializer)
+            {
+                var jObject = serializer.Deserialize<JObject>(reader);
+                return ConvertJToken(jObject);
+            }
+
+            private static object ConvertJToken(JToken token)
+            {
+                switch (token.Type)
+                {
+                    case JTokenType.Object:
+                        var keyValuePairs = ((JObject)token).As<IDictionary<string, JToken>>()
+                            .Select(kvp => KeyValuePair.Create(kvp.Key, ConvertJToken(kvp.Value)));
+                        return new ODataRow(keyValuePairs);
+                    case JTokenType.Array:
+                        return ((JArray)token).Select(ConvertJToken).ToList();
+                    default:
+                        var value = token as JValue;
+                        if (value == null)
+                        {
+                            throw new NotSupportedException("Cannot convert JSON token of type " + token.Type);
+                        }
+                        return value.Value;
+                }
+            }
+            #endregion
+
+            #region ---- Write ----
+            public override bool CanWrite { get { return true; } }
+
+            public override void WriteJson(Newtonsoft.Json.JsonWriter writer, object value, Newtonsoft.Json.JsonSerializer serializer)
+            {
+                // ODataRow just serializes as a dictionary
+                serializer.Serialize(writer, ((ODataRow)value)._values);
+            }
+            #endregion
+        }
+        #endregion
+    }
 }

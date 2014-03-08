@@ -24,7 +24,10 @@ namespace Medallion.OData.Client
 			this._resultTranslator = null;
 			this._memberAndParameterTranslator = new MemberAndParameterTranslator(this);
 
-			var translated = this.TranslateInternal(linq);
+            // normalize away ODataRow constructs
+            var normalized = ODataRow.Normalize(linq);
+
+			var translated = this.TranslateInternal(normalized);
 
 			if (translated.Kind == ODataExpressionKind.Query)
 			{			
@@ -46,7 +49,12 @@ namespace Medallion.OData.Client
 				var selectMethod = Helpers.GetMethod((IEnumerable<object> e) => e.Select(o => o))
 					.GetGenericMethodDefinition()
 					.MakeGenericMethod(projection.Type.GetGenericArguments(typeof(Func<,>)));
-				Func<object, object> queryTranslator = enumerable => selectMethod.Invoke(null, new[] { enumerable, projection.Compile() });
+
+                // restores any ODataRow constructs that were normalized away, since we need to be able to compile and run the projection
+                // (i. e. fake ODataRow property accesses don't run when compiled)
+                var denormalizedProjection = (LambdaExpression)ODataRow.Denormalize(projection);
+				
+                Func<object, object> queryTranslator = enumerable => selectMethod.Invoke(null, new[] { enumerable, denormalizedProjection.Compile() });
 				resultTranslator = o => finalTranslator(queryTranslator(o));
 			}
 			else
@@ -324,13 +332,6 @@ namespace Medallion.OData.Client
 					default:
 						throw new ODataCompileException("Query operator " + call.Method + " is not supported in OData");
 				}
-			}
-
-			// ODataRow.Get<T> is translated specially
-			PropertyInfo rowProperty;
-			if (ODataRow.TryConvertMethodCallToRowProperty(call, out rowProperty))
-			{
-				return this.TranslateInternal(Expression.Property(call.Object, rowProperty));
 			}
 
 			// other OData methods

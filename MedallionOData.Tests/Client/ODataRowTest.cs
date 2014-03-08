@@ -20,12 +20,12 @@ namespace Medallion.OData.Tests.Client
 		{
 			Expression<Func<ODataRow, object>> getString = r => r.Get<string>("Text");
 			PropertyInfo prop;
-			ODataRow.TryConvertMethodCallToRowProperty((MethodCallExpression)getString.Body, out prop).ShouldEqual(true);
+			TryConvertMethodCallToRowProperty((MethodCallExpression)getString.Body, out prop).ShouldEqual(true);
 			prop.Name.ShouldEqual("Text");
 			prop.PropertyType.ShouldEqual(typeof(string));
 
 			Expression<Func<ODataRow, object>> toString = r => r.ToString();
-			ODataRow.TryConvertMethodCallToRowProperty((MethodCallExpression)toString.Body, out prop).ShouldEqual(false);
+			TryConvertMethodCallToRowProperty((MethodCallExpression)toString.Body, out prop).ShouldEqual(false);
 			prop.ShouldEqual(null);
 		}
 
@@ -44,5 +44,23 @@ namespace Medallion.OData.Tests.Client
 		{
 			var row = new ODataRow(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
 		}
+
+        public bool TryConvertMethodCallToRowProperty(MethodCallExpression methodCall, out PropertyInfo property)
+        {
+            property = null;
+            try
+            {
+                var normalized = ODataRow.Normalize(methodCall);
+                if (normalized.NodeType == ExpressionType.MemberAccess)
+                {
+                    property = ((MemberExpression)normalized).Member as PropertyInfo;
+                }
+            }
+            catch (ODataCompileException)
+            {
+            }
+
+            return property != null;
+        }
     }
 }

@@ -83,6 +83,18 @@ namespace Medallion.OData.Tests.Integration
             );
         }
 
+        [TestMethod]
+        public void IntegrationDynamicRowFilterAndProjectToSimpleType()
+        {
+            this.Test(
+                "customers",
+                (IQueryable<ODataRow> rows) => rows.Where(c => c.Get<ODataRow>("Company").Get<string>("Name") == "Mine")
+                    .Select(c => c.Get<string>("Name")),
+                    expected: CustomersContext.GetCustomers().Where(c => c.Company != null && c.Company.Name == "Mine")
+                        .Select(c => c.Name)
+            );
+        }
+
         private static readonly ODataQueryProvider _provider = new ODataQueryProvider();
         private void Test<TSource, TResult>(string url, Func<IQueryable<TSource>, IQueryable<TResult>> query, IEnumerable<TResult> expected, IEqualityComparer<TResult> comparer = null, bool orderMatters = false)
         {
