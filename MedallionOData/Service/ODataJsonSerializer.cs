@@ -90,7 +90,7 @@ namespace Medallion.OData.Service
                 if (node.Select != null)
                 {
                     Throw<InvalidOperationException>.If(!node.Select.AllColumns, "should have all columns!");
-                    if (!node.ValueRetriever.TryGetValue(item, out value))
+                    if (!node.ValueRetriever.TryGetValue(item, out value) || value == null)
                     {
                         writer.WriteNull();
                         return;

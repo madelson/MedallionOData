@@ -27,6 +27,21 @@ namespace Medallion.OData.Tests.Integration
         public Guid? CompanyId { get; set; }
         [ForeignKey("CompanyId")]
         public virtual Company Company { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            var that = obj as Customer;
+            return that != null
+                && that.Id == this.Id
+                && that.Name == this.Name
+                && (that.DateCreated - this.DateCreated).Duration() < TimeSpan.FromMilliseconds(10)
+                && that.CompanyId == this.CompanyId;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Id.GetHashCode();
+        }
     }
 
     public class Company
@@ -41,6 +56,20 @@ namespace Medallion.OData.Tests.Integration
         public Guid Id { get; set; }
         public string Name { get; set; }
         public DateTime DateCreated { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            var that = obj as Company;
+            return that != null
+                && this.Id == that.Id
+                && this.Name == that.Name
+                && (this.DateCreated - that.DateCreated).Duration() < TimeSpan.FromMilliseconds(10);
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Id.GetHashCode();
+        }
     }
 
     public class CustomersContext : DbContext
@@ -81,7 +110,8 @@ namespace Medallion.OData.Tests.Integration
             {
                 DataSource = @".\SqlExpress",
                 InitialCatalog = Prefix + "_" + typeof(CustomersContext).Name + Math.Round((DateTime.MaxValue - DateTime.Now).TotalSeconds),
-                IntegratedSecurity = true
+                IntegratedSecurity = true,
+                PersistSecurityInfo = true,
             };
             return connectionString.ConnectionString;
         }
@@ -92,7 +122,7 @@ namespace Medallion.OData.Tests.Integration
             var databasesToDelete = this.Database.SqlQuery<string>(@"
                     SELECT name FROM sys.databases
                     WHERE name LIKE '" + Prefix + @"%'
-                        AND DATEADD(w, -1, GETDATE()) > create_date"
+                        AND DATEADD(d, -1, GETDATE()) > create_date"
                 )
                 .ToArray();
 
@@ -100,7 +130,16 @@ namespace Medallion.OData.Tests.Integration
             {
                 try
                 {
-                    this.Database.ExecuteSqlCommand("DROP DATABASE " + db);
+                    // needs a separate connection to not 
+                    using (var connection = new SqlConnection(this.Database.Connection.ConnectionString))
+                    {
+                        connection.Open();
+                        using (var command = connection.CreateCommand())
+                        {
+                            command.CommandText = "DROP DATABASE " + db;
+                            command.ExecuteNonQuery();
+                        }
+                    }
                     Console.WriteLine("Dropped {0}", db);
                 }
                 catch (Exception ex)

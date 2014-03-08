@@ -45,9 +45,42 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void TestSimpleQuery()
+        public void IntegrationSimpleQuery()
         {
-            this.Test<Customer, Customer>("customers", c => c, expected: CustomersContext.GetCustomers(), comparer: CustomerColumnComparer);
+            this.Test<Customer, Customer>("customers", c => c, expected: CustomersContext.GetCustomers());
+        }
+
+        [TestMethod]
+        public void IntegrationWhere()
+        {
+            this.Test<Customer, Customer>(
+                "customers", 
+                cc => cc.Where(c => c.CompanyId.HasValue && c.Name.StartsWith("Albert")), 
+                expected: CustomersContext.GetCustomers()
+                    .Where(c => c.CompanyId.HasValue && c.Name.StartsWith("Albert"))
+            );
+        }
+
+        [TestMethod]
+        public void IntegrationSort()
+        {
+            this.Test<Customer, Customer>(
+                "customers",
+                cc => cc.OrderBy(c => c.Name.Length).ThenByDescending(c => c.Name),
+                expected: CustomersContext.GetCustomers()
+                    .OrderBy(c => c.Name.Length).ThenByDescending(c => c.Name),
+                orderMatters: true
+            );
+        }
+
+        [TestMethod]
+        public void IntegrationSelect()
+        {
+            this.Test(
+                "customers",
+                (IQueryable<Customer> cc) => cc.Select(c => new { c.Company, c.Name }),
+                expected: CustomersContext.GetCustomers().Select(c => new { c.Company, c.Name })
+            );
         }
 
         private static readonly ODataQueryProvider _provider = new ODataQueryProvider();
@@ -59,11 +92,5 @@ namespace Medallion.OData.Tests.Integration
             var result = resultQuery.ToArray();
             result.CollectionShouldEqual(expected, orderMatters: orderMatters, comparer: comparer);
         }
-
-        private static readonly TimeSpan DateEpsilon = TimeSpan.FromMilliseconds(10);
-        private static readonly EqualityComparer<Customer> CustomerColumnComparer = EqualityComparers.Create<Customer>(
-            (c1, c2) => c1.Name == c2.Name && c1.Id == c2.Id && c1.CompanyId == c2.CompanyId && (c1.DateCreated - c2.DateCreated).Duration() < DateEpsilon,
-            c => c.Id.GetHashCode()
-        );
     }
 }

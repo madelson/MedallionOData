@@ -59,6 +59,14 @@ namespace Medallion.OData.Parser
 				}
 			}
 
+            IReadOnlyList<ODataSelectColumnExpression> select = Empty<ODataSelectColumnExpression>.Array;
+            var selectString = parameters["$select"];
+            if (selectString != null)
+            {
+                var parser = new ODataExpressionLanguageParser(elementType, HttpUtility.UrlDecode(selectString));
+                select = parser.ParseSelectColumnList();
+            }
+
 			var format = parameters["$format"];
 
 			var inlineCount = ODataInlineCountOption.None;
@@ -76,6 +84,7 @@ namespace Medallion.OData.Parser
 				orderBy: orderBy,
 				top: top,
 				skip: skip,
+                select: select,
 				format: format,
 				inlineCount: inlineCount
 			);
