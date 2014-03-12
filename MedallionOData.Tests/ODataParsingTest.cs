@@ -203,6 +203,28 @@ namespace Medallion.OData.Tests
 		}
         #endregion
 
+        #region ---- Lex tests ----
+        [TestMethod]
+        public void TestOperatorSpacing() 
+        {
+           this.TestLex("aeq(eq)", ODataTokenKind.Identifier, ODataTokenKind.LeftParen, ODataTokenKind.Eq, ODataTokenKind.RightParen);
+        }
+
+        [TestMethod]
+        public void TestOperatorInPath()
+        {
+            // TODO debatable whether this should match eq as an identifier
+            this.TestLex("a/eq", ODataTokenKind.Identifier, ODataTokenKind.Slash, ODataTokenKind.Eq);
+        }
+
+        private void TestLex(string text, params ODataTokenKind[] expected)
+        {
+            var list = ODataExpressionLanguageTokenizer.Tokenize(text).Select(t => t.Kind).ToList();
+            list[list.Count - 1].ShouldEqual(ODataTokenKind.Eof);
+            list.GetRange(0, list.Count - 1).CollectionShouldEqual(expected, orderMatters: true, message: list.ToDelimitedString(", "));
+        }
+        #endregion
+
         #region ---- Sample classes ----
         private class A
 		{

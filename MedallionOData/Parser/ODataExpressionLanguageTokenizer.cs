@@ -11,7 +11,6 @@ namespace Medallion.OData.Parser
 	// http://www.odata.org/documentation/overview/#AbstractDataModel
 	internal enum ODataTokenKind
 	{
-		IntLiteral,
 		NullLiteral,
 		BinaryLiteral,
 		BooleanLiteral,
@@ -54,11 +53,17 @@ namespace Medallion.OData.Parser
 		Star,
 
 		WhiteSpace,
+        /// <summary>
+        /// Represents an unexpected character
+        /// </summary>
 		Error,
+        /// <summary>
+        /// Represents the end of the token stream
+        /// </summary>
 		Eof,
 	}
 
-	internal class ODataToken
+	internal sealed class ODataToken
 	{
 		internal ODataToken(Match match, ODataTokenKind kind)
 		{
@@ -78,7 +83,7 @@ namespace Medallion.OData.Parser
 		}
 	}
 
-	internal class ODataExpressionLanguageTokenizer
+	internal sealed class ODataExpressionLanguageTokenizer
 	{
 		private static readonly IReadOnlyList<KeyValuePair<ODataTokenKind, string>> Kinds = Helpers.GetValues<ODataTokenKind>()
 			.Select(k => KeyValuePair.Create(k, k.ToString()))
@@ -92,7 +97,8 @@ namespace Medallion.OData.Parser
 
 		static ODataExpressionLanguageTokenizer()
 		{
-			var tokenToResx = new TupleList<ODataTokenKind, string>
+            const string followedByNonWord = @"(?=\W|$)";
+			var tokenToRegex = new TupleList<ODataTokenKind, string>
 			{
 				{ ODataTokenKind.NullLiteral, "null" },
 				{ ODataTokenKind.BinaryLiteral, "(binary|X)'[A-Fa-f0-9]+'" },
@@ -107,22 +113,22 @@ namespace Medallion.OData.Parser
 				{ ODataTokenKind.Int32Literal, "-?[0-9]+" },
 				{ ODataTokenKind.GuidLiteral, @"guid'(?<digits>DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD)'".Replace("D", "[A-Fa-f0-9]") },
 				{ ODataTokenKind.StringLiteral, "'(?<chars>(''|[^'])*)'"},
-				{ ODataTokenKind.Eq, @"eq(?=\s|$)" },
-				{ ODataTokenKind.Ne, @"ne(?=\s|$)" },
-				{ ODataTokenKind.Gt, @"gt(?=\s|$)" },
-				{ ODataTokenKind.Ge, @"ge(?=\s|$)" },
-				{ ODataTokenKind.Lt, @"lt(?=\s|$)" },
-				{ ODataTokenKind.Le, @"le(?=\s|$)" },
-				{ ODataTokenKind.And, @"and(?=\s|$)" },
-				{ ODataTokenKind.Or, @"or(?=\s|$)" },
-				{ ODataTokenKind.Not, @"not(?=\s|$)" },
-				{ ODataTokenKind.Add, @"add(?=\s|$)" },
-				{ ODataTokenKind.Sub, @"sub(?=\s|$)" },
-				{ ODataTokenKind.Mul, @"mul(?=\s|$)" },
-				{ ODataTokenKind.Div, @"div(?=\s|$)" },
-				{ ODataTokenKind.Mod, @"mod(?=\s|$)" },
-				{ ODataTokenKind.Asc, @"asc(?=\s|,|$)" },
-				{ ODataTokenKind.Desc, @"desc(?=\s|,|$)" },
+				{ ODataTokenKind.Eq, @"eq" + followedByNonWord },
+				{ ODataTokenKind.Ne, @"ne" + followedByNonWord },
+				{ ODataTokenKind.Gt, @"gt" + followedByNonWord },
+				{ ODataTokenKind.Ge, @"ge" + followedByNonWord },
+				{ ODataTokenKind.Lt, @"lt" + followedByNonWord },
+				{ ODataTokenKind.Le, @"le" + followedByNonWord },
+				{ ODataTokenKind.And, @"and" + followedByNonWord },
+				{ ODataTokenKind.Or, @"or" + followedByNonWord },
+				{ ODataTokenKind.Not, @"not" + followedByNonWord },
+				{ ODataTokenKind.Add, @"add" + followedByNonWord },
+				{ ODataTokenKind.Sub, @"sub" + followedByNonWord },
+				{ ODataTokenKind.Mul, @"mul" + followedByNonWord },
+				{ ODataTokenKind.Div, @"div" + followedByNonWord },
+				{ ODataTokenKind.Mod, @"mod" + followedByNonWord },
+				{ ODataTokenKind.Asc, @"asc" + followedByNonWord },
+				{ ODataTokenKind.Desc, @"desc" + followedByNonWord },
 				// TODO time, date-time offset
 				{ ODataTokenKind.LeftParen, @"\(" },
 				{ ODataTokenKind.RightParen, @"\)" },
@@ -131,13 +137,14 @@ namespace Medallion.OData.Parser
 				{ ODataTokenKind.WhiteSpace, @"\s+" },
 				{ ODataTokenKind.Comma, "," },
 				{ ODataTokenKind.Slash, "/" },
-				{ ODataTokenKind.Error, @"." },
+				{ ODataTokenKind.Error, @"." }, // matches any character not already matched
+                { ODataTokenKind.Eof, "$" }, // matches an empty string positioned at the end of the string
 			};	
 
 			TokenizerRegex = new Regex(
-				tokenToResx.Select(t => string.Format("(?<{0}>{1})", t.Item1, t.Item2))
+				tokenToRegex.Select(t => string.Format("(?<{0}>{1})", t.Item1, t.Item2))
 					.ToDelimitedString("|"),
-				RegexOptions.ExplicitCapture
+				RegexOptions.ExplicitCapture | RegexOptions.Compiled
 			);
 		}
 
@@ -147,12 +154,11 @@ namespace Medallion.OData.Parser
 				.Cast<Match>()
 				.Select(m =>
 				{
-					var kind = Kinds.First(kvp => !string.IsNullOrEmpty(m.Groups[kvp.Value].Value));
+					var kind = Kinds.First(kvp => m.Groups[kvp.Value].Success);
 					return new ODataToken(m, kind.Key);
 				})
 				.Where(t => t.Kind != ODataTokenKind.WhiteSpace)
 				.ToList();
-			tokens.Add(new ODataToken(null, ODataTokenKind.Eof));
 			return tokens;
 		}
 	}
