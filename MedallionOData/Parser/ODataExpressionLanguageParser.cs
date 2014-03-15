@@ -26,7 +26,7 @@ namespace Medallion.OData.Parser
 		// expression = orExpression
 		// expressionList = expression [, expression]*
 
-		private readonly List<ODataToken> _tokens;
+		private readonly IReadOnlyList<ODataToken> _tokens;
 		private readonly Type _elementType;
 		private int _counter;
 
