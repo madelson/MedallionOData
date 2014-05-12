@@ -88,9 +88,9 @@ namespace Medallion.OData.Service
 					switch (binaryOp.Operator)
 					{
 						case ODataBinaryOp.Or:
-							return Expression.Or(left, right);
+							return Expression.OrElse(left, right);
 						case ODataBinaryOp.And:
-							return Expression.And(left, right);
+							return Expression.AndAlso(left, right);
 						case ODataBinaryOp.Add:
 							return Expression.Add(left, right);
 						case ODataBinaryOp.Subtract:

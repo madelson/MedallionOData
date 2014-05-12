@@ -31,9 +31,8 @@ namespace Medallion.OData.Tests
         public void TestFilterQueryTop2() { this.TestFilterQuery("Id eq 1 or Id eq 2 or Id eq 3", "Id desc", "0", "2", new[] { 3, 2 }); }
         [TestMethod]    
         public void TestFilterQueryStringOps() { this.TestFilterQuery("startswith(Text, 'AB') and substringof('C', Text)", null, null, null, new[] { 2 }); }
-        [Ignore] // null handling
         [TestMethod]    
-        public void TestFilterQueryYear() { this.TestFilterQuery("year(Date) eq 2013", null, null, null, new[] { 4 }); }
+        public void TestFilterQueryYear() { this.TestFilterQuery("Date ne null and year(Date) eq 2013", null, null, null, new[] { 4 }); }
         [TestMethod]    
         public void TestFilterQueryLength() { this.TestFilterQuery("length(Text) eq 0", null, null, null, new[] { 4 }); }
         
