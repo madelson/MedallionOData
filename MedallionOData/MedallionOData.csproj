@@ -53,6 +53,7 @@
     <Compile Include="Client\ODataQueryOptions.cs" />
     <Compile Include="Client\ODataQueryProvider.cs" />
     <Compile Include="Client\ODataRow.cs" />
+    <Compile Include="ConversionHelpers.cs" />
     <Compile Include="EqualityComparers.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Parser\ODataExpressionLanguageParser.cs" />

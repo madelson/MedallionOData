@@ -12,8 +12,8 @@ namespace Medallion.OData.Trees
 	public sealed class ODataBinaryOpExpression : ODataExpression
 	{
 		// TODO implicit cast checks (& insertions), static factory methods
-		internal ODataBinaryOpExpression(ODataExpression left, ODataBinaryOp @operator, ODataExpression right)
-			: base(ODataExpressionKind.BinaryOp, @operator.IsBooleanOp() ? ODataExpressionType.Boolean : left.Type)
+		internal ODataBinaryOpExpression(ODataExpression left, ODataBinaryOp @operator, ODataExpression right, Type clrType)
+			: base(ODataExpressionKind.BinaryOp, clrType.ToODataExpressionType(), clrType)
 		{
 			Throw<ArgumentException>.If(right.Type != left.Type, "right & left: must have equal types");
 			this.Right = right;
@@ -70,7 +70,8 @@ namespace Medallion.OData.Trees
     public sealed class ODataUnaryOpExpression : ODataExpression
 	{
 		internal ODataUnaryOpExpression(ODataExpression operand, ODataUnaryOp @operator)
-			: base(ODataExpressionKind.UnaryOp, operand.Type)
+            // in general, unary ops don't change the type. If we ever implement one that does, we can change this logic
+			: base(ODataExpressionKind.UnaryOp, operand.Type, operand.ClrType)
 		{
 			this.Operand = operand;
 			this.Operator = @operator;
@@ -87,8 +88,8 @@ namespace Medallion.OData.Trees
 
     public sealed class ODataCallExpression : ODataExpression
 	{
-		internal ODataCallExpression(ODataFunction function, IReadOnlyList<ODataExpression> arguments, ODataExpressionType returnType)
-			: base(ODataExpressionKind.Call, returnType)
+		internal ODataCallExpression(ODataFunction function, IReadOnlyList<ODataExpression> arguments, Type returnClrType)
+			: base(ODataExpressionKind.Call, returnClrType.ToODataExpressionType(), returnClrType)
 		{
 			this.Function = function;
 			this.Arguments = arguments;
@@ -105,8 +106,8 @@ namespace Medallion.OData.Trees
 
     public sealed class ODataConstantExpression : ODataExpression
 	{
-		internal ODataConstantExpression(object value, ODataExpressionType type)
-			: base(ODataExpressionKind.Constant, type)
+		internal ODataConstantExpression(object value, ODataExpressionType type, Type clrType)
+			: base(ODataExpressionKind.Constant, type, clrType)
 		{
 			this.Value = value;
 		}
@@ -175,7 +176,7 @@ namespace Medallion.OData.Trees
     public sealed class ODataMemberAccessExpression : ODataExpression
 	{
 		public ODataMemberAccessExpression(ODataMemberAccessExpression expression, PropertyInfo member)
-			: base(ODataExpressionKind.MemberAccess, member.PropertyType.ToODataExpressionType())
+			: base(ODataExpressionKind.MemberAccess, member.PropertyType.ToODataExpressionType(), member.PropertyType)
 		{
 			this.Expression = expression;
 			this.Member = member;
@@ -194,8 +195,8 @@ namespace Medallion.OData.Trees
 
     public sealed class ODataConvertExpression : ODataExpression
 	{
-		internal ODataConvertExpression(ODataExpression expression, ODataExpressionType type)
-			: base(ODataExpressionKind.Convert, type)
+		internal ODataConvertExpression(ODataExpression expression, Type clrType)
+			: base(ODataExpressionKind.Convert, clrType.ToODataExpressionType(), clrType)
 		{
 			this.Expression = expression;
 		}
@@ -213,7 +214,7 @@ namespace Medallion.OData.Trees
     public sealed class ODataSortKeyExpression : ODataExpression
 	{
 		internal ODataSortKeyExpression(ODataExpression expression, ODataSortDirection direction)
-			: base(ODataExpressionKind.SortKey, expression.Type)
+			: base(ODataExpressionKind.SortKey, expression.Type, expression.ClrType)
 		{
 			this.Expression = expression;
 			this.Direction = direction;
@@ -231,7 +232,8 @@ namespace Medallion.OData.Trees
     public sealed class ODataSelectColumnExpression : ODataExpression
 	{
 		internal ODataSelectColumnExpression(ODataMemberAccessExpression expression, bool allColumns)
-			: base(ODataExpressionKind.SelectColumn, expression != null ? expression.Type : ODataExpressionType.Complex)
+            // TODO we have to pass typeof(object) here for select *. We could fix this with a "ParameterExpression" type
+			: base(ODataExpressionKind.SelectColumn, expression != null ? expression.Type : ODataExpressionType.Complex, expression != null ? expression.ClrType : typeof(object))
 		{
 			this.Expression = expression;
 			this.AllColumns = allColumns;
@@ -267,7 +269,7 @@ namespace Medallion.OData.Trees
 			string format,
 			ODataInlineCountOption inlineCount,
 			IReadOnlyList<ODataSelectColumnExpression> select)
-			: base(ODataExpressionKind.Query, ODataExpressionType.Complex)
+			: base(ODataExpressionKind.Query, ODataExpressionType.Complex, typeof(IQueryable))
 		{
 			this.Filter = filter;
 			this.OrderBy = orderBy;

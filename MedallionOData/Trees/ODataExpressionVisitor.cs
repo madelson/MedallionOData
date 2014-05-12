@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Trees
 {
-	internal class ODataExpressionVisitor
+	internal abstract class ODataExpressionVisitor
 	{
-		public virtual void Visit(ODataExpression node)
+		protected virtual void Visit(ODataExpression node)
 		{
 			if (node == null)
 			{

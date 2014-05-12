@@ -95,6 +95,16 @@ namespace Medallion.OData.Tests.Integration
             );
         }
 
+        [TestMethod]
+        public void IntegrationFilterByYear()
+        {
+            this.Test<Customer, Customer>(
+                "customers",
+                cc => cc.Where(c => c.Company != null && c.Company.DateClosed.HasValue && ((DateTime)c.Company.DateClosed).Year == 1988),
+                expected: CustomersContext.GetCustomers().Where(c => c.Company != null && c.Company.DateClosed.HasValue && ((DateTime)c.Company.DateClosed).Year == 1988)
+            );
+        }
+
         private static readonly ODataQueryProvider _provider = new ODataQueryProvider();
         private void Test<TSource, TResult>(string url, Func<IQueryable<TSource>, IQueryable<TResult>> query, IEnumerable<TResult> expected, IEqualityComparer<TResult> comparer = null, bool orderMatters = false)
         {

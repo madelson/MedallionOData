@@ -56,6 +56,7 @@ namespace Medallion.OData.Tests.Integration
         public Guid Id { get; set; }
         public string Name { get; set; }
         public DateTime DateCreated { get; set; }
+        public DateTime? DateClosed { get; set; }
 
         public override bool Equals(object obj)
         {
@@ -78,7 +79,7 @@ namespace Medallion.OData.Tests.Integration
         private static IReadOnlyList<Customer> _customers;
         public static IReadOnlyList<Customer> GetCustomers()
         {
-            var mine = new Company { Name = "Mine" };
+            var mine = new Company { Name = "Mine", DateClosed = DateTime.Parse("12/07/1988") };
             var farm = new Company { Name = "Farm" };
             var customers = new[]
             {

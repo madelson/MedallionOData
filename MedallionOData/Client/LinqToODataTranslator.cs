@@ -83,7 +83,7 @@ namespace Medallion.OData.Client
 					this._rootQuery = (IQueryable)value;
 					return ODataExpression.Query();
 				}
-				return ODataExpression.Constant(value, linq.Type.ToODataExpressionType());
+				return ODataExpression.Constant(value, linq.Type);
 			}
 
 			switch (linq.NodeType)
@@ -126,7 +126,7 @@ namespace Medallion.OData.Client
 				case ExpressionType.Convert:
 				case ExpressionType.ConvertChecked:
 				case ExpressionType.TypeAs:
-					return ODataExpression.Convert(this.TranslateInternal(((UnaryExpression)linq).Operand), linq.Type.ToODataExpressionType());
+					return ODataExpression.Convert(this.TranslateInternal(((UnaryExpression)linq).Operand), linq.Type);
 				case ExpressionType.Parameter:
 					return this._memberAndParameterTranslator.TranslateParameter((ParameterExpression)linq);
 				case ExpressionType.TypeIs:
@@ -353,7 +353,7 @@ namespace Medallion.OData.Client
 			{
 				var testExpression = this.TranslateInternal(call.Arguments.Last());
 				var equalsElementExpressions = ((IEnumerable)enumerable).Cast<object>()
-					.Select(o => ODataExpression.Constant(o, elementType.ToODataExpressionType()))
+					.Select(o => ODataExpression.Constant(o, elementType))
 					.Select(c => ODataExpression.BinaryOp(testExpression, ODataBinaryOp.Equal, c))
 					.ToArray();
 				var equivalentOrExpression = equalsElementExpressions.Length == 0

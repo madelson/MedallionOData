@@ -224,8 +224,10 @@ namespace Medallion.OData.Trees
 		private static readonly Dictionary<Type, ODataExpressionType> ClrToODataTypes = ODataToClrTypes
 			.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
 
-		public static ODataExpressionType ToODataExpressionType(this Type @this)
+		internal static ODataExpressionType ToODataExpressionType(this Type @this)
 		{
+            Throw.IfNull(@this, "this");
+
 			ODataExpressionType result;
 			if (ClrToODataTypes.TryGetValue(Nullable.GetUnderlyingType(@this) ?? @this, out result))
 			{
@@ -255,6 +257,19 @@ namespace Medallion.OData.Trees
 			throw new ArgumentException("Expression type " + @this + " does not map to a Clr type");
 		}
 
+        internal static bool IsCompatibleWith(this ODataExpressionType @this, Type clrType)
+        {
+            Throw.IfNull(clrType, "clrType");
+
+            if (@this == ODataExpressionType.Null)
+            {
+                return clrType.CanBeNull(); // all nullable types are compatible with the null type
+            }
+
+            var mappedODataType = clrType.ToODataExpressionType();
+            return mappedODataType == @this;
+        }
+
 		public static bool IsImplicityCastableTo(this ODataExpressionType @this, ODataExpressionType that)
 		{
             // can't cast to null, since it's not really a type
@@ -267,10 +282,23 @@ namespace Medallion.OData.Trees
 			return result;
 		}
 
-		public static bool IsBooleanOp(this ODataBinaryOp @this)
-		{
-			return @this >= ODataBinaryOp.Or && @this <= ODataBinaryOp.LessThanOrEqual;
-		}
+        public static bool IsNumeric(this ODataExpressionType @this)
+        {
+            switch (@this)
+            {
+                case ODataExpressionType.Byte:
+                case ODataExpressionType.Decimal:
+                case ODataExpressionType.Double:
+                case ODataExpressionType.Int16:
+                case ODataExpressionType.Int32:
+                case ODataExpressionType.Int64:
+                case ODataExpressionType.SByte:
+                case ODataExpressionType.Single:
+                    return true;
+                default:
+                    return false;
+            }
+        }
 
 		public static string ToODataString<TEnum>(this TEnum @this)
 			where TEnum : struct, IConvertible

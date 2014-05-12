@@ -13,35 +13,85 @@ namespace Medallion.OData.Trees
 	/// </summary>
 	public abstract class ODataExpression
 	{
-		protected ODataExpression(ODataExpressionKind kind, ODataExpressionType type)
+		protected ODataExpression(ODataExpressionKind kind, ODataExpressionType type, Type clrType)
 		{
+            Throw.IfNull(clrType, "clrType");
+            Throw.If(!type.IsCompatibleWith(clrType), "clrType must be compatible with kind");
+
 			this.Kind = kind;
 			this.Type = type;
+            this.ClrType = clrType;
 		}
 
 		public ODataExpressionKind Kind { get; private set; }
 		public ODataExpressionType Type { get; private set; }
+        public Type ClrType { get; private set; }
 
 		#region ---- Static factories ----
+        private static readonly IReadOnlyCollection<ODataExpressionType> NonNumericComparableTypes = new[] { ODataExpressionType.DateTime, ODataExpressionType.DateTimeOffset, ODataExpressionType.Time };
 		public static ODataBinaryOpExpression BinaryOp(ODataExpression left, ODataBinaryOp @operator, ODataExpression right)
 		{
 			Throw.IfNull(left, "left");
 			Throw.IfNull(right, "right");
 
+            // add in implicit conversions as needed
+            ODataExpression convertedLeft, convertedRight;
 			if (left.Type == right.Type)
 			{
-				return new ODataBinaryOpExpression(left, @operator, right);
+                convertedLeft = left;
+                convertedRight = right;
 			}
-			if (left.Type.IsImplicityCastableTo(right.Type))
+			else if (left.Type.IsImplicityCastableTo(right.Type))
 			{
-				return new ODataBinaryOpExpression(Convert(left, right.Type), @operator, right);
+                convertedLeft = Convert(left, right.ClrType);
+                convertedRight = right;
 			}
-			if (right.Type.IsImplicityCastableTo(left.Type))
+			else if (right.Type.IsImplicityCastableTo(left.Type))
 			{
-				return new ODataBinaryOpExpression(left, @operator, Convert(right, left.Type));
+                convertedLeft = left;
+                convertedRight = Convert(right, left.ClrType);
 			}
+            else
+            {
+                throw new ArgumentException(string.Format("Types {0} and {1} cannot be used with operator {2}", left.Type, right.Type, @operator));
+            }
 
-			throw new ArgumentException(string.Format("Types {0} and {1} are incompatible", left.Type, right.Type));
+            // determine the result type
+            var operandClrType = convertedLeft.ClrType;
+            var operandType = convertedLeft.Type;
+            Type resultClrType;
+            switch (@operator)
+            {
+                case ODataBinaryOp.Add:
+                case ODataBinaryOp.Subtract:
+                case ODataBinaryOp.Multiply:
+                case ODataBinaryOp.Divide:
+                case ODataBinaryOp.Modulo:
+                    Throw.If(!operandType.IsNumeric(), "Operator requires numeric type");
+                    resultClrType = operandClrType;
+                    break;
+                case ODataBinaryOp.LessThan:
+                case ODataBinaryOp.LessThanOrEqual:
+                case ODataBinaryOp.GreaterThanOrEqual:
+                case ODataBinaryOp.GreaterThan:
+                    Throw.If(!operandType.IsNumeric() && !NonNumericComparableTypes.Contains(operandType), "Operator requires a type with comparison operators defined");
+                    resultClrType = typeof(bool);
+                    break;
+                case ODataBinaryOp.And:
+                case ODataBinaryOp.Or:
+                    Throw.If(operandClrType != typeof(bool), "Boolean operators require operands with a non-nullable boolean type");
+                    resultClrType = typeof(bool);
+                    break;
+                case ODataBinaryOp.Equal:
+                case ODataBinaryOp.NotEqual:
+                    resultClrType = typeof(bool);
+                    break;
+                default:
+                    throw Throw.UnexpectedCase(@operator);
+            }
+
+            // construct the expression
+            return new ODataBinaryOpExpression(convertedLeft, @operator, convertedRight, resultClrType);
 		}
 
 		public static ODataUnaryOpExpression UnaryOp(ODataExpression operand, ODataUnaryOp @operator)
@@ -52,29 +102,51 @@ namespace Medallion.OData.Trees
 			return new ODataUnaryOpExpression(operand, @operator);
 		}
 
-		public static ODataConvertExpression Convert(ODataExpression expression, ODataExpressionType type)
+		public static ODataConvertExpression Convert(ODataExpression expression, Type clrType)
 		{
 			Throw.IfNull(expression, "expression");
-
-			return new ODataConvertExpression(expression, type);
+            Throw.IfNull(clrType, "clrType");
+            
+            Throw<ArgumentException>.If(
+                // can only convert where (1) a cast is valid or (2) a cast might succeed because the target type
+                // derives from of the expression type
+                !expression.ClrType.IsCastableTo(clrType)
+                    && !clrType.IsAssignableFrom(expression.ClrType),
+                () => "cannot convert from " + expression.ClrType + " to " + clrType
+            );
+			return new ODataConvertExpression(expression, clrType);
 		}
 
-		public static ODataConstantExpression Constant(object value, ODataExpressionType? type = null)
+		public static ODataConstantExpression Constant(object value, Type clrType = null)
 		{
-			ODataExpressionType finalType;
-			if (type.HasValue)
-			{
-				Throw.If(value != null && type.Value == ODataExpressionType.Null, "type: the null type can only accompany a null value");
-				Throw<ArgumentException>.If(value != null && value.GetType().ToODataExpressionType() != type, () => string.Format("value of type {0} does not fit OData type {1}", value.GetType(), type));
-				finalType = type.Value;
-			}
-			else
-			{
-				finalType = value == null ? ODataExpressionType.Null : value.GetType().ToODataExpressionType();
-			}
-			Throw<ArgumentException>.If(!finalType.IsPrimitive() && !finalType.EqualsAny(ODataExpressionType.Null, ODataExpressionType.Type), () => "a constant must be of a primitive type, null, or the Type type. Found " + finalType);
-
-			return new ODataConstantExpression(value, finalType);
+            if (value == null)
+            {
+                if (clrType == null)
+                {
+                    return new ODataConstantExpression(null, ODataExpressionType.Null, typeof(object));
+                }
+                else
+                {
+                    Throw<ArgumentException>.If(!clrType.CanBeNull(), "Cannot create a null constant for non-nullable type " + clrType);
+                    var oDataType = clrType.ToODataExpressionType();
+                    return new ODataConstantExpression(null, clrType.ToODataExpressionType(), clrType);
+                }
+            }
+            else
+            {
+                var finalClrType = clrType ?? value.GetType();
+                var oDataType = finalClrType.ToODataExpressionType();
+                Throw<ArgumentException>.If(!oDataType.IsPrimitive() && oDataType != ODataExpressionType.Type, () => "Cannot create a non-null constant of non-primitive type " + finalClrType);
+                Throw<ArgumentException>.If(
+                    clrType != null 
+                        && !(
+                            clrType.IsInstanceOfType(value)
+                            || value.GetType().IsImplicitlyCastableTo(clrType)
+                        ),                    
+                    () => string.Format("Cannot create a constant of type '{0}' with value '{1}'", clrType, value)
+                );
+                return new ODataConstantExpression(value, oDataType, finalClrType);
+            }
 		}
 
 		private static readonly ILookup<ODataFunction, ODataFunctionAttribute> FunctionSignatures = Helpers.GetValuesAndFields<ODataFunction>()
@@ -103,13 +175,20 @@ namespace Medallion.OData.Trees
 			Throw<ArgumentException>.If(matches.Length > 1 && matches[0].score == matches[1].score, () => string.Format("Ambiguous match for argument types [{0}] between {1} and {2}", arguments.Select(a => a.Type).ToDelimitedString(", "), matches[0].sig, matches[1].sig));
 
 			var match = matches[0].sig;
-			var castArguments = argumentsList.Select((a, i) => (!match.Arguments[i].HasValue || a.Type == match.Arguments[i]) ? a 
-					: Convert(a, match.Arguments[i].Value))
+			var castArguments = argumentsList.Select((a, i) => (!match.Arguments[i].HasValue || a.Type == match.Arguments[i]) 
+                    ? a 
+					: Convert(a, match.Arguments[i].Value.ToClrType()))
 				.ToList()
 				.AsReadOnly();
 
             // the ?? here on return type handles cast, whose return type is dynamic depending on its arguments
-			return new ODataCallExpression(function, castArguments, match.ReturnType ?? ((Type)((ODataConstantExpression)castArguments[1]).Value).ToODataExpressionType());
+			return new ODataCallExpression(
+                function, 
+                castArguments, 
+                match.ReturnType.HasValue
+                    ? match.ReturnType.Value.ToClrType() 
+                    : (Type)((ODataConstantExpression)castArguments[1]).Value
+            );
 		}
 
 		public static ODataMemberAccessExpression MemberAccess(ODataMemberAccessExpression expression, PropertyInfo member)

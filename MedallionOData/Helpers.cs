@@ -103,55 +103,6 @@ namespace Medallion.OData
             return @this.GetGenericArguments(genericTypeDefinition).Length > 0;
         }
 
-        private static readonly Dictionary<Tuple<Type, Type>, bool> ImplicitCastCache = new Dictionary<Tuple<Type, Type>, bool>();
-        public static bool IsImplicitlyCastableTo(this Type @this, Type that)
-        {
-            Throw.IfNull(@this, "this");
-            Throw.IfNull(that, "that");
-
-            if (that.IsAssignableFrom(@this))
-            {
-                return false;
-            }
-
-            var key = Tuple.Create(@this, that);
-            lock (ImplicitCastCache)
-            {
-                bool cachedResult;   
-                if (ImplicitCastCache.TryGetValue(key, out cachedResult))
-                {
-                    return cachedResult;
-                }
-            }
-
-            var method = Helpers.GetMethod(() => IsImplicitlyCastableToHelper<object, object>())
-                .GetGenericMethodDefinition()
-                .MakeGenericMethod(@this, that);
-            var result = (bool)method.Invoke(null, Empty<object>.Array);
-
-            lock (ImplicitCastCache)
-            {
-                if (ImplicitCastCache.Count > 5000)
-                {
-                    ImplicitCastCache.Clear();
-                }
-                ImplicitCastCache[key] = result;
-            }
-
-            return result;
-        }
-
-        private static bool IsImplicitlyCastableToHelper<TFrom, TTo>()
-        {
-            dynamic from = default(TFrom);
-            try
-            {
-                TTo result = from;
-            }
-            catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { return false; }
-            return true;
-        }
-
         public static IEnumerable<TEnum> GetValues<TEnum>()
             where TEnum : struct
         {

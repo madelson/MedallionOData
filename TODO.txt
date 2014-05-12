@@ -1,0 +1,6 @@
+look more at 
+http://www.sdn.sap.com/irj/scn/go/portal/prtroot/docs/library/uuid/e0dc0e49-8e3a-3110-4f9e-a307b1ffd8ce?QuickLink=index&overridelayout=true&58879706682777
+* in operator
+* like operator (could probably support this without an explicit reference to EF via pure reflection)
+
+
