@@ -41,12 +41,22 @@ namespace Medallion.OData.Client
 			{
 				throw new ArgumentException("The row does not contain a value for column '" + columnName + "'!");
 			}
-			if (!(result is TColumn))
-			{
-				throw new InvalidCastException(string.Format("value '{0}' for column '{1}' is not of type {2}", result ?? "null", columnName, typeof(TColumn)));
-			}
 
-			return (TColumn)result;
+            if (result == null)
+            {
+                if (!typeof(TColumn).CanBeNull())
+                {
+                    throw new InvalidCastException(string.Format("Column '{0}' has a null value and cannot be cast to '{1}'", columnName, typeof(TColumn)));
+                }
+                return default(TColumn);
+            }
+
+			if (result is TColumn)
+			{
+                return (TColumn)result;
+            }
+
+			throw new InvalidCastException(string.Format("value '{0}' for column '{1}' is not of type {2}", result ?? "null", columnName, typeof(TColumn)));
 		}
 
         #region ---- Translation ----

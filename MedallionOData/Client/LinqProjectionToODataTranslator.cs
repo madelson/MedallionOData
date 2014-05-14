@@ -126,10 +126,10 @@ namespace Medallion.OData.Client
 			/// </summary>
 			public LambdaExpression GetFinalProjection()
 			{
-				var result = this._projectionList.Count > 0
-					? this._projectionList.Aggregate((acc, lambda) => Expression.Lambda(Expression.Invoke(lambda, acc.Body), acc.Parameters))
-					: null;
-				return result;
+                var result = this._projectionList.Count > 0
+                    ? ClientSideProjectionBuilder.CreateProjection(this._projectionList)
+                    : null;
+                return result;
 			}
 
 			/// <summary>
@@ -242,6 +242,10 @@ namespace Medallion.OData.Client
 						{
 							throw new ODataCompileException("Only parameterless constructors are supported with object initializers in OData. Found: " + memberInit);
 						}
+                        if (memberInit.Bindings.Any(mb => mb.BindingType != MemberBindingType.Assignment))
+                        {
+                            throw new ODataCompileException("Only member assignment initializers are supported in OData. Found: " + memberInit);
+                        }
 
 						pathToLinqMapping = memberInit.Bindings.Cast<MemberAssignment>()
 							.ToDictionary(

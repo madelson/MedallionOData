@@ -227,14 +227,14 @@ namespace Medallion.OData.Tests
 		}
 
 		[TestMethod]
-        [Ignore] // can't really do this until we're using serialization
-		public void TestProjectionWithDynamicRow()
-		{
-			this.VerifyQuery(
-				(IQueryable<ODataRow> q) => q.Select(r => new { b = r.Get<B>("B"), c = r.Get<int>("Int") * 2 }).Where(t => t.b.Id % 3 != t.c % 3),
-				q => q.Select(a => new { b = a.B, c = a.Int * 2 }).Where(t => t.b.Id % 3 == t.c % 3)
-			);
-		}
+        public void TestProjectionWithUnusedValue()
+        {
+            this.VerifyQuery(
+                q => q.Select(a => new { a.B.Id, a.Int })
+                    .Where(t => t.Id % 2 == 1)
+                    .Select(t => t.Int)
+            );
+        }
 
 		private void VerifyQuery<TClient, TClientResult, TResult>(Func<IQueryable<TClient>, IQueryable<TClientResult>> clientQueryTransform, Func<IQueryable<A>, IQueryable<TResult>> expectedTransform, bool requireNonEmpty = true)
 		{

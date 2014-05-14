@@ -16,7 +16,7 @@ namespace Medallion.OData.Client
 
         public ODataQueryProvider(IODataClientQueryPipeline pipeline = null)
         {
-            this._pipeline = new DefaultODataQueryPipeline();
+            this._pipeline = new DefaultODataClientQueryPipeline();
         }
 
         #region ---- Query factory methods ----
@@ -215,24 +215,6 @@ namespace Medallion.OData.Client
                 var replaced = replacer.Visit(executeExpression.Body);
                 var result = await this._provider.ExecutePipelineAsync(replaced).ConfigureAwait(false);
                 return (TResult)result.Value;
-            }
-
-            private sealed class ParameterReplacer : ExpressionVisitor
-            {
-                private readonly ParameterExpression _parameter;
-                private readonly Expression _replacement;
-                public ParameterReplacer(ParameterExpression parameter, Expression replacement)
-                {
-                    this._parameter = parameter;
-                    this._replacement = replacement;
-                }
-
-                protected override Expression VisitParameter(ParameterExpression node)
-                {
-                    return node == this._parameter
-                        ? this._replacement
-                        : base.VisitParameter(node);
-                }
             }
         }
         #endregion

@@ -77,7 +77,7 @@ namespace Medallion.OData.Client
     /// <summary>
     /// Provides a default implementation of a client-side pipeline
     /// </summary>
-    public sealed class DefaultODataQueryPipeline : IODataClientQueryPipeline
+    public sealed class DefaultODataClientQueryPipeline : IODataClientQueryPipeline
     {
         IODataTranslationResult IODataClientQueryPipeline.Translate(Expression expression, ODataQueryOptions options)
         {

@@ -167,10 +167,21 @@ namespace Medallion.OData
             return !@this.IsValueType || Nullable.GetUnderlyingType(@this) != null;
         }
 
-        public static bool EqualsAny<T>(this T @this, T t1, T t2, params T[] others)
+        public static int IndexWhere<T>(this IEnumerable<T> @this, Func<T, bool> predicate)
         {
-            var cmp = EqualityComparer<T>.Default;
-            return cmp.Equals(@this, t1) || cmp.Equals(@this, t2) || others.Contains(@this, cmp);
+            Throw.IfNull(@this, "this");
+            Throw.IfNull(predicate, "predicate");
+
+            var index = 0;
+            foreach (var t in @this)
+            {
+                if (predicate(t))
+                {
+                    return index;
+                }
+                index++;
+            }
+            return -1;
         }
     }
 

@@ -96,6 +96,21 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
+        public void IntegrationDynamicRowComplexQuery()
+        {
+            this.Test(
+                "customers",
+                (IQueryable<ODataRow> rows) => rows.Select(r => new { b = r.Get<ODataRow>("Company"), c = r.Get<string>("Name").Length * 2 })
+                    .Where(t => t.b.Get<string>("Name").Length % 3 != t.c % 3)
+                    .Select(t => t.c),
+                expected: CustomersContext.GetCustomers().Select(c => new { b = c.Company, c = c.Name.Length * 2 })
+                    // note: we need == null here because C# nullability semantics do not match EF's 
+                    .Where(t => t.b == null || t.b.Name.Length % 3 != t.c % 3)
+                    .Select(t => t.c)
+            ); 
+        }
+
+        [TestMethod]
         public void IntegrationFilterByYear()
         {
             this.Test<Customer, Customer>(

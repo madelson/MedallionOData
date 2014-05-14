@@ -67,6 +67,7 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="Client\ClientSideProjectionBuilderTest.cs" />
     <Compile Include="Client\ODataRowTest.cs" />
     <Compile Include="ConversionHelpersTest.cs" />
     <Compile Include="Integration\IntegrationTest.cs" />
