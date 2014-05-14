@@ -120,6 +120,118 @@ namespace Medallion.OData.Tests.Integration
             );
         }
 
+        [TestMethod]
+        public void IntegrationTestFirstAndLast()
+        {
+            var first = this.CustomersODataQuery().OrderBy(c => c.Name).First();
+            first.Name.ShouldEqual("A");
+            UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Take(0).First());
+
+            var firstOrDefault = this.CustomersODataQuery().OrderBy(c => c.Name).FirstOrDefault();
+            firstOrDefault.Name.ShouldEqual("A");
+            var firstOrDefault2 = this.CustomersODataQuery().Take(0).FirstOrDefault();
+            firstOrDefault2.ShouldEqual(null);
+
+            var firstPred = this.CustomersODataQuery().OrderByDescending(c => c.Name).First(c => c.Name.Contains("A"));
+            firstPred.Name.ShouldEqual("Albert");
+            UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().First(c => c.Name == "no customer has this name"));
+
+            var firstOrDefaultPred = this.CustomersODataQuery().OrderByDescending(c => c.Name).FirstOrDefault(c => c.Name.Contains("A"));
+            firstOrDefaultPred.Name.ShouldEqual("Albert");
+            var firstOrDefaultPred2 = this.CustomersODataQuery().FirstOrDefault(c => c.Name == "no customer has this name");
+            firstOrDefaultPred2.ShouldEqual(null);
+
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Last());
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Last(c => c.Name == "Dominic"));
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().LastOrDefault());
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().LastOrDefault(c => c.Name == "Dominic"));
+        }
+
+        [TestMethod]
+        public void IntegrationTestMinAndMax()
+        {
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated).Min());
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated).Max());
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Min(c => c.DateCreated));
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Max(c => c.DateCreated));
+        }
+
+        [TestMethod]
+        public void IntegrationTestSingle()
+        {
+            UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Take(0).Single());
+            this.CustomersODataQuery().Take(0).SingleOrDefault().ShouldEqual(null);
+
+            UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Single(c => c.Name == "no customer has this name"));
+            this.CustomersODataQuery().SingleOrDefault(c => c.Name == "no customer has this name").ShouldEqual(null);
+
+            UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Contains("A")).Single());
+            UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Contains("A")).SingleOrDefault());
+
+            this.CustomersODataQuery().Where(c => c.Name == "Dominic").Single().Name.ShouldEqual("Dominic");
+            this.CustomersODataQuery().Where(c => c.Name == "Dominic").SingleOrDefault().Name.ShouldEqual("Dominic");
+            this.CustomersODataQuery().Single(c => c.Name == "Dominic").Name.ShouldEqual("Dominic");
+            this.CustomersODataQuery().SingleOrDefault(c => c.Name == "Dominic").Name.ShouldEqual("Dominic");
+        }
+
+        [TestMethod]
+        public void IntegrationTestSumAndAverage()
+        {
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated.Year).Sum());
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated.Year).Average());
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Sum(c => c.DateCreated.Year));
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Average(c => c.DateCreated.Year));
+        }
+
+        [TestMethod]
+        public void IntegrationTestCount()
+        {
+            this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3).Count().ShouldEqual(3);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3).LongCount().ShouldEqual(3);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3000).Count().ShouldEqual(CustomersContext.GetCustomers().Count - 1);
+            this.CustomersODataQuery().Where(c => c.Name.Length % 2 == 1)
+                .Count()
+                .ShouldEqual(CustomersContext.GetCustomers().Count(c => c.Name.Length % 2 == 1));
+            this.CustomersODataQuery().Count(c => c.Name.Length % 2 == 1)
+                .ShouldEqual(CustomersContext.GetCustomers().Count(c => c.Name.Length % 2 == 1));
+            this.CustomersODataQuery().LongCount(c => c.Name.Length % 2 == 1)
+                .ShouldEqual(CustomersContext.GetCustomers().Count(c => c.Name.Length % 2 == 1));
+        }
+
+        [TestMethod]
+        public void IntegrationTestAnyAndAll()
+        {
+            this.CustomersODataQuery().Where(c => c.Name == "Dominic").Any().ShouldEqual(true);
+            this.CustomersODataQuery().Where(c => c.Name == "no customer has this name").Any().ShouldEqual(false);
+            this.CustomersODataQuery().Any(c => c.Name == "Dominic").ShouldEqual(true);
+            this.CustomersODataQuery().Any(c => c.Name == "no customer has this name").ShouldEqual(false);
+
+            this.CustomersODataQuery().Where(c => c.Name.Contains("bert")).All(c => c.Name.StartsWith("A"))
+                .ShouldEqual(true);
+            this.CustomersODataQuery().All(c => c.Name.StartsWith("A"))
+                .ShouldEqual(false);
+        }
+
+        [TestMethod]
+        public void IntegrationTestContains()
+        {
+            this.CustomersODataQuery().Select(c => c.Name)
+                .Contains("no customer has this name")
+                .ShouldEqual(false);
+
+            this.CustomersODataQuery().Select(c => c.Name)
+                .Contains("Dominic")
+                .ShouldEqual(true);
+
+            // TODO could be wrong exception type
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Contains(new Customer()));
+        }
+
+        private IQueryable<Customer> CustomersODataQuery()
+        {
+            return _provider.Query<Customer>(_testServer.Prefix + "customers");
+        }
+
         private static readonly ODataQueryProvider _provider = new ODataQueryProvider();
         private void Test<TSource, TResult>(string url, Func<IQueryable<TSource>, IQueryable<TResult>> query, IEnumerable<TResult> expected, IEqualityComparer<TResult> comparer = null, bool orderMatters = false)
         {
