@@ -161,7 +161,6 @@ namespace Medallion.OData.Client
 			var @this = this.TranslateInternal(memberAccess.Expression);
 
 			// first try known members which compile to ODataFunctions
-			// TODO null handling
 			if (memberAccess.Member.DeclaringType == typeof(string) && memberAccess.Member.Name == "Length")
 			{
 				return ODataExpression.Call(ODataFunction.Length, new[] { @this });
