@@ -71,7 +71,7 @@ namespace Medallion.OData.Tests
             var code = string.Join(
                 Environment.NewLine,
                 new[] { "namespace A { public class B { static T Get<T>() { return default(T); } public void C() {" }
-                .Concat(typeCrossProduct.Select(t => string.Format("{0} var{1} = {2}default({3});", GetName(t.to), t.index, @implicit ? string.Empty : "(" + GetName(t.to) + ")", GetName(t.from))))
+                .Concat(typeCrossProduct.Select(t => string.Format("{0} var{1} = {2}Get<{3}>();", GetName(t.to), t.index, @implicit ? string.Empty : "(" + GetName(t.to) + ")", GetName(t.from))))
                     .Concat(new[] { "}}}" })
             );
 
