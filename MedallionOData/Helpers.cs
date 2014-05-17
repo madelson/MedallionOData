@@ -86,14 +86,14 @@ namespace Medallion.OData
             Throw.IfNull(genericTypeDefinition, "genericTypeDefinition");
             Throw.If(!genericTypeDefinition.IsGenericTypeDefinition, "genericTypeDefinition: must be a generic type definition");
 
+            if (@this.IsGenericType && @this.GetGenericTypeDefinition() == genericTypeDefinition)
+            {
+                return @this.GetGenericArguments();
+            }
             if (genericTypeDefinition.IsInterface)
             {
                 var @interface = @this.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == genericTypeDefinition);
                 return @interface.NullSafe(i => i.GetGenericArguments(), Type.EmptyTypes);
-            }
-            if (@this.IsGenericType && @this.GetGenericTypeDefinition() == genericTypeDefinition)
-            {
-                return @this.GetGenericArguments();
             }
             return @this.BaseType.NullSafe(t => t.GetGenericArguments(genericTypeDefinition), Type.EmptyTypes);
         }
