@@ -185,6 +185,57 @@ namespace Medallion.OData
         }
     }
 
+    internal static class Exceptions
+    {
+        public static TResult GetResultWithOriginalException<TResult>(this Task<TResult> @this)
+        {
+            Throw.IfNull(@this, "this");
+
+            try
+            {
+                return @this.Result;
+            }
+            catch (AggregateException ex)
+            {
+                var reWrapped = ex.TryRewrapWithOriginalExceptionType();
+                if (reWrapped != null)
+                {
+                    throw reWrapped;
+                }
+                throw;
+            }
+        }
+
+        public static Exception TryRewrapWithOriginalExceptionType(this Exception @this)
+        {
+            Throw.IfNull(@this, "this");
+
+            var realException = Traverse.Along(@this, e => e.InnerException)
+                .FirstOrDefault(e => !(e is TargetInvocationException) && !(e is AggregateException && ((AggregateException)e).InnerExceptions.Count == 1));
+            if (realException != null && realException != @this)
+            {
+                var constructor = realException.GetType().GetConstructor(new[] { typeof(string), typeof(Exception) });
+                if (constructor != null)
+                {
+                    try
+                    {
+                        var reWrapped = constructor.Invoke(new object[] 
+                        {
+                            realException.Message + " (inner exception extracted from wrapping AggregateException/TargetInvocationException(s))",
+                            @this
+                        });
+                        return (Exception)reWrapped;
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+
+            return null;
+        }
+    }
+
     internal static class LinqHelpers
     {
         [Flags]
@@ -266,6 +317,14 @@ namespace Medallion.OData
                     value = null;
                     return false;
             }
+        }
+
+        public static Expression UnQuote(this Expression @this)
+        {
+            Throw.IfNull(@this, "this");
+            Throw.If(@this.NodeType != ExpressionType.Quote, "must be a Quote expression");
+
+            return ((UnaryExpression)@this).Operand;
         }
     }
 

@@ -59,7 +59,7 @@ namespace Medallion.OData.Client
         TResult IQueryProvider.Execute<TResult>(Expression expression)
         {
             Throw.IfNull(expression, "expression");
-            var result = this.ExecutePipelineAsync(expression).Result;
+            var result = this.ExecutePipelineAsync(expression).GetResultWithOriginalException();
             return (TResult)result.Value;
         }
 
@@ -179,7 +179,8 @@ namespace Medallion.OData.Client
 
             IEnumerator<TElement> IEnumerable<TElement>.GetEnumerator()
             {
-                var result = (IEnumerable<TElement>)this._provider.ExecutePipelineAsync(this.As<IQueryable>().Expression).Result.Value;
+                var result = (IEnumerable<TElement>)this._provider.ExecutePipelineAsync(this.As<IQueryable>().Expression)
+                    .GetResultWithOriginalException().Value;
                 foreach (var element in result)
                 {
                     yield return element; // using yield causes lazy evaluation of the query

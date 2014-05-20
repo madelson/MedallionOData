@@ -38,7 +38,7 @@ namespace Medallion.OData.Client
 
         public static IODataResult<TElement> ExecuteQuery<TElement>(this IQueryable<TElement> @this, ODataQueryOptions options = null)
         {
-            return @this.ExecuteQueryAsync(options).Result;
+            return @this.ExecuteQueryAsync(options).GetResultWithOriginalException();
         }
 
         public static Task<TResult> ExecuteAsync<TElement, TResult>(this IQueryable<TElement> @this, Expression<Func<IQueryable<TElement>, TResult>> executeExpression)

@@ -230,20 +230,21 @@ namespace Medallion.OData.Client
 					throw new ODataCompileException("OData does not support nested query structures!");
 				}
 
-				// handle overloads of the execute methods
-                // TODO normalization
-                //MethodCallExpression normalized;
-                //ExecuteExpressionNormalizer.Flags flags;
-                //if (ExecuteExpressionNormalizer.TryNormalizeExecuteExpression(call, out normalized, out flags))
-                //{
-                //    var translated = this.TranslateCall(normalized);
-                //    if (flags.HasFlag(ExecuteExpressionNormalizer.Flags.NegatedBooleanValue))
-                //    {
-                //        var originalTranslator = this._resultTranslator;
-                //        this._resultTranslator = o => !(bool)originalTranslator(o);
-                //        return translated;
-                //    }
-                //}
+                // normalize overloads of query operators
+                bool changedAllToAny;
+                var normalized = QueryOperatorCanonicalizer.Canonicalize(call, changedAllToAny: out changedAllToAny);
+                if (normalized != call)
+                {
+                    // TODO better exception message here since expression being translated won't match?
+                    var result = this.TranslateInternal(normalized);
+                    if (changedAllToAny)
+                    {
+                        var innerResultTranslator = this._resultTranslator;
+                        Throw<InvalidOperationException>.If(innerResultTranslator == null, "Sanity check: expected non-null result translator");
+                        this._resultTranslator = o => !((bool)innerResultTranslator(o));
+                    }
+                    return result;
+                }
 
 				// handle "normal" query methods
 				
@@ -297,7 +298,7 @@ namespace Medallion.OData.Client
 					case "Take":
 						object take;
                         Throw<InvalidOperationException>.If(!TryGetValueFast(call.Arguments[1], out take), "Could not get value");
-						return source.Update(top: Math.Min(source.Top ?? int.MaxValue, (int)take));
+                        return Take(source, (int)take);
 					case "Select":
 						/*
 						 * MA: select is tricky in OData, since it doesn't just conform to the OData $select system query option.
@@ -328,6 +329,19 @@ namespace Medallion.OData.Client
 						// return the source, since the projection doesn't actually affect the returned expression
 						// until the very end when we can use it to determine which columns to $select
 						return source;
+                    case "Any":
+                        this._resultTranslator = MakeTranslator<bool>(e => e.Any());
+                        return Take(source, 1);
+                    case "Count":
+                        // TODO how do we get at inlineCount from here?
+                        return source.Update(inlineCount: ODataInlineCountOption.AllPages);
+                    case "First":
+                        this._resultTranslator = MakeTranslator<object>(e => e.First());
+                        return Take(source, 1);
+                    case "FirstOrDefault":
+                        // TODO won't work because default object is null but default of others is not
+                        this._resultTranslator = MakeTranslator<object>(e => e.FirstOrDefault());
+                        return Take(source, 1);
 					default:
 						throw new ODataCompileException("Query operator " + call.Method + " is not supported in OData");
 				}
@@ -435,6 +449,16 @@ namespace Medallion.OData.Client
 			return result;
 		}
 
+        private Func<object, object> MakeTranslator<T>(Func<IEnumerable<object>, T> translator)
+        {
+            return o => translator(((IEnumerable)o).Cast<object>());
+        }
+
+        private static ODataQueryExpression Take(ODataQueryExpression query, int take)
+        {
+            return query.Update(top: Math.Min(query.Top ?? int.MaxValue, take));
+        }
+
 		private static bool TryGetValueFast(Expression expression, out object value)
 		{
 			return expression.TryGetValue(LinqHelpers.GetValueOptions.ConstantsFieldsAndProperties, out value);
@@ -515,11 +539,17 @@ namespace Medallion.OData.Client
 		}
 	}
 
+    // TODO all exceptions should be serializable, have good constructors
 	public class ODataCompileException : Exception
 	{
 		public ODataCompileException(string message)
 			: base(message)
 		{
 		}
+
+        public ODataCompileException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
 	}
 }

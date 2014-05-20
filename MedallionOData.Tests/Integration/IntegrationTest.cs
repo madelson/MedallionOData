@@ -132,11 +132,11 @@ namespace Medallion.OData.Tests.Integration
             var firstOrDefault2 = this.CustomersODataQuery().Take(0).FirstOrDefault();
             firstOrDefault2.ShouldEqual(null);
 
-            var firstPred = this.CustomersODataQuery().OrderByDescending(c => c.Name).First(c => c.Name.Contains("A"));
+            var firstPred = this.CustomersODataQuery().Where(c => c.Name.Contains("ert")).First(c => c.Name.Contains("A"));
             firstPred.Name.ShouldEqual("Albert");
             UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().First(c => c.Name == "no customer has this name"));
 
-            var firstOrDefaultPred = this.CustomersODataQuery().OrderByDescending(c => c.Name).FirstOrDefault(c => c.Name.Contains("A"));
+            var firstOrDefaultPred = this.CustomersODataQuery().Where(c => c.Name.Contains("ert")).FirstOrDefault(c => c.Name.Contains("A"));
             firstOrDefaultPred.Name.ShouldEqual("Albert");
             var firstOrDefaultPred2 = this.CustomersODataQuery().FirstOrDefault(c => c.Name == "no customer has this name");
             firstOrDefaultPred2.ShouldEqual(null);
@@ -206,7 +206,7 @@ namespace Medallion.OData.Tests.Integration
             this.CustomersODataQuery().Any(c => c.Name == "Dominic").ShouldEqual(true);
             this.CustomersODataQuery().Any(c => c.Name == "no customer has this name").ShouldEqual(false);
 
-            this.CustomersODataQuery().Where(c => c.Name.Contains("bert")).All(c => c.Name.StartsWith("A"))
+            this.CustomersODataQuery().Where(c => c.Name.Contains("lbert")).All(c => c.Name.StartsWith("A"))
                 .ShouldEqual(true);
             this.CustomersODataQuery().All(c => c.Name.StartsWith("A"))
                 .ShouldEqual(false);
