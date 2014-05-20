@@ -342,6 +342,12 @@ namespace Medallion.OData.Client
                         // TODO won't work because default object is null but default of others is not
                         this._resultTranslator = MakeTranslator<object>(e => e.FirstOrDefault());
                         return Take(source, 1);
+                    case "Single":
+                        this._resultTranslator = MakeTranslator<object>(e => e.Single());
+                        return Take(source, 2);
+                    case "SingleOrDefault":
+                        this._resultTranslator = MakeTranslator<object>(e => e.SingleOrDefault());
+                        return Take(source, 2);
 					default:
 						throw new ODataCompileException("Query operator " + call.Method + " is not supported in OData");
 				}
