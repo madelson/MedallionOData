@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Medallion.OData.Trees;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -37,6 +38,17 @@ namespace Medallion.OData.Client
                 case "Min":
                 case "Max":
                     return Apply(call.Method.Name, Apply("Select", call.Arguments[0], call.Arguments[1]));
+                case "Contains":
+                    var queryElementType = call.Arguments[0].Type.GetGenericArguments(typeof(IQueryable<>)).Single();
+                    Throw<ODataCompileException>.If(
+                        queryElementType.ToODataExpressionType() == ODataExpressionType.Complex,
+                        "Query operator Contains is only supported for complex types"
+                    );
+
+                    // Contains(foo) => Any(x => x == foo)
+                    var parameter = Expression.Parameter(queryElementType);
+                    var any = Apply("Any", call.Arguments[0], Expression.Quote(Expression.Lambda(Expression.Equal(parameter, call.Arguments[1]), parameter)));
+                    return Canonicalize(any, out changedAllToAny);
                 default:
                     return call;
             }
