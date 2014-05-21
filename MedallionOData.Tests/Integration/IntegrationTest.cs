@@ -150,6 +150,7 @@ namespace Medallion.OData.Tests.Integration
         [TestMethod]
         public void IntegrationTestMinAndMax()
         {
+            // TODO is this right?
             UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated).Min());
             UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated).Max());
             UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Min(c => c.DateCreated));
