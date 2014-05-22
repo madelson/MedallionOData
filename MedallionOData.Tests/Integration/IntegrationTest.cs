@@ -239,8 +239,15 @@ namespace Medallion.OData.Tests.Integration
                 .Contains("Dominic")
                 .ShouldEqual(true);
 
-            // TODO could be wrong exception type
             UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Contains(new Customer()));
+        }
+
+        [TestMethod]
+        public void IntegrationTestExecuteMethodWithComplexProjection()
+        {
+            this.CustomersODataQuery().Select(c => c.DateCreated.Day % 5)
+                .Min()
+                .ShouldEqual(CustomersContext.GetCustomers().Min(c => c.DateCreated.Day % 5));
         }
 
         private IQueryable<Customer> CustomersODataQuery()
