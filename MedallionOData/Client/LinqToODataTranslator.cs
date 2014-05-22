@@ -330,23 +330,23 @@ namespace Medallion.OData.Client
 						// until the very end when we can use it to determine which columns to $select
 						return source;
                     case "Any":
-                        this._resultTranslator = MakeTranslator<bool>(e => e.Any());
+                        this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.Any());
                         return Take(source, 1);
                     case "Count":
                         // TODO how do we get at inlineCount from here?
                         return source.Update(inlineCount: ODataInlineCountOption.AllPages);
                     case "First":
-                        this._resultTranslator = MakeTranslator<object>(e => e.First());
+                        this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.First());
                         return Take(source, 1);
                     case "FirstOrDefault":
                         // TODO won't work because default object is null but default of others is not
-                        this._resultTranslator = MakeTranslator<object>(e => e.FirstOrDefault());
+                        this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.FirstOrDefault());
                         return Take(source, 1);
                     case "Single":
-                        this._resultTranslator = MakeTranslator<object>(e => e.Single());
+                        this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.Single());;
                         return Take(source, 2);
                     case "SingleOrDefault":
-                        this._resultTranslator = MakeTranslator<object>(e => e.SingleOrDefault());
+                        this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.SingleOrDefault());;
                         return Take(source, 2);
 					default:
 						throw new ODataCompileException("Query operator " + call.Method + " is not supported in OData");
@@ -455,9 +455,13 @@ namespace Medallion.OData.Client
 			return result;
 		}
 
-        private Func<object, object> MakeTranslator<T>(Func<IEnumerable<object>, T> translator)
+        private Func<object, object> MakeTranslator(Expression queryExpression, Expression<Action<IEnumerable<object>>> translatorMethod)
         {
-            return o => translator(((IEnumerable)o).Cast<object>());
+            var elementType = queryExpression.Type.GetGenericArguments(typeof(IQueryable<>)).Single();
+            var method = Helpers.GetMethod(translatorMethod)
+                .GetGenericMethodDefinition()
+                .MakeGenericMethod(elementType);
+            return o => method.InvokeWithOriginalException(null, new object[] { o });
         }
 
         private static ODataQueryExpression Take(ODataQueryExpression query, int take)

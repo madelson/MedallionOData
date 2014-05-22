@@ -187,6 +187,23 @@ namespace Medallion.OData
 
     internal static class Exceptions
     {
+        public static object InvokeWithOriginalException(this MethodInfo @this, object obj, object[] parameters)
+        {
+            try
+            {
+                return @this.Invoke(obj, parameters);
+            }
+            catch (TargetInvocationException ex)
+            {
+                var reWrapped = ex.TryRewrapWithOriginalExceptionType();
+                if (reWrapped != null)
+                {
+                    throw reWrapped;
+                }
+                throw;
+            }
+        }
+
         public static TResult GetResultWithOriginalException<TResult>(this Task<TResult> @this)
         {
             Throw.IfNull(@this, "this");

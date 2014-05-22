@@ -176,6 +176,15 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
+        public void IntegrationTestOrDefaultMethodsWithValueTypes()
+        {
+            var ints = this.CustomersODataQuery().Select(c => c.Name.Length);
+
+            ints.FirstOrDefault(i => i > 2 && i < 2).ShouldEqual(default(int));
+            ints.SingleOrDefault(i => i > 2 && i < 2).ShouldEqual(default(int));
+        }
+
+        [TestMethod]
         public void IntegrationTestSumAndAverage()
         {
             UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated.Year).Sum());
