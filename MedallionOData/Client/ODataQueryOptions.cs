@@ -12,13 +12,13 @@ namespace Medallion.OData.Client
         private static ODataQueryOptions _defaultOptions = new ODataQueryOptions();
         public static ODataQueryOptions Default { get { return _defaultOptions; } }
 
-        public ODataQueryOptions(string format = "json", ODataInlineCountOption inlineCount = ODataInlineCountOption.None) 
+        public ODataQueryOptions(string format = "json", ODataInlineCountOption? inlineCount = null) 
         {
             this.Format = format;
             this.InlineCount = inlineCount;
         }
 
-        public ODataInlineCountOption InlineCount { get; private set; }
+        public ODataInlineCountOption? InlineCount { get; private set; }
         public string Format { get; private set; }
     }
 }

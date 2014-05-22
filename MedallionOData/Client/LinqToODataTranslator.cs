@@ -12,12 +12,14 @@ namespace Medallion.OData.Client
 {
 	internal partial class LinqToODataTranslator
 	{
+        internal delegate object ResultTranslator(IEnumerable values, int? inlineCount);
+
 		private bool _isInsideQuery;
 		private IQueryable _rootQuery;
-		private Func<object, object> _resultTranslator;
+        private ResultTranslator _resultTranslator;
 		private MemberAndParameterTranslator _memberAndParameterTranslator;
 
-		public ODataExpression Translate(Expression linq, out IQueryable rootQuery, out Func<object, object> resultTranslator)
+		public ODataExpression Translate(Expression linq, out IQueryable rootQuery, out ResultTranslator resultTranslator)
 		{
 			this._isInsideQuery = false;
 			this._rootQuery = null;
@@ -43,7 +45,7 @@ namespace Medallion.OData.Client
 			rootQuery = this._rootQuery;
 
 			var projection = this._memberAndParameterTranslator.GetFinalProjection();
-			var finalTranslator = this._resultTranslator ?? (o => o);
+			var finalTranslator = this._resultTranslator ?? ((values, count) => values);
 			if (projection != null)
 			{
 				var selectMethod = Helpers.GetMethod((IEnumerable<object> e) => e.Select(o => o))
@@ -55,7 +57,7 @@ namespace Medallion.OData.Client
                 var denormalizedProjection = (LambdaExpression)ODataRow.Denormalize(projection);
 				
                 Func<object, object> queryTranslator = enumerable => selectMethod.Invoke(null, new[] { enumerable, denormalizedProjection.Compile() });
-				resultTranslator = o => finalTranslator(queryTranslator(o));
+				resultTranslator = (values, count) => finalTranslator((IEnumerable)queryTranslator(values), count);
 			}
 			else
 			{
@@ -241,7 +243,7 @@ namespace Medallion.OData.Client
                     {
                         var innerResultTranslator = this._resultTranslator;
                         Throw<InvalidOperationException>.If(innerResultTranslator == null, "Sanity check: expected non-null result translator");
-                        this._resultTranslator = o => !((bool)innerResultTranslator(o));
+                        this._resultTranslator = (values, count) => !((bool)innerResultTranslator(values, count));
                     }
                     return result;
                 }
@@ -333,8 +335,13 @@ namespace Medallion.OData.Client
                         this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.Any());
                         return Take(source, 1);
                     case "Count":
-                        // TODO how do we get at inlineCount from here?
-                        return source.Update(inlineCount: ODataInlineCountOption.AllPages);
+                        this._resultTranslator = (values, count) => Math.Min(count.Value - source.Skip, source.Top ?? int.MaxValue);
+                        // top 0 is so that we don't have any wasted payload of data that we won't look at
+                        return source.Update(inlineCount: ODataInlineCountOption.AllPages, top: 0);
+                    case "LongCount":
+                        this._resultTranslator = (values, count) => (long)Math.Min(count.Value - source.Skip, source.Top ?? int.MaxValue);
+                        // top 0 is so that we don't have any wasted payload of data that we won't look at
+                        return source.Update(inlineCount: ODataInlineCountOption.AllPages, top: 0);
                     case "First":
                         this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.First());
                         return Take(source, 1);
@@ -455,13 +462,13 @@ namespace Medallion.OData.Client
 			return result;
 		}
 
-        private Func<object, object> MakeTranslator(Expression queryExpression, Expression<Action<IEnumerable<object>>> translatorMethod)
+        private ResultTranslator MakeTranslator(Expression queryExpression, Expression<Action<IEnumerable<object>>> translatorMethod)
         {
             var elementType = queryExpression.Type.GetGenericArguments(typeof(IQueryable<>)).Single();
             var method = Helpers.GetMethod(translatorMethod)
                 .GetGenericMethodDefinition()
                 .MakeGenericMethod(elementType);
-            return o => method.InvokeWithOriginalException(null, new object[] { o });
+            return (values, count) => method.InvokeWithOriginalException(null, new object[] { values });
         }
 
         private static ODataQueryExpression Take(ODataQueryExpression query, int take)

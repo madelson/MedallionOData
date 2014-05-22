@@ -240,7 +240,7 @@ namespace Medallion.OData.Tests
 		{
             var comparer = GetComparer<TResult>();
 
-			Func<object, object> resultTranslator;
+			LinqToODataTranslator.ResultTranslator resultTranslator;
 			IQueryable rootQuery;
 			var translated = new LinqToODataTranslator().Translate(clientQueryTransform(Empty<TClient>.Array.AsQueryable()).Expression, out rootQuery, out resultTranslator);
 			Assert.IsInstanceOfType(translated, typeof(ODataQueryExpression));
@@ -258,7 +258,7 @@ namespace Medallion.OData.Tests
 				Console.WriteLine("odata = " + HttpUtility.UrlDecode(translated.ToString()));
                 IQueryable<A> inlineCountQuery;
 				var rawApplied = ODataQueryFilter.Apply(randomQuery, ODataQueryParser.Parse(randomQuery.ElementType, translated.ToString()), out inlineCountQuery);
-				var applied = (IEnumerable<TResult>)resultTranslator(rawApplied);
+				var applied = (IEnumerable<TResult>)resultTranslator(rawApplied, null);
 				Console.WriteLine("applied = " + rawApplied);
                 applied.ToArray().CollectionShouldEqual(expected, comparer: comparer, orderMatters: true);
 				Console.WriteLine(new string('-', 80));

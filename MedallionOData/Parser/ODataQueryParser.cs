@@ -74,7 +74,7 @@ namespace Medallion.OData.Parser
 			var inlineCountString = parameters["$inlinecount"];
 			if (inlineCountString != null)
 			{
-				if (!Enum.TryParse(inlineCountString, out inlineCount))
+				if (!Enum.TryParse(inlineCountString, ignoreCase: true, result: out inlineCount))
 				{
 					throw new ODataParseException("Unexpected value " + inlineCountString + " for $inlinecount");
 				}

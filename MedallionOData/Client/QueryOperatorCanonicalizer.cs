@@ -31,6 +31,7 @@ namespace Medallion.OData.Client
                     case "Single":
                     case "SingleOrDefault":
                     case "Count":
+                    case "LongCount":
                         return Apply(call.Method.Name, Apply("Where", call.Arguments[0], call.Arguments[1])); 
                     case "All":
                         changedAllToAny = true;

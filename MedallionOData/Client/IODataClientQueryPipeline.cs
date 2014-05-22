@@ -47,7 +47,7 @@ namespace Medallion.OData.Client
         /// <summary>
         /// A post-processor function to be applied to the result after serialization
         /// </summary>
-        Func<object, object> PostProcessor { get; }
+        Func<IODataDeserializationResult, object> PostProcessor { get; }
     }
 
     /// <summary>
@@ -86,25 +86,25 @@ namespace Medallion.OData.Client
 
             var translator = new LinqToODataTranslator();
             IQueryable rootQuery;
-            Func<object, object> postProcessor;
+            LinqToODataTranslator.ResultTranslator postProcessor;
             var oDataQuery = translator.Translate(expression, out rootQuery, out postProcessor);
             Throw.If(oDataQuery.Kind != ODataExpressionKind.Query, "expression: did not translate to a query expression");
 
-            var oDataQueryWithOptions = ((ODataQueryExpression)oDataQuery).Update(format: options.Format, inlineCount: options.InlineCount);
+            var oDataQueryWithOptions = ((ODataQueryExpression)oDataQuery).Update(format: options.Format, inlineCount: options.InlineCount ?? ((ODataQueryExpression)oDataQuery).InlineCount);
 
-            return new TranslationResult(rootQuery, oDataQueryWithOptions, postProcessor);
+            return new TranslationResult(rootQuery, oDataQueryWithOptions, r => postProcessor(r.Values, r.InlineCount));
         }
 
-        private sealed class TranslationResult : Tuple<IQueryable, ODataQueryExpression, Func<object, object>>, IODataTranslationResult
+        private sealed class TranslationResult : Tuple<IQueryable, ODataQueryExpression, Func<IODataDeserializationResult, object>>, IODataTranslationResult
         {
-            public TranslationResult(IQueryable rootQuery, ODataQueryExpression oDataQuery, Func<object, object> postProcessor)
+            public TranslationResult(IQueryable rootQuery, ODataQueryExpression oDataQuery, Func<IODataDeserializationResult, object> postProcessor)
                 : base(rootQuery, oDataQuery, postProcessor)
             {
             }
 
             IQueryable IODataTranslationResult.RootQuery { get { return this.Item1; } }
             ODataQueryExpression IODataTranslationResult.ODataQuery { get { return this.Item2; } }
-            Func<object, object> IODataTranslationResult.PostProcessor { get { return this.Item3; } }
+            Func<IODataDeserializationResult, object> IODataTranslationResult.PostProcessor { get { return this.Item3; } }
         }
 
         async Task<IODataWebResponse> IODataClientQueryPipeline.ReadAsync(Uri url)

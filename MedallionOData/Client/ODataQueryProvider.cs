@@ -101,7 +101,7 @@ namespace Medallion.OData.Client
             {
                 var responseStream = await response.GetResponseStreamAsync().ConfigureAwait(false);
                 var deserialized = await this._pipeline.DeserializeAsync(translationResult, responseStream).ConfigureAwait(false);
-                var result = translationResult.PostProcessor(deserialized.Values);
+                var result = translationResult.PostProcessor(deserialized);
                 return new ExecuteResult(result, deserialized.InlineCount);
             }
         }
