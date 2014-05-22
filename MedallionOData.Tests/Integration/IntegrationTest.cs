@@ -150,11 +150,17 @@ namespace Medallion.OData.Tests.Integration
         [TestMethod]
         public void IntegrationTestMinAndMax()
         {
-            // TODO is this right?
-            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated).Min());
-            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated).Max());
-            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Min(c => c.DateCreated));
-            UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Max(c => c.DateCreated));
+            var minDate = CustomersContext.GetCustomers().Min(c => c.DateCreated);
+            this.CustomersODataQuery().Select(c => c.DateCreated).Min().ShouldEqual(minDate);
+            this.CustomersODataQuery().Min(c => c.DateCreated).ShouldEqual(minDate);
+            UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Length == int.MaxValue).Min(c => c.DateCreated));
+            Assert.IsNotNull(this.CustomersODataQuery().Min(c => c.Company.DateClosed));
+
+            var maxDate = CustomersContext.GetCustomers().Max(c => c.DateCreated);
+            this.CustomersODataQuery().Select(c => c.DateCreated).Max().ShouldEqual(maxDate);
+            this.CustomersODataQuery().Max(c => c.DateCreated).ShouldEqual(maxDate); 
+            UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Length == int.MaxValue).Max(c => c.DateCreated));
+            Assert.IsNotNull(this.CustomersODataQuery().Max(c => c.Company.DateClosed));
         }
 
         [TestMethod]

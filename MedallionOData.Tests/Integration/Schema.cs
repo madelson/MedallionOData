@@ -16,7 +16,7 @@ namespace Medallion.OData.Tests.Integration
         public Customer() 
         {
             this.Id = Guid.NewGuid();
-            this.DateCreated = DateTime.Now;
+            this.DateCreated = DateTime.Now.Date.AddDays(Math.Abs(this.Id.GetHashCode()) % 10);
         }
 
         [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
