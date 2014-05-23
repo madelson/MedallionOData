@@ -326,7 +326,7 @@ namespace Medallion.OData.Parser
 			var expression = this.ParseExpression();
 			if (this.TryEat(ODataTokenKind.Desc))
 			{
-				return ODataExpression.SortKey(expression, ODataSortDirection.Descending);
+				return ODataExpression.SortKey(expression, descending: true);
 			}
 			this.TryEat(ODataTokenKind.Asc);
 			return ODataExpression.SortKey(expression);

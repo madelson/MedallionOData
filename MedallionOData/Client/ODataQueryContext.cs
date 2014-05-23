@@ -212,12 +212,12 @@ namespace Medallion.OData.Client
                 return new ODataResult<TElement>(((IEnumerable<TElement>)result.Value).ToArray(), result.InlineCount);
             }
 
-            private sealed class ODataResult<TElement> : Tuple<IReadOnlyList<TElement>, int?>, IODataResult<TElement>
+            private sealed class ODataResult<T> : Tuple<IReadOnlyList<T>, int?>, IODataResult<T>
             {
-                public ODataResult(IReadOnlyList<TElement> results, int? totalCount) : base(results, totalCount) { }
+                public ODataResult(IReadOnlyList<T> results, int? totalCount) : base(results, totalCount) { }
 
-                IReadOnlyList<TElement> IODataResult<TElement>.Results { get { return this.Item1; } }
-                int? IODataResult<TElement>.TotalCount { get { return this.Item2; } }
+                IReadOnlyList<T> IODataResult<T>.Results { get { return this.Item1; } }
+                int? IODataResult<T>.TotalCount { get { return this.Item2; } }
             }
 
             async Task<TResult> IODataQueryable<TElement>.ExecuteAsync<TResult>(Expression<Func<IQueryable<TElement>, TResult>> executeExpression)

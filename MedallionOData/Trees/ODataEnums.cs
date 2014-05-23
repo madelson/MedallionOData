@@ -46,7 +46,7 @@ namespace Medallion.OData.Trees
         /// </summary>
 		Convert,
         /// <summary>
-        /// Represents a value to sort by along with a <see cref="ODataSortDirection"/>
+        /// Represents a value to sort by along with a sort direction
         /// </summary>
 		SortKey,
         /// <summary>
@@ -155,12 +155,6 @@ namespace Medallion.OData.Trees
 		[ODataName("not")] Not,
 	}
 
-	public enum ODataSortDirection
-	{
-		[ODataName("asc")] Ascending,
-		[ODataName("desc")] Descending,
-	}
-
     /// <summary>
     /// Specifies an option for the inline count result in OData
     /// </summary>
@@ -178,53 +172,75 @@ namespace Medallion.OData.Trees
 	/// </summary>
 	public enum ODataFunction
 	{
+        /// <summary>substringof</summary>
 		[ODataFunction(ODataExpressionType.String, ODataExpressionType.String, Returns = ODataExpressionType.Boolean)] 
 		SubstringOf,
-		[ODataFunction(ODataExpressionType.String, ODataExpressionType.String, Returns = ODataExpressionType.Boolean)] 
+        /// <summary>endswith</summary>
+        [ODataFunction(ODataExpressionType.String, ODataExpressionType.String, Returns = ODataExpressionType.Boolean)] 
 		EndsWith,
+        /// <summary>startswith</summary>
 		[ODataFunction(ODataExpressionType.String, ODataExpressionType.String, Returns = ODataExpressionType.Boolean)] 
 		StartsWith,
+        /// <summary>length</summary>
 		[ODataFunction(ODataExpressionType.String, Returns = ODataExpressionType.Int32)]
 		Length,
+        /// <summary>indexof</summary>
 		[ODataFunction(ODataExpressionType.String, ODataExpressionType.String, Returns = ODataExpressionType.Int32)]
 		IndexOf,
+        /// <summary>replace</summary>
 		[ODataFunction(ODataExpressionType.String, ODataExpressionType.String, ODataExpressionType.String, Returns = ODataExpressionType.String)] 
 		Replace,
+        /// <summary>substring</summary>
 		[ODataFunction(ODataExpressionType.String, ODataExpressionType.Int32, Returns = ODataExpressionType.String)]
 		[ODataFunction(ODataExpressionType.String, ODataExpressionType.Int32, ODataExpressionType.Int32, Returns = ODataExpressionType.String)] 
 		Substring,
+        /// <summary>tolower</summary>
 		[ODataFunction(ODataExpressionType.String, Returns = ODataExpressionType.String)] 
 		ToLower,
+        /// <summary>toupper</summary>
 		[ODataFunction(ODataExpressionType.String, Returns = ODataExpressionType.String)] 
 		ToUpper,
+        /// <summary>trim</summary>
 		[ODataFunction(ODataExpressionType.String, Returns = ODataExpressionType.String)] 
 		Trim,
+        /// <summary>concat</summary>
 		[ODataFunction(ODataExpressionType.String, ODataExpressionType.String, Returns = ODataExpressionType.String)] 
 		Concat,
+        /// <summary>day</summary>
 		[ODataFunction(ODataExpressionType.DateTime, Returns = ODataExpressionType.Int32)] 
 		Day,
+        /// <summary>hour</summary>
 		[ODataFunction(ODataExpressionType.DateTime, Returns = ODataExpressionType.Int32)] 
 		Hour,
+        /// <summary>minute</summary>
 		[ODataFunction(ODataExpressionType.DateTime, Returns = ODataExpressionType.Int32)] 
 		Minute,
+        /// <summary>month</summary>
 		[ODataFunction(ODataExpressionType.DateTime, Returns = ODataExpressionType.Int32)]
 		Month,
+        /// <summary>second</summary>
 		[ODataFunction(ODataExpressionType.DateTime, Returns = ODataExpressionType.Int32)]
 		Second,
+        /// <summary>year</summary>
 		[ODataFunction(ODataExpressionType.DateTime, Returns = ODataExpressionType.Int32)]
 		Year,
+        /// <summary>round</summary>
 		[ODataFunction(ODataExpressionType.Double, Returns = ODataExpressionType.Double)]
 		[ODataFunction(ODataExpressionType.Decimal, Returns = ODataExpressionType.Decimal)] 
 		Round,
+        /// <summary>floor</summary>
 		[ODataFunction(ODataExpressionType.Double, Returns = ODataExpressionType.Double)]
 		[ODataFunction(ODataExpressionType.Decimal, Returns = ODataExpressionType.Decimal)] 
 		Floor,
+        /// <summary>ceiling</summary>
 		[ODataFunction(ODataExpressionType.Double, Returns = ODataExpressionType.Double)]
 		[ODataFunction(ODataExpressionType.Decimal, Returns = ODataExpressionType.Decimal)] 
 		Ceiling,
+        /// <summary>isof</summary>
 		[ODataFunction(ODataExpressionType.Type, Returns = ODataExpressionType.Boolean)]
 		[ODataFunction(null, ODataExpressionType.Type, Returns = ODataExpressionType.Boolean)]
 		IsOf,
+        /// <summary>cast</summary>
 		[ODataFunction(null, ODataExpressionType.Type, Returns = null)]
 		Cast,
 	}

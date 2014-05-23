@@ -48,7 +48,7 @@ namespace Medallion.OData.Service
 			var translated = Translate(parameter, sortKey.Expression);
 			var lambda = Expression.Lambda(translated, parameter);
 
-			var methodName = (isPrimarySort ? "OrderBy" : "ThenBy") + (sortKey.Direction == ODataSortDirection.Descending ? "Descending" : string.Empty);
+			var methodName = (isPrimarySort ? "OrderBy" : "ThenBy") + (sortKey.Descending ? "Descending" : string.Empty);
 			MethodInfo method;
 			switch (methodName)
 			{

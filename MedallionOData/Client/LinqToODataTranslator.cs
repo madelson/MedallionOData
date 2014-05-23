@@ -278,7 +278,7 @@ namespace Medallion.OData.Client
 						}
 
 						var sortKeyExpression = this.TranslateInsideQuery(call.Arguments[1]);
-						var sortKey = ODataExpression.SortKey(sortKeyExpression, call.Method.Name.EndsWith("Descending") ? ODataSortDirection.Descending : ODataSortDirection.Ascending);
+						var sortKey = ODataExpression.SortKey(sortKeyExpression, descending: call.Method.Name.EndsWith("Descending"));
 						if (source.Top.HasValue || source.Skip > 0)
 						{
 							throw new ODataCompileException("Cannot apply a sort after applying Take or Skip operations");
@@ -557,13 +557,22 @@ namespace Medallion.OData.Client
 	}
 
     // TODO all exceptions should be serializable, have good constructors
-	public class ODataCompileException : Exception
+    /// <summary>
+    /// Represents an error in compiling an <see cref="IQueryable"/> to OData
+    /// </summary>
+	public sealed class ODataCompileException : Exception
 	{
+        /// <summary>
+        /// Constructs an exception from a message
+        /// </summary>
 		public ODataCompileException(string message)
 			: base(message)
 		{
 		}
 
+        /// <summary>
+        /// Constructs an exception from a message and inner exception
+        /// </summary>
         public ODataCompileException(string message, Exception innerException)
             : base(message, innerException)
         {

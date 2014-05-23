@@ -245,21 +245,21 @@ namespace Medallion.OData.Trees
     /// </summary>
     public sealed class ODataSortKeyExpression : ODataExpression
 	{
-		internal ODataSortKeyExpression(ODataExpression expression, ODataSortDirection direction)
+		internal ODataSortKeyExpression(ODataExpression expression, bool descending)
 			: base(ODataExpressionKind.SortKey, expression.Type, expression.ClrType)
 		{
 			this.Expression = expression;
-			this.Direction = direction;
+			this.Descending = descending;
 		}
 
         /// <summary>the value to sort by</summary>
 		public ODataExpression Expression { get; private set; }
-        /// <summary>the direction (ASC or DESC) of the sort</summary>
-		public ODataSortDirection Direction { get; private set; }
+        /// <summary>specifies the direction of the sort</summary>
+        public bool Descending { get; private set; }
 
 		internal override string ToODataExpressionLanguage()
 		{
-			return this.Expression + (this.Direction == ODataSortDirection.Ascending ? string.Empty : " " + this.Direction.ToODataString());
+			return this.Expression + (this.Descending ? " desc" : string.Empty);
 		}
 	}
 

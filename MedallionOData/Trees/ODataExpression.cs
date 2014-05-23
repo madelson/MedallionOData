@@ -211,11 +211,11 @@ namespace Medallion.OData.Trees
 			return new ODataMemberAccessExpression(expression, member);
 		}
 
-        internal static ODataSortKeyExpression SortKey(ODataExpression expression, ODataSortDirection direction = ODataSortDirection.Ascending)
+        internal static ODataSortKeyExpression SortKey(ODataExpression expression, bool descending = false)
 		{
 			Throw.IfNull(expression, "expression");
 			
-			return new ODataSortKeyExpression(expression, direction);
+			return new ODataSortKeyExpression(expression, descending: descending);
 		}
 
         internal static ODataSelectColumnExpression SelectStar()
