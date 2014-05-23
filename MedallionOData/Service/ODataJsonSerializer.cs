@@ -13,6 +13,9 @@ using System.Collections;
 
 namespace Medallion.OData.Service
 {
+    /// <summary>
+    /// Serializes to OData's JSON lite format
+    /// </summary>
 	public sealed class ODataJsonSerializer : IODataSerializer
 	{
         object IODataSerializer.Serialize<TElement>(IODataProjectResult<TElement> projectResult)

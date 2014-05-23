@@ -10,19 +10,28 @@ using System.Web;
 
 namespace Medallion.OData.Client
 {
-    public sealed class ODataQueryProvider : IQueryProvider
+    /// <summary>
+    /// Provides an access point for creating OData queries
+    /// </summary>
+    public sealed class ODataQueryContext : IQueryProvider
     {
         private readonly IODataClientQueryPipeline _pipeline;
 
-        public ODataQueryProvider(IODataClientQueryPipeline pipeline = null)
+        /// <summary>
+        /// Creates a query context with the given pipeline
+        /// </summary>
+        public ODataQueryContext(IODataClientQueryPipeline pipeline = null)
         {
             this._pipeline = new DefaultODataClientQueryPipeline();
         }
 
         #region ---- Query factory methods ----
-        private static readonly MethodInfo QueryMethod = Helpers.GetMethod((ODataQueryProvider p) => p.Query<object>(default(Uri)))
+        private static readonly MethodInfo QueryMethod = Helpers.GetMethod((ODataQueryContext p) => p.Query<object>(default(Uri)))
             .GetGenericMethodDefinition();
 
+        /// <summary>
+        /// Creates a query against the given uri
+        /// </summary>
         public IQueryable<TElement> Query<TElement>(Uri url)
         {
             Throw.IfNull(url, "url");
@@ -30,6 +39,9 @@ namespace Medallion.OData.Client
             return new ODataQuery<TElement>(this, url);
         }
 
+        /// <summary>
+        /// Creates a query against the given uri
+        /// </summary>
         public IQueryable<TElement> Query<TElement>(string url)
         {
             Throw.IfNull(url, "url");
@@ -118,17 +130,17 @@ namespace Medallion.OData.Client
         #region ---- IQueryable implementation ----
         private abstract class ODataQuery : IOrderedQueryable
         {
-            protected readonly ODataQueryProvider _provider;
+            protected readonly ODataQueryContext _provider;
             private readonly Expression _expression;
             private readonly Uri _url;
 
-            protected ODataQuery(ODataQueryProvider provider, Expression expression)
+            protected ODataQuery(ODataQueryContext provider, Expression expression)
             {
                 this._provider = provider;
                 this._expression = expression;
             }
 
-            protected ODataQuery(ODataQueryProvider provider, Uri url)
+            protected ODataQuery(ODataQueryContext provider, Uri url)
             {
                 this._provider = provider;
                 this._url = url;
@@ -167,12 +179,12 @@ namespace Medallion.OData.Client
 
         private sealed class ODataQuery<TElement> : ODataQuery, IOrderedQueryable<TElement>, IODataQueryable<TElement>
         {
-            public ODataQuery(ODataQueryProvider provider, Expression expression)
+            public ODataQuery(ODataQueryContext provider, Expression expression)
                 : base(provider, expression)
             {
             }
 
-            public ODataQuery(ODataQueryProvider provider, Uri url)
+            public ODataQuery(ODataQueryContext provider, Uri url)
                 : base(provider, url)
             {
             }

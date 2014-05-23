@@ -24,7 +24,7 @@ namespace Medallion.OData.Client
         /// necessary selected colums. Thus, if you have something like
         /// <code>
         ///     query.Select(c => new { CompanyName = c.Company.Name, c.Name })
-        ///         .Where(t => t.CompanyName != null && t.CompanyName.Length > 0)
+        ///         .Where(t => t.CompanyName != null &gt;&gt; t.CompanyName.Length > 0)
         ///         .Select(t => t.Name);
         /// </code>
         /// we might naively generate a projection like c => new { CompanyName = c.Company.Name, c.Name }.Name.

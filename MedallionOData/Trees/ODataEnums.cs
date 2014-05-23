@@ -146,8 +146,12 @@ namespace Medallion.OData.Trees
 		[ODataName("mod")] Modulo,
 	}
 
+    /// <summary>
+    /// Represents a unary operator
+    /// </summary>
 	public enum ODataUnaryOp
 	{
+        /// <summary>not</summary>
 		[ODataName("not")] Not,
 	}
 
@@ -157,10 +161,16 @@ namespace Medallion.OData.Trees
 		[ODataName("desc")] Descending,
 	}
 
+    /// <summary>
+    /// Specifies an option for the inline count result in OData
+    /// </summary>
 	public enum ODataInlineCountOption
 	{
+        /// <summary>none</summary>
 		[ODataName("none")] None,
-		[ODataName("allpages")] AllPages,	
+        /// <summary>allpages</summary>
+        [ODataName("allpages")]
+        AllPages,	
 	}
 
 	/// <summary>

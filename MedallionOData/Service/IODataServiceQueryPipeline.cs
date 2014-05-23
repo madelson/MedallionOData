@@ -38,6 +38,9 @@ namespace Medallion.OData.Service
         object Serialize<TElement>(IODataProjectResult<TElement> projectResult);
     }
 
+    /// <summary>
+    /// The result of parsing an OData query
+    /// </summary>
     public interface IODataParseResult
     {
         /// <summary>
@@ -46,6 +49,9 @@ namespace Medallion.OData.Service
         ODataQueryExpression ODataQuery { get; }
     }
 
+    /// <summary>
+    /// The result of filtering an OData query
+    /// </summary>
     public interface IODataFilterResult<TElement> : IODataParseResult
     {
         /// <summary>
@@ -58,6 +64,9 @@ namespace Medallion.OData.Service
         IQueryable<TElement> InlineCountQuery { get; }
     }
 
+    /// <summary>
+    /// The result of applying projection to an OData query
+    /// </summary>
     public interface IODataProjectResult<TElement> : IODataFilterResult<TElement>
     {
         /// <summary>
@@ -72,10 +81,16 @@ namespace Medallion.OData.Service
     #endregion
 
     #region ---- Implementation ----
+    /// <summary>
+    /// A default implementation for <see cref="IODataServiceQueryPipeline"/>
+    /// </summary>
     public sealed class DefaultODataServiceQueryPipeline : IODataServiceQueryPipeline
     {
         private readonly IReadOnlyDictionary<string, IODataSerializer> _serializersByFormat;
 
+        /// <summary>
+        /// Constructs a pipeline using the given mapping from format => serializer
+        /// </summary>
         public DefaultODataServiceQueryPipeline(IEnumerable<KeyValuePair<string, IODataSerializer>> serializersByFormat = null)
         {
             var dict = new Dictionary<string, IODataSerializer>(StringComparer.OrdinalIgnoreCase);

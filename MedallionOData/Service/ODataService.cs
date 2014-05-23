@@ -15,11 +15,17 @@ namespace Medallion.OData.Service
     {
         private readonly IODataServiceQueryPipeline _pipeline;
 
+        /// <summary>
+        /// Constructs a service from the given pipeline
+        /// </summary>
         public ODataService(IODataServiceQueryPipeline pipeline = null)
         {
             this._pipeline = pipeline ?? new DefaultODataServiceQueryPipeline();
         }
 
+        /// <summary>
+        /// Executes the given query with the gien url query options
+        /// </summary>
         public Result Execute<TElement>(IQueryable<TElement> query, NameValueCollection urlQuery)
         {
             Throw.IfNull(query, "query");
@@ -33,6 +39,9 @@ namespace Medallion.OData.Service
             return new Result(serialized, parseResult.ODataQuery.Format);
         }
 
+        /// <summary>
+        /// The result of executing a query locally in an OData service
+        /// </summary>
         public sealed class Result
         {
             internal Result(object results, string format)
@@ -44,7 +53,13 @@ namespace Medallion.OData.Service
                 this.Format = format;
             }
 
+            /// <summary>
+            /// The result data
+            /// </summary>
             public object Results { get; private set; }
+            /// <summary>
+            /// The result format
+            /// </summary>
             public string Format { get; private set; }
         }
     }

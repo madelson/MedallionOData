@@ -23,8 +23,11 @@ namespace Medallion.OData.Trees
             this.ClrType = clrType;
 		}
 
+        /// <summary>the expression kind</summary>
 		public ODataExpressionKind Kind { get; private set; }
-		public ODataExpressionType Type { get; private set; }
+        /// <summary>the odata type of the expression</summary>
+        public ODataExpressionType Type { get; private set; }
+        /// <summary>the .NET type of the expression</summary>
         public Type ClrType { get; private set; }
 
         internal abstract string ToODataExpressionLanguage();
@@ -39,7 +42,7 @@ namespace Medallion.OData.Trees
 
 		#region ---- Static factories ----
         private static readonly IReadOnlyCollection<ODataExpressionType> NonNumericComparableTypes = new[] { ODataExpressionType.DateTime, ODataExpressionType.DateTimeOffset, ODataExpressionType.Time };
-		public static ODataBinaryOpExpression BinaryOp(ODataExpression left, ODataBinaryOp @operator, ODataExpression right)
+		internal static ODataBinaryOpExpression BinaryOp(ODataExpression left, ODataBinaryOp @operator, ODataExpression right)
 		{
 			Throw.IfNull(left, "left");
 			Throw.IfNull(right, "right");
@@ -104,7 +107,7 @@ namespace Medallion.OData.Trees
             return new ODataBinaryOpExpression(convertedLeft, @operator, convertedRight, resultClrType);
 		}
 
-		public static ODataUnaryOpExpression UnaryOp(ODataExpression operand, ODataUnaryOp @operator)
+        internal static ODataUnaryOpExpression UnaryOp(ODataExpression operand, ODataUnaryOp @operator)
 		{
 			Throw.IfNull(operand, "operand");
 			Throw.If(operand.Type != ODataExpressionType.Boolean, "operand: must be a boolean type");
@@ -112,7 +115,7 @@ namespace Medallion.OData.Trees
 			return new ODataUnaryOpExpression(operand, @operator);
 		}
 
-		public static ODataConvertExpression Convert(ODataExpression expression, Type clrType)
+        internal static ODataConvertExpression Convert(ODataExpression expression, Type clrType)
 		{
 			Throw.IfNull(expression, "expression");
             Throw.IfNull(clrType, "clrType");
@@ -127,7 +130,7 @@ namespace Medallion.OData.Trees
 			return new ODataConvertExpression(expression, clrType);
 		}
 
-		public static ODataConstantExpression Constant(object value, Type clrType = null)
+        internal static ODataConstantExpression Constant(object value, Type clrType = null)
 		{
             if (value == null)
             {
@@ -166,7 +169,7 @@ namespace Medallion.OData.Trees
 				t => t.sig
 			);
 
-		public static ODataCallExpression Call(ODataFunction function, IEnumerable<ODataExpression> arguments)
+        internal static ODataCallExpression Call(ODataFunction function, IEnumerable<ODataExpression> arguments)
 		{
 			var argumentsList = (arguments as IReadOnlyList<ODataExpression>) ?? arguments.ToArray();
 			var signatures = FunctionSignatures[function];
@@ -201,26 +204,26 @@ namespace Medallion.OData.Trees
             );
 		}
 
-		public static ODataMemberAccessExpression MemberAccess(ODataMemberAccessExpression expression, PropertyInfo member)
+        internal static ODataMemberAccessExpression MemberAccess(ODataMemberAccessExpression expression, PropertyInfo member)
 		{
 			Throw.IfNull(member, "member");
 
 			return new ODataMemberAccessExpression(expression, member);
 		}
 
-		public static ODataSortKeyExpression SortKey(ODataExpression expression, ODataSortDirection direction = ODataSortDirection.Ascending)
+        internal static ODataSortKeyExpression SortKey(ODataExpression expression, ODataSortDirection direction = ODataSortDirection.Ascending)
 		{
 			Throw.IfNull(expression, "expression");
 			
 			return new ODataSortKeyExpression(expression, direction);
 		}
 
-		public static ODataSelectColumnExpression SelectStar()
+        internal static ODataSelectColumnExpression SelectStar()
 		{
 			return SelectColumn(null, allColumns: true);
 		}
 
-		public static ODataSelectColumnExpression SelectColumn(ODataMemberAccessExpression memberAccess, bool allColumns)
+        internal static ODataSelectColumnExpression SelectColumn(ODataMemberAccessExpression memberAccess, bool allColumns)
 		{
 			Throw.If(allColumns && memberAccess != null && memberAccess.Type != ODataExpressionType.Complex, "'*' can only be selected for non-primitive types!");
 			Throw.If(memberAccess == null && !allColumns, "If no property path is specified, then '*' must be selected!");
@@ -228,7 +231,7 @@ namespace Medallion.OData.Trees
 			return new ODataSelectColumnExpression(memberAccess, allColumns: allColumns);
 		}
 
-		public static ODataQueryExpression Query(
+        internal static ODataQueryExpression Query(
 			ODataExpression filter = null,
 			IReadOnlyList<ODataSortKeyExpression> orderBy = null,
 			int? top = null,

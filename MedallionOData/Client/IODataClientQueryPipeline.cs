@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Client
 {
+    /// <summary>
+    /// A pipeline for executing queries against a remote service
+    /// </summary>
     public interface IODataClientQueryPipeline
     {
         /// <summary>
@@ -55,6 +58,9 @@ namespace Medallion.OData.Client
     /// </summary>
     public interface IODataWebResponse : IDisposable
     {
+        /// <summary>
+        /// Gets the content stream for the web response
+        /// </summary>
         Task<Stream> GetResponseStreamAsync();
     }
 

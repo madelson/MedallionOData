@@ -24,7 +24,13 @@ namespace Medallion.OData.Client
             this.InlineCount = inlineCount;
         }
 
+        /// <summary>
+        /// Optionally specifies an inline count option for the query
+        /// </summary>
         public ODataInlineCountOption? InlineCount { get; private set; }
+        /// <summary>
+        /// Determines the query format
+        /// </summary>
         public string Format { get; private set; }
     }
 }

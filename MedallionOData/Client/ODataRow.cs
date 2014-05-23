@@ -22,6 +22,9 @@ namespace Medallion.OData.Client
 
 		private readonly IReadOnlyDictionary<string, object> _values;
 
+        /// <summary>
+        /// Constructs a row from the given set of key value pairs
+        /// </summary>
 		public ODataRow(IEnumerable<KeyValuePair<string, object>> values)
 		{
 			this._values = values.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, KeyComparer);

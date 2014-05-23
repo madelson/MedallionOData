@@ -255,7 +255,7 @@ namespace Medallion.OData.Tests.Integration
             return _provider.Query<Customer>(_testServer.Prefix + "customers");
         }
 
-        private static readonly ODataQueryProvider _provider = new ODataQueryProvider();
+        private static readonly ODataQueryContext _provider = new ODataQueryContext();
         private void Test<TSource, TResult>(string url, Func<IQueryable<TSource>, IQueryable<TResult>> query, IEnumerable<TResult> expected, IEqualityComparer<TResult> comparer = null, bool orderMatters = false)
         {
             var uri = new Uri(_testServer.Prefix + url);

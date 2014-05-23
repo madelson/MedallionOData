@@ -13,6 +13,9 @@ namespace Medallion.OData.Client
         Task<TResult> ExecuteAsync<TResult>(Expression<Func<IQueryable<TElement>, TResult>> executeExpression);
     }
 
+    /// <summary>
+    /// Represents the result of an OData query
+    /// </summary>
     public interface IODataResult<TElement>
     {
         /// <summary>
@@ -26,8 +29,14 @@ namespace Medallion.OData.Client
         int? TotalCount { get; }
     }
 
+    /// <summary>
+    /// Provides query operators for OData queries
+    /// </summary>
     public static class ODataQueryable
     {
+        /// <summary>
+        /// Asynchronously executes the given OData query
+        /// </summary>
         public static Task<IODataResult<TElement>> ExecuteQueryAsync<TElement>(this IQueryable<TElement> @this, ODataQueryOptions options = null)
         {
             Throw.IfNull(@this, "this");
@@ -36,11 +45,20 @@ namespace Medallion.OData.Client
             return oDataQuery.ExecuteQueryAsync(options);
         }
 
+        /// <summary>
+        /// Executes the given OData query
+        /// </summary>
         public static IODataResult<TElement> ExecuteQuery<TElement>(this IQueryable<TElement> @this, ODataQueryOptions options = null)
         {
             return @this.ExecuteQueryAsync(options).GetResultWithOriginalException();
         }
 
+        /// <summary>
+        /// Provides aync OData query execution after applying the given execute expression. For example:
+        /// <code>
+        /// var count = await query.ExecuteAsync(q => q.Count());
+        /// </code>
+        /// </summary>
         public static Task<TResult> ExecuteAsync<TElement, TResult>(this IQueryable<TElement> @this, Expression<Func<IQueryable<TElement>, TResult>> executeExpression)
         {
             Throw.IfNull(@this, "this");
