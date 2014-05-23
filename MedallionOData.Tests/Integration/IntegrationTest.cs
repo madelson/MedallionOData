@@ -250,6 +250,29 @@ namespace Medallion.OData.Tests.Integration
                 .ShouldEqual(CustomersContext.GetCustomers().Min(c => c.DateCreated.Day % 5));
         }
 
+        [TestMethod]
+        public void IntegrationTestExecuteAsync()
+        {
+            this.CustomersODataQuery().ExecuteAsync(q => q.Count(c => c.Name.Length % 2 == 1)).Result
+                .ShouldEqual(CustomersContext.GetCustomers().Count(c => c.Name.Length % 2 == 1));
+        }
+
+        [TestMethod]
+        public void IntegrationTestExecuteQueryAsync()
+        {
+            var result = this.CustomersODataQuery().Where(c => c.Company != null)
+                .OrderBy(c => c.Id)
+                .Skip(1)
+                .Take(2)
+                .ExecuteQueryAsync(new ODataQueryOptions(inlineCount: ODataInlineCountOption.AllPages)).Result;
+            result.TotalCount.ShouldEqual(this.CustomersODataQuery().Where(c => c.Company != null).Count());
+            result.Results.Select(c => c.Id)
+                .CollectionShouldEqual(
+                    this.CustomersODataQuery().Where(c => c.Company != null).OrderBy(c => c.Id).Skip(1).Take(2).Select(c => c.Id),
+                    orderMatters: true
+                );
+        }
+
         private IQueryable<Customer> CustomersODataQuery()
         {
             return _provider.Query<Customer>(_testServer.Prefix + "customers");
