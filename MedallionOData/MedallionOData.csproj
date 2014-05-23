@@ -55,7 +55,7 @@
     <Compile Include="Client\ODataQueryable.cs" />
     <Compile Include="Client\ODataQueryOptions.cs" />
     <Compile Include="Client\ODataQueryContext.cs" />
-    <Compile Include="Client\ODataRow.cs" />
+    <Compile Include="Client\ODataEntity.cs" />
     <Compile Include="Client\ParameterReplacer.cs" />
     <Compile Include="Client\QueryOperatorCanonicalizer.cs" />
     <Compile Include="ConversionHelpers.cs" />
