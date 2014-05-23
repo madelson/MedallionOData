@@ -7,11 +7,17 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Client
 {
+    /// <summary>
+    /// Options for query execution
+    /// </summary>
     public sealed class ODataQueryOptions
     {
         private static ODataQueryOptions _defaultOptions = new ODataQueryOptions();
-        public static ODataQueryOptions Default { get { return _defaultOptions; } }
+        internal static ODataQueryOptions Default { get { return _defaultOptions; } }
 
+        /// <summary>
+        /// Constructs a new instance of <see cref="ODataQueryOptions"/>
+        /// </summary>
         public ODataQueryOptions(string format = "json", ODataInlineCountOption? inlineCount = null) 
         {
             this.Format = format;

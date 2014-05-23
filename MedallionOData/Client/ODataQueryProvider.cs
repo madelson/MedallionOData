@@ -194,7 +194,7 @@ namespace Medallion.OData.Client
 
             protected override Type ElementType { get { return typeof(TElement); } }
 
-            async Task<IODataResult<TElement>> IODataQueryable<TElement>.ExecuteQueryAsync(ODataQueryOptions options = null)
+            async Task<IODataResult<TElement>> IODataQueryable<TElement>.ExecuteQueryAsync(ODataQueryOptions options)
             {
                 var result = await this._provider.ExecutePipelineAsync(this.As<IQueryable>().Expression, options).ConfigureAwait(false);
                 return new ODataResult<TElement>(((IEnumerable<TElement>)result.Value).ToArray(), result.InlineCount);

@@ -6,8 +6,14 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service
 {
+    /// <summary>
+    /// An implementation of a serializer for OData services
+    /// </summary>
     public interface IODataSerializer
     {
+        /// <summary>
+        /// Serializes the given result
+        /// </summary>
         object Serialize<TElement>(IODataProjectResult<TElement> projectResult);
     }
 }

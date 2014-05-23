@@ -9,6 +9,9 @@ using System.Web;
 
 namespace Medallion.OData.Trees
 {
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.BinaryOp"/>
+    /// </summary>
 	public sealed class ODataBinaryOpExpression : ODataExpression
 	{
 		// TODO implicit cast checks (& insertions), static factory methods
@@ -21,11 +24,14 @@ namespace Medallion.OData.Trees
 			this.Left = left;
 		}
 
+        /// <summary>The right-hand expression</summary>
 		public ODataExpression Right { get; private set; }
+        /// <summary>The operator</summary>
 		public ODataBinaryOp Operator { get; private set; }
-		public ODataExpression Left { get; private set; }
+        /// <summary>The left-hand expression</summary>
+        public ODataExpression Left { get; private set; }
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{
 			return new StringBuilder()
 				.AppendFormat(this.NeedsParens(this.Left) ? "({0}) " : "{0} ", this.Left)
@@ -67,6 +73,9 @@ namespace Medallion.OData.Trees
 		}
 	}
 
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.UnaryOp"/>
+    /// </summary>
     public sealed class ODataUnaryOpExpression : ODataExpression
 	{
 		internal ODataUnaryOpExpression(ODataExpression operand, ODataUnaryOp @operator)
@@ -77,15 +86,20 @@ namespace Medallion.OData.Trees
 			this.Operator = @operator;
 		}
 
+        /// <summary>The operand</summary>
 		public ODataExpression Operand { get; private set; }
+        /// <summary>The operator</summary>
 		public ODataUnaryOp Operator { get; private set; }
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{
 			return string.Format("{0} {1}", this.Operator.ToODataString(), this.Operand);
 		}
 	}
 
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.Call"/>
+    /// </summary>
     public sealed class ODataCallExpression : ODataExpression
 	{
 		internal ODataCallExpression(ODataFunction function, IReadOnlyList<ODataExpression> arguments, Type returnClrType)
@@ -95,15 +109,20 @@ namespace Medallion.OData.Trees
 			this.Arguments = arguments;
 		}
 
+        /// <summary>the function call</summary>
 		public ODataFunction Function { get; private set; }
+        /// <summary>the arguments</summary>
 		public IReadOnlyList<ODataExpression> Arguments { get; private set; }
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{
 			return string.Format("{0}({1})", this.Function.ToODataString(), this.Arguments.ToDelimitedString(", "));
 		}
 	}
 
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.Constant"/>
+    /// </summary>
     public sealed class ODataConstantExpression : ODataExpression
 	{
 		internal ODataConstantExpression(object value, ODataExpressionType type, Type clrType)
@@ -112,9 +131,10 @@ namespace Medallion.OData.Trees
 			this.Value = value;
 		}
 
+        /// <summary>the value of the constant</summary>
 		public object Value { get; private set; }
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{
 			if (this.Value == null)
 			{
@@ -173,19 +193,24 @@ namespace Medallion.OData.Trees
 		}
 	}
 
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.MemberAccess"/>
+    /// </summary>
     public sealed class ODataMemberAccessExpression : ODataExpression
 	{
-		public ODataMemberAccessExpression(ODataMemberAccessExpression expression, PropertyInfo member)
+		internal ODataMemberAccessExpression(ODataMemberAccessExpression expression, PropertyInfo member)
 			: base(ODataExpressionKind.MemberAccess, member.PropertyType.ToODataExpressionType(), member.PropertyType)
 		{
 			this.Expression = expression;
 			this.Member = member;
 		}
 
+        /// <summary>the expression whose member is being accessed</summary>
 		public ODataMemberAccessExpression Expression { get; private set; }
+        /// <summary>the property being accessed</summary>
 		public PropertyInfo Member { get; private set; }
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{
 			return this.Expression != null
 				? string.Format("{0}/{1}", this.Expression, this.Member.Name)
@@ -193,6 +218,9 @@ namespace Medallion.OData.Trees
 		}
 	}
 
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.Convert"/>
+    /// </summary>
     public sealed class ODataConvertExpression : ODataExpression
 	{
 		internal ODataConvertExpression(ODataExpression expression, Type clrType)
@@ -201,9 +229,10 @@ namespace Medallion.OData.Trees
 			this.Expression = expression;
 		}
 
+        /// <summary>the expression being converted</summary>
 		public ODataExpression Expression { get; private set; }
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{			
 			return this.Expression.Type.IsImplicityCastableTo(this.Type)
 				? this.Expression.ToString()
@@ -211,6 +240,9 @@ namespace Medallion.OData.Trees
 		}
 	}
 
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.SortKey"/>
+    /// </summary>
     public sealed class ODataSortKeyExpression : ODataExpression
 	{
 		internal ODataSortKeyExpression(ODataExpression expression, ODataSortDirection direction)
@@ -220,15 +252,20 @@ namespace Medallion.OData.Trees
 			this.Direction = direction;
 		}
 
+        /// <summary>the value to sort by</summary>
 		public ODataExpression Expression { get; private set; }
+        /// <summary>the direction (ASC or DESC) of the sort</summary>
 		public ODataSortDirection Direction { get; private set; }
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{
 			return this.Expression + (this.Direction == ODataSortDirection.Ascending ? string.Empty : " " + this.Direction.ToODataString());
 		}
 	}
 
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.SelectColumn"/>
+    /// </summary>
     public sealed class ODataSelectColumnExpression : ODataExpression
 	{
 		internal ODataSelectColumnExpression(ODataMemberAccessExpression expression, bool allColumns)
@@ -239,10 +276,16 @@ namespace Medallion.OData.Trees
 			this.AllColumns = allColumns;
 		}
 
+        /// <summary>
+        /// The member being selected
+        /// </summary>
 		public ODataMemberAccessExpression Expression { get; private set; }
-		public bool AllColumns { get; private set; }
+		/// <summary>
+		/// Are all columns being selected?
+		/// </summary>
+        public bool AllColumns { get; private set; }
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{
 			var sb = new StringBuilder().Append(this.Expression);
 			if (this.AllColumns)
@@ -257,6 +300,9 @@ namespace Medallion.OData.Trees
 		}
 	}
 
+    /// <summary>
+    /// An expression for <see cref="ODataExpressionKind.Query"/>
+    /// </summary>
 	public class ODataQueryExpression : ODataExpression
 	{
 		// TODO expand
@@ -280,15 +326,22 @@ namespace Medallion.OData.Trees
 			this.Select = select;
 		}
 
+        /// <summary>the expression to filter by</summary>
 		public ODataExpression Filter { get; private set; }
-		public IReadOnlyList<ODataSortKeyExpression> OrderBy { get; private set; }
-		public int? Top { get; private set; }
+        /// <summary>the list of sort keys</summary>
+        public IReadOnlyList<ODataSortKeyExpression> OrderBy { get; private set; }
+        /// <summary>the number of items to take</summary>
+        public int? Top { get; private set; }
+        /// <summary>the number to skip</summary>	
 		public int Skip { get; private set; }
+        /// <summary>the format to use</summary>	
 		public string Format { get; private set; }
+        /// <summary>the inline count option to use</summary>
 		public ODataInlineCountOption InlineCount { get; private set; }
-		public IReadOnlyList<ODataSelectColumnExpression> Select { get; private set; } 
-
-		public NameValueCollection ToNameValueCollection()
+        /// <summary>the columns to select</summary>		
+		public IReadOnlyList<ODataSelectColumnExpression> Select { get; private set; }
+	
+		internal NameValueCollection ToNameValueCollection()
 		{
 			var result = new NameValueCollection();
 			if (this.Filter != null)
@@ -323,7 +376,7 @@ namespace Medallion.OData.Trees
 			return result;
 		}
 
-		public override string ToString()
+		internal override string ToODataExpressionLanguage()
 		{
 			var builder = new StringBuilder("?");
 			var values = this.ToNameValueCollection();
@@ -335,7 +388,7 @@ namespace Medallion.OData.Trees
 			return builder.ToString();
 		}
 
-		public ODataQueryExpression Update(ODataExpression filter = null, IEnumerable<ODataSortKeyExpression> orderBy = null, int? top = -1, int? skip = null, string format = null, ODataInlineCountOption? inlineCount = null, IEnumerable<ODataSelectColumnExpression> select = null)
+		internal ODataQueryExpression Update(ODataExpression filter = null, IEnumerable<ODataSortKeyExpression> orderBy = null, int? top = -1, int? skip = null, string format = null, ODataInlineCountOption? inlineCount = null, IEnumerable<ODataSelectColumnExpression> select = null)
 		{
 			return Query(
 				filter: filter ?? this.Filter,

@@ -13,7 +13,7 @@ namespace Medallion.OData.Trees
 	/// </summary>
 	public abstract class ODataExpression
 	{
-		protected ODataExpression(ODataExpressionKind kind, ODataExpressionType type, Type clrType)
+		internal ODataExpression(ODataExpressionKind kind, ODataExpressionType type, Type clrType)
 		{
             Throw.IfNull(clrType, "clrType");
             Throw.If(!type.IsCompatibleWith(clrType), "clrType must be compatible with kind");
@@ -26,6 +26,16 @@ namespace Medallion.OData.Trees
 		public ODataExpressionKind Kind { get; private set; }
 		public ODataExpressionType Type { get; private set; }
         public Type ClrType { get; private set; }
+
+        internal abstract string ToODataExpressionLanguage();
+
+        /// <summary>
+        /// Returns the OData expression language text for the expression
+        /// </summary>
+        public sealed override string ToString()
+        {
+            return this.ToODataExpressionLanguage();
+        }
 
 		#region ---- Static factories ----
         private static readonly IReadOnlyCollection<ODataExpressionType> NonNumericComparableTypes = new[] { ODataExpressionType.DateTime, ODataExpressionType.DateTimeOffset, ODataExpressionType.Time };

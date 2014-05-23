@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Client
 {
-    public interface IODataQueryable<TElement>
+    internal interface IODataQueryable<TElement>
     {
         Task<IODataResult<TElement>> ExecuteQueryAsync(ODataQueryOptions options = null);
         Task<TResult> ExecuteAsync<TResult>(Expression<Func<IQueryable<TElement>, TResult>> executeExpression);

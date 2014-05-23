@@ -1,44 +1,95 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Medallion.OData.Trees
 {
+    /// <summary>
+    /// Represents the different types of OData expressions. Compare to <see cref="ExpressionType"/> in 
+    /// LINQ expressions
+    /// </summary>
 	public enum ODataExpressionKind
 	{
+        /// <summary>
+        /// Represents an entire query
+        /// </summary>
 		Query,
 
 		// expression components
+
+        /// <summary>
+        /// Represents a binary operation like adition
+        /// </summary>
 		BinaryOp,
+        /// <summary>
+        /// Represents a unary operation like "not"
+        /// </summary>
 		UnaryOp,
+        /// <summary>
+        /// Represents a method call
+        /// </summary>
 		Call,
+        /// <summary>
+        /// Represents a literal value
+        /// </summary>
 		Constant,
+        /// <summary>
+        /// Represents a simple or navigation property access
+        /// </summary>
 		MemberAccess,
+        /// <summary>
+        /// Represents a cast
+        /// </summary>
 		Convert,
+        /// <summary>
+        /// Represents a value to sort by along with a <see cref="ODataSortDirection"/>
+        /// </summary>
 		SortKey,
+        /// <summary>
+        /// Represents a projected "column"
+        /// </summary>
 		SelectColumn,
 	}
 
+    /// <summary>
+    /// Represents the OData type system
+    /// </summary>
 	public enum ODataExpressionType
 	{
 		// primitives (based on http://www.odata.org/documentation/odata-v3-documentation/)
-		[ODataName("'Edm.Binary'")] Binary,
-		[ODataName("'Edm.Boolean'")] Boolean,
+		/// <summary>Edm.Binary</summary>
+        [ODataName("'Edm.Binary'")] Binary,
+        /// <summary>Edm.Boolean</summary>
+        [ODataName("'Edm.Boolean'")] Boolean,
+        /// <summary>Edm.Byte</summary>
 		[ODataName("'Edm.Byte'")] Byte,
+        /// <summary>Edm.DateTime</summary>
 		[ODataName("'Edm.DateTime'")] DateTime,
+        /// <summary>Edm.Decimal</summary>
 		[ODataName("'Edm.Decimal'")] Decimal,
+        /// <summary>Edm.Double</summary>
 		[ODataName("'Edm.Double'")] Double,
+        /// <summary>Edm.Single</summary>
 		[ODataName("'Edm.Single'")] Single,
+        /// <summary>Edm.Guid</summary>
 		[ODataName("'Edm.Guid'")] Guid,
+        /// <summary>Edm.Int16</summary>
 		[ODataName("'Edm.Int16'")] Int16,
+        /// <summary>Edm.Int32</summary>
 		[ODataName("'Edm.Int32'")] Int32,
+        /// <summary>Edm.Int64</summary>
 		[ODataName("'Edm.Int64'")] Int64,
+        /// <summary>Edm.SByte</summary>
 		[ODataName("'Edm.SByte'")] SByte,
+        /// <summary>Edm.String</summary>
 		[ODataName("'Edm.String'")] String,
+        /// <summary>Edm.Time</summary>
 		[ODataName("'Edm.Time'")] Time,
+        /// <summary>Edm.DateTimeOffset</summary>
 		[ODataName("'Edm.DateTimeOffset'")] DateTimeOffset,
 
 		// TODO geography/geometry types
@@ -51,29 +102,47 @@ namespace Medallion.OData.Trees
 		/// Type constants appear in cast and isof expressions
 		/// </summary>
 		Type,
+        /// <summary>
+        /// Represents any non-primitive type, such as an entity type
+        /// </summary>
 		Complex,
 	}
 
+    /// <summary>
+    /// The binary operations available in OData
+    /// </summary>
 	public enum ODataBinaryOp
 	{
 		// MA: organized into groups by increasing precedence level
 
+        /// <summary>or</summary>
 		[ODataName("or")] Or,
-	
+
+        /// <summary>and</summary>
 		[ODataName("and")] And,
 
+        /// <summary>eq</summary>
 		[ODataName("eq")] Equal,
+        /// <summary>ne</summary>
 		[ODataName("ne")] NotEqual,
+        /// <summary>gt</summary>
 		[ODataName("gt")] GreaterThan,
+        /// <summary>ge</summary>
 		[ODataName("ge")] GreaterThanOrEqual,
+        /// <summary>lt</summary>
 		[ODataName("lt")] LessThan,
+        /// <summary>le</summary>
 		[ODataName("le")] LessThanOrEqual,
 
+        /// <summary>add</summary>
 		[ODataName("add")] Add,
+        /// <summary>sub</summary>
 		[ODataName("sub")] Subtract,
-
+        /// <summary>mul</summary>
 		[ODataName("mul")] Multiply,
+        /// <summary>div</summary>
 		[ODataName("div")] Divide,
+        /// <summary>mod</summary>
 		[ODataName("mod")] Modulo,
 	}
 
