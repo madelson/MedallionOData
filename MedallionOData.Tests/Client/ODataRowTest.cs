@@ -18,13 +18,13 @@ namespace Medallion.OData.Tests.Client
 		[TestMethod]
 		public void TestGetProperty()
 		{
-			Expression<Func<ODataRow, object>> getString = r => r.Get<string>("Text");
+			Expression<Func<ODataEntity, object>> getString = r => r.Get<string>("Text");
 			PropertyInfo prop;
 			TryConvertMethodCallToRowProperty((MethodCallExpression)getString.Body, out prop).ShouldEqual(true);
 			prop.Name.ShouldEqual("Text");
 			prop.PropertyType.ShouldEqual(typeof(string));
 
-			Expression<Func<ODataRow, object>> toString = r => r.ToString();
+			Expression<Func<ODataEntity, object>> toString = r => r.ToString();
 			TryConvertMethodCallToRowProperty((MethodCallExpression)toString.Body, out prop).ShouldEqual(false);
 			prop.ShouldEqual(null);
 		}
@@ -32,7 +32,7 @@ namespace Medallion.OData.Tests.Client
 		[TestMethod]
 		public void TestGet()
 		{
-			var row = new ODataRow(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
+			var row = new ODataEntity(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
 			row.Get<int>("A").ShouldEqual(1);
 			row.Get<string>("b").ShouldEqual("2");
 			UnitTestHelpers.AssertThrows<InvalidCastException>(() => row.Get<string>("a"));
@@ -42,7 +42,7 @@ namespace Medallion.OData.Tests.Client
 		[TestMethod]
 		public void TestSerialization()
 		{
-			var row = new ODataRow(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
+			var row = new ODataEntity(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
 		}
 
         public bool TryConvertMethodCallToRowProperty(MethodCallExpression methodCall, out PropertyInfo property)
@@ -50,7 +50,7 @@ namespace Medallion.OData.Tests.Client
             property = null;
             try
             {
-                var normalized = ODataRow.Normalize(methodCall);
+                var normalized = ODataEntity.Normalize(methodCall);
                 if (normalized.NodeType == ExpressionType.MemberAccess)
                 {
                     property = ((MemberExpression)normalized).Member as PropertyInfo;

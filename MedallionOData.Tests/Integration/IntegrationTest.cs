@@ -88,7 +88,7 @@ namespace Medallion.OData.Tests.Integration
         {
             this.Test(
                 "customers",
-                (IQueryable<ODataRow> rows) => rows.Where(c => c.Get<ODataRow>("Company").Get<string>("Name") == "Mine")
+                (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<ODataEntity>("Company").Get<string>("Name") == "Mine")
                     .Select(c => c.Get<string>("Name")),
                     expected: CustomersContext.GetCustomers().Where(c => c.Company != null && c.Company.Name == "Mine")
                         .Select(c => c.Name)
@@ -100,7 +100,7 @@ namespace Medallion.OData.Tests.Integration
         {
             this.Test(
                 "customers",
-                (IQueryable<ODataRow> rows) => rows.Select(r => new { b = r.Get<ODataRow>("Company"), c = r.Get<string>("Name").Length * 2 })
+                (IQueryable<ODataEntity> rows) => rows.Select(r => new { b = r.Get<ODataEntity>("Company"), c = r.Get<string>("Name").Length * 2 })
                     .Where(t => t.b.Get<string>("Name").Length % 3 != t.c % 3)
                     .Select(t => t.c),
                 expected: CustomersContext.GetCustomers().Select(c => new { b = c.Company, c = c.Name.Length * 2 })

@@ -125,11 +125,11 @@ namespace Medallion.OData.Tests
 		[TestMethod]
 		public void TestRow()
 		{
-			this.VerifyQuery((IQueryable<ODataRow> q) => q.Where(r => r.Get<int>("Int") > 0), q => q.Where(a => a.Int > 0));
-			this.VerifyQuery((IQueryable<ODataRow> q) => q.Where(r => r.Get<double?>("NullableDouble").HasValue), q => q.Where(r => r.NullableDouble.HasValue));
-			this.VerifyQuery((IQueryable<ODataRow> q) => q.OrderBy(r => r.Get<double?>("NullableDouble").HasValue), q => q.OrderBy(r => r.NullableDouble.HasValue));
+			this.VerifyQuery((IQueryable<ODataEntity> q) => q.Where(r => r.Get<int>("Int") > 0), q => q.Where(a => a.Int > 0));
+			this.VerifyQuery((IQueryable<ODataEntity> q) => q.Where(r => r.Get<double?>("NullableDouble").HasValue), q => q.Where(r => r.NullableDouble.HasValue));
+			this.VerifyQuery((IQueryable<ODataEntity> q) => q.OrderBy(r => r.Get<double?>("NullableDouble").HasValue), q => q.OrderBy(r => r.NullableDouble.HasValue));
 			this.VerifyQuery(
-				(IQueryable<ODataRow> q) => q.OrderByDescending(r => r.Get<string>("Text")).ThenByDescending(r => r.Get<double?>("NullableDouble").HasValue).Skip(5).Take(100),
+				(IQueryable<ODataEntity> q) => q.OrderByDescending(r => r.Get<string>("Text")).ThenByDescending(r => r.Get<double?>("NullableDouble").HasValue).Skip(5).Take(100),
 				q => q.OrderByDescending(r => r.Text).ThenByDescending(r => r.NullableDouble.HasValue).Skip(5).Take(100)
 			);
 		}
@@ -137,8 +137,8 @@ namespace Medallion.OData.Tests
 		[TestMethod]
 		public void TestRowErrors()
 		{
-            UnitTestHelpers.AssertThrows<ArgumentException>(() => this.VerifyQuery((IQueryable<ODataRow> q) => q.Where(r => r.Get<string>("NullableDouble") != "0"), q => q));
-            UnitTestHelpers.AssertThrows<ODataParseException>(() => this.VerifyQuery((IQueryable<ODataRow> q) => q.Where(r => r.Get<int>("FakeInt") < 100), q => q));
+            UnitTestHelpers.AssertThrows<ArgumentException>(() => this.VerifyQuery((IQueryable<ODataEntity> q) => q.Where(r => r.Get<string>("NullableDouble") != "0"), q => q));
+            UnitTestHelpers.AssertThrows<ODataParseException>(() => this.VerifyQuery((IQueryable<ODataEntity> q) => q.Where(r => r.Get<int>("FakeInt") < 100), q => q));
 		}
 
 		[TestMethod]

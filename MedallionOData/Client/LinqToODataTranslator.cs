@@ -28,7 +28,7 @@ namespace Medallion.OData.Client
 			this._memberAndParameterTranslator = new MemberAndParameterTranslator(this);
 
             // normalize away ODataRow constructs
-            var normalized = ODataRow.Normalize(linq);
+            var normalized = ODataEntity.Normalize(linq);
 
 			var translated = this.TranslateInternal(normalized);
 
@@ -55,7 +55,7 @@ namespace Medallion.OData.Client
 
                 // restores any ODataRow constructs that were normalized away, since we need to be able to compile and run the projection
                 // (i. e. fake ODataRow property accesses don't run when compiled)
-                var denormalizedProjection = (LambdaExpression)ODataRow.Denormalize(projection);
+                var denormalizedProjection = (LambdaExpression)ODataEntity.Denormalize(projection);
 				
                 Func<object, object> queryTranslator = enumerable => selectMethod.Invoke(null, new[] { enumerable, denormalizedProjection.Compile() });
 				resultTranslator = (values, count) => finalTranslator((IEnumerable)queryTranslator(values), count);

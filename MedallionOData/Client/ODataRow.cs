@@ -13,61 +13,61 @@ using System.Threading.Tasks;
 namespace Medallion.OData.Client
 {
 	/// <summary>
-	/// A dynamic row type to provide support for dynamic client queries
+	/// A dynamic entity type to provide support for dynamic client queries
 	/// </summary>
-	[JsonConverter(typeof(ODataRow.JsonConverter))]
-    public sealed class ODataRow
+	[JsonConverter(typeof(ODataEntity.JsonConverter))]
+    public sealed class ODataEntity
 	{
 		private static readonly IEqualityComparer<string> KeyComparer = StringComparer.OrdinalIgnoreCase;
 
 		private readonly IReadOnlyDictionary<string, object> _values;
 
         /// <summary>
-        /// Constructs a row from the given set of key value pairs
+        /// Constructs a entity from the given set of key value pairs
         /// </summary>
-		public ODataRow(IEnumerable<KeyValuePair<string, object>> values)
+		public ODataEntity(IEnumerable<KeyValuePair<string, object>> values)
 		{
 			this._values = values.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, KeyComparer);
 		}
 
 		/// <summary>
-		/// Gets the strongly-typed value of the named column. This method can be used in OData queries as long as <paramref name="columnName"/>
+		/// Gets the strongly-typed value of the named property. This method can be used in OData queries as long as <paramref name="propertyName"/>
 		/// is a constant or local variable capture
 		/// </summary>
-		/// <typeparam name="TColumn">the column type</typeparam>
-		/// <param name="columnName">the column name</param>
-		/// <returns>the column value</returns>
-		public TColumn Get<TColumn>(string columnName)
+		/// <typeparam name="TProperty">the property type</typeparam>
+		/// <param name="propertyName">the property name</param>
+		/// <returns>the property value</returns>
+		public TProperty Get<TProperty>(string propertyName)
 		{
 			object result;
-			if (!this._values.TryGetValue(columnName, out result))
+			if (!this._values.TryGetValue(propertyName, out result))
 			{
-				throw new ArgumentException("The row does not contain a value for column '" + columnName + "'!");
+				throw new ArgumentException("The entity does not contain a value for property '" + propertyName + "'!");
 			}
 
             if (result == null)
             {
-                if (!typeof(TColumn).CanBeNull())
+                if (!typeof(TProperty).CanBeNull())
                 {
-                    throw new InvalidCastException(string.Format("Column '{0}' has a null value and cannot be cast to '{1}'", columnName, typeof(TColumn)));
+                    throw new InvalidCastException(string.Format("Property '{0}' has a null value and cannot be cast to '{1}'", propertyName, typeof(TProperty)));
                 }
-                return default(TColumn);
+                return default(TProperty);
             }
 
-			if (result is TColumn)
+			if (result is TProperty)
 			{
-                return (TColumn)result;
+                return (TProperty)result;
             }
 
-			throw new InvalidCastException(string.Format("value '{0}' for column '{1}' is not of type {2}", result ?? "null", columnName, typeof(TColumn)));
+			throw new InvalidCastException(string.Format("value '{0}' for property '{1}' is not of type {2}", result ?? "null", propertyName, typeof(TProperty)));
 		}
 
         #region ---- Translation ----
-        private static readonly MethodInfo GetMethod = Helpers.GetMethod((ODataRow r) => r.Get<int>(null))
+        private static readonly MethodInfo GetMethod = Helpers.GetMethod((ODataEntity r) => r.Get<int>(null))
             .GetGenericMethodDefinition();
 
         /// <summary>
-        /// Replaces calls to <see cref="ODataRow.Get{T}"/> with property accesses
+        /// Replaces calls to <see cref="ODataEntity.Get{T}"/> with property accesses
         /// </summary>
         public static Expression Normalize(Expression expression)
         {
@@ -94,9 +94,9 @@ namespace Medallion.OData.Client
                             methodCall.Method
                         )
                     );
-                    var columnName = (string)value;
+                    var propertyName = (string)value;
                     Throw<ODataCompileException>.If(
-                        string.IsNullOrWhiteSpace(columnName),
+                        string.IsNullOrWhiteSpace(propertyName),
                         () => string.Format(
                             "'{0}' value for {1} must not be null or whitespace",
                             methodCall.Method.GetParameters()[0].Name,
@@ -104,7 +104,7 @@ namespace Medallion.OData.Client
                         )
                     );
 
-                    var property = RowPropertyInfo.For(name: columnName, type: methodCall.Method.GetGenericArguments()[0]);
+                    var property = EntityPropertyInfo.For(name: propertyName, type: methodCall.Method.GetGenericArguments()[0]);
                     return Expression.Property(this.Visit(methodCall.Object), property);
                 }
 
@@ -114,7 +114,7 @@ namespace Medallion.OData.Client
         #endregion
 
         /// <summary>
-        /// Reverts changes to an expression made by <see cref="ODataRow.Normalize"/>
+        /// Reverts changes to an expression made by <see cref="ODataEntity.Normalize"/>
         /// </summary>
         public static Expression Denormalize(Expression expression)
         {
@@ -129,13 +129,13 @@ namespace Medallion.OData.Client
 
             protected override Expression VisitMember(MemberExpression node)
             {
-                var rowProp = node.Member as RowPropertyInfo;
-                if (rowProp != null)
+                var entityProp = node.Member as EntityPropertyInfo;
+                if (entityProp != null)
                 {
                     return Expression.Call(
                         this.Visit(node.Expression),
-                        GetMethod.MakeGenericMethod(rowProp.PropertyType),
-                        Expression.Constant(rowProp.Name)
+                        GetMethod.MakeGenericMethod(entityProp.PropertyType),
+                        Expression.Constant(entityProp.Name)
                     );
                 }
                 return base.VisitMember(node);
@@ -145,18 +145,18 @@ namespace Medallion.OData.Client
 
 
         #region ---- Fake property implementation ----
-        private TColumn FakeGetter<TColumn>()
+        private TProperty FakeGetter<TProperty>()
 		{
 			throw new InvalidOperationException("This getter is not valid");
 		}
 	
-		private sealed class RowPropertyInfo : PropertyInfo
+		private sealed class EntityPropertyInfo : PropertyInfo
 		{
 			private readonly string _name;
 			private readonly Type _type;
 			private readonly int _metadataToken;
 
-			private RowPropertyInfo(string name, Type type, int metadataToken)
+			private EntityPropertyInfo(string name, Type type, int metadataToken)
 			{
 				Throw.IfNull(name, "name");
 				Throw.IfNull(type, "type");
@@ -189,7 +189,7 @@ namespace Medallion.OData.Client
 			public override MethodInfo GetGetMethod(bool nonPublic)
 			{
 				// we need to implement this because it's checked by Expression.Property calls
-				return Helpers.GetMethod((ODataRow r) => r.FakeGetter<object>())
+				return Helpers.GetMethod((ODataEntity r) => r.FakeGetter<object>())
 					.GetGenericMethodDefinition()
 					.MakeGenericMethod(this.PropertyType);
 			}
@@ -211,24 +211,24 @@ namespace Medallion.OData.Client
 
 			public override object GetValue(object obj, BindingFlags invokeAttr, Binder binder, object[] index, System.Globalization.CultureInfo culture)
 			{
-				Throw.If(index != null && index.Length > 0, "index: Row properties cannot have indexers");
+				Throw.If(index != null && index.Length > 0, "index: properties cannot have indexers");
 
 				Throw.IfNull(obj, "obj");
-				var row = obj as ODataRow;
-				Throw.If(row == null, "obj: must be of type Row");
-				Throw<ArgumentException>.If(!row._values.ContainsKey(this.Name), () => "the given row instance does not contain column '" + this.Name + "'");
+				var entity = obj as ODataEntity;
+				Throw.If(entity == null, "obj: must be of type ODataEntity");
+				Throw<ArgumentException>.If(!entity._values.ContainsKey(this.Name), () => "the given entity instance does not contain property '" + this.Name + "'");
 
-				return row._values[this.Name];
+				return entity._values[this.Name];
 			}
 
 			public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, object[] index, System.Globalization.CultureInfo culture)
 			{
-				throw new InvalidOperationException("Row properties are read-only!");
+				throw new InvalidOperationException("ODataEntity properties are read-only!");
 			}
 
 			public override Type DeclaringType
 			{
-				get { return typeof(ODataRow); }
+				get { return typeof(ODataEntity); }
 			}
 
 			public override object[] GetCustomAttributes(Type attributeType, bool inherit)
@@ -253,12 +253,12 @@ namespace Medallion.OData.Client
 
 			public override Type ReflectedType
 			{
-				get { return typeof(ODataRow); }
+				get { return typeof(ODataEntity); }
 			}
 
 			public override bool Equals(object obj)
 			{
-				var that = obj as RowPropertyInfo;
+				var that = obj as EntityPropertyInfo;
 				return that != null && KeyComparer.Equals(this.Name, that.Name) && this.PropertyType == that.PropertyType;
 			}
 
@@ -269,32 +269,32 @@ namespace Medallion.OData.Client
 
 			public override string ToString()
 			{
-				return string.Format("{0}.Get<{1}>(\"{2}\")", typeof(ODataRow), this.PropertyType, this.Name);
+				return string.Format("{0}.Get<{1}>(\"{2}\")", typeof(ODataEntity), this.PropertyType, this.Name);
 			}
 
 			// TODO consider returning a static token with a new module each time instead
 			public override int MetadataToken { get { return this._metadataToken; } }
-			public override Module Module { get { return RowModule.Instance; } }
+			public override Module Module { get { return EntityModule.Instance; } }
 
 			private static int _lastMetadataToken = 0;
-			private static readonly ConcurrentDictionary<Tuple<Type, string>, RowPropertyInfo> Cache = new ConcurrentDictionary<Tuple<Type, string>, RowPropertyInfo>(
+			private static readonly ConcurrentDictionary<Tuple<Type, string>, EntityPropertyInfo> Cache = new ConcurrentDictionary<Tuple<Type, string>, EntityPropertyInfo>(
 				EqualityComparers.Create<Tuple<Type, string>>(
 					equals: (t1, t2) => t1.Item1 == t2.Item1 && KeyComparer.Equals(t1.Item2, t2.Item2),
 					hash: t => t.Item1.GetHashCode() ^ KeyComparer.GetHashCode(t.Item2)
 				)	
 			);
 
-			public static RowPropertyInfo For(string name, Type type)
+			public static EntityPropertyInfo For(string name, Type type)
 			{
 				var cacheKey = Tuple.Create(type, name);
-				RowPropertyInfo cached;
+				EntityPropertyInfo cached;
 				if (Cache.TryGetValue(cacheKey, out cached))
 				{
 					return cached;
 				}
 
 				var metadataToken = Interlocked.Increment(ref _lastMetadataToken);
-				var newProp = new RowPropertyInfo(name, type, metadataToken);
+				var newProp = new EntityPropertyInfo(name, type, metadataToken);
 				// to avoid ever having equivalent props with different tokens, we only return
 				// the new prop if it becomes the cached instance
 				return Cache.TryAdd(cacheKey, newProp)
@@ -303,9 +303,9 @@ namespace Medallion.OData.Client
 			}
 		}
 
-		private sealed class RowModule : Module
+		private sealed class EntityModule : Module
 		{
-			public static readonly Module Instance = new RowModule();
+			public static readonly Module Instance = new EntityModule();
 		}
 		#endregion
         #endregion
@@ -315,7 +315,7 @@ namespace Medallion.OData.Client
         {
             public override bool CanConvert(Type objectType)
             {
-                return objectType == typeof(ODataRow);
+                return objectType == typeof(ODataEntity);
             }
 
             #region ---- Read ----
@@ -334,7 +334,7 @@ namespace Medallion.OData.Client
                     case JTokenType.Object:
                         var keyValuePairs = ((JObject)token).As<IDictionary<string, JToken>>()
                             .Select(kvp => KeyValuePair.Create(kvp.Key, ConvertJToken(kvp.Value)));
-                        return new ODataRow(keyValuePairs);
+                        return new ODataEntity(keyValuePairs);
                     case JTokenType.Array:
                         return ((JArray)token).Select(ConvertJToken).ToList();
                     default:
@@ -353,8 +353,8 @@ namespace Medallion.OData.Client
 
             public override void WriteJson(Newtonsoft.Json.JsonWriter writer, object value, Newtonsoft.Json.JsonSerializer serializer)
             {
-                // ODataRow just serializes as a dictionary
-                serializer.Serialize(writer, ((ODataRow)value)._values);
+                // ODataEntity just serializes as a dictionary
+                serializer.Serialize(writer, ((ODataEntity)value)._values);
             }
             #endregion
         }
