@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Medallion.OData.Trees;
+using System.Runtime.Serialization;
 
 namespace Medallion.OData.Client
 {
@@ -481,26 +482,30 @@ namespace Medallion.OData.Client
 		}
 	}
 
-    // TODO all exceptions should be serializable, have good constructors
     /// <summary>
     /// Represents an error in compiling an <see cref="IQueryable"/> to OData
     /// </summary>
+    [Serializable]
 	public sealed class ODataCompileException : Exception
 	{
+        /// <summary>
+        /// Constructs an exception with a default message
+        /// </summary>
+        public ODataCompileException() : this("compilation to OData failed") { }
+
         /// <summary>
         /// Constructs an exception from a message
         /// </summary>
 		public ODataCompileException(string message)
-			: base(message)
-		{
-		}
+            : base(message) { }
 
         /// <summary>
         /// Constructs an exception from a message and inner exception
         /// </summary>
         public ODataCompileException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
+            : base(message, innerException) { }
+
+        internal ODataCompileException(SerializationInfo info, StreamingContext context)
+            : base(info, context) { }
 	}
 }

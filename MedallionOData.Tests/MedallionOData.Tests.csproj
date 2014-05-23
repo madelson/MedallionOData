@@ -70,6 +70,7 @@
     <Compile Include="Client\ClientSideProjectionBuilderTest.cs" />
     <Compile Include="Client\ODataRowTest.cs" />
     <Compile Include="ConversionHelpersTest.cs" />
+    <Compile Include="ExceptionsTest.cs" />
     <Compile Include="HelpersTest.cs" />
     <Compile Include="Integration\IntegrationTest.cs" />
     <Compile Include="Integration\Schema.cs" />
