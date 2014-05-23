@@ -158,7 +158,7 @@ namespace Medallion.OData.Client
 			/// </summary>
 			private bool TryTranslateMemberAccessAsSpecialMember(MemberExpression memberAccess, out ODataExpression result)
 			{
-				// TODO null handling?
+				// TODO FUTURE null handling?
 				Func<IEnumerable<ODataExpression>> translateInstance = () => this._translator.TranslateInternal(memberAccess.Expression).Enumerate();
 				if (memberAccess.Member.DeclaringType == typeof(string) && memberAccess.Member.Name == "Length")
 				{

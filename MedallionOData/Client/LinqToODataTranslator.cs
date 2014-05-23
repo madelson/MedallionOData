@@ -237,7 +237,7 @@ namespace Medallion.OData.Client
                 var normalized = QueryOperatorCanonicalizer.Canonicalize(call, changedAllToAny: out changedAllToAny);
                 if (normalized != call)
                 {
-                    // TODO better exception message here since expression being translated won't match?
+                    // TODO FUTURE better exception message here since expression being translated won't match?
                     var result = this.TranslateInternal(normalized);
                     if (changedAllToAny)
                     {
@@ -346,7 +346,6 @@ namespace Medallion.OData.Client
                         this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.First());
                         return Take(source, 1);
                     case "FirstOrDefault":
-                        // TODO won't work because default object is null but default of others is not
                         this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.FirstOrDefault());
                         return Take(source, 1);
                     case "Single":
@@ -479,80 +478,6 @@ namespace Medallion.OData.Client
 		private static bool TryGetValueFast(Expression expression, out object value)
 		{
 			return expression.TryGetValue(LinqHelpers.GetValueOptions.ConstantsFieldsAndProperties, out value);
-		}
-
-        // TODO are these comments still relevant?
-		// to use: when translating parameter => ParameterExp, shift, translate ParameterExp, shift back
-		// OR, just translate everything upfront! (props too!)
-		// at all times, need to know the current mapping for each property + the whole parameter + previous mappings for any prop that IS a parameter
-
-		// to translate MemberAccess:
-		// (1) if special property, translate instance, translate member
-		// (2) otherwise, call GetInlineValue()
-		//		(a) if it's a parameter
-		//			| root parameter -> Member(null)
-		//			| other parameter -> look up ODataExpression for member -> Member(exp)
-		//		(b) if it's a member -> look up ODataExpression for member (how)? -> 
-		//		(c) fail
-		// looking up an expression 
-
-		// select -> list of member paths (e. g. a.b.c) mapped to LinqExpressions -> extract to this form
-		// to translate a member, just figure out if it's a special member, or part of a path
-		private class ParameterMapping
-		{
-			private readonly ParameterMapping _innerMapping;
-			private readonly LambdaExpression _projection;
-			private readonly ODataExpression _translatedParameterExpression;
-			private readonly IReadOnlyDictionary<MemberInfo, Expression> _propExpressions;
-			private readonly IReadOnlyDictionary<MemberInfo, ODataExpression> _translatedPropExpressions; 
-
-			public ParameterMapping(LambdaExpression projection, ParameterMapping innerMapping, LinqToODataTranslator translator)
-			{
-				this._innerMapping = innerMapping;
-
-				Throw.If(projection.Parameters.Count != 1, "parameter mapping projection must have exactly 1 parameter!");
-				this._projection = projection;
-
-				// there are 3 types of projections we support
-				// (1) anonymous type projection
-				if (this._projection.Body.NodeType == ExpressionType.New && this._projection.Body.Type.IsAnonymous())
-				{
-					var @new = (NewExpression)this._projection.Body;
-					this._propExpressions = @new.Constructor.GetParameters()
-                        .Select((param, index) => new { param, index })
-						.ToDictionary(t => @new.Type.GetMember(t.param.Name).Single(), t => @new.Arguments[t.index], Helpers.MemberComparer);
-				}
-				// (2) object initializer
-				else if (this._projection.Body.NodeType == ExpressionType.MemberInit)
-				{
-					var memberInit = (MemberInitExpression)this._projection.Body;
-					if (memberInit.NewExpression.Arguments.Count > 0)
-					{
-						throw new ODataCompileException("Only parameterless constructors are supported with object initializers in OData. Found: " + memberInit);
-					}
-
-					this._propExpressions = memberInit.Bindings.Cast<MemberAssignment>().ToDictionary(mb => mb.Member, mb => mb.Expression, Helpers.MemberComparer);
-				}				
-				// (3) translatable value (e. g. x => x.B + 2)
-				else
-				{
-					this._propExpressions = new Dictionary<MemberInfo, Expression>(0);					
-				}
-
-				this._translatedParameterExpression = translator.TranslateInternal(this._projection.Body);
-				this._translatedPropExpressions = this._propExpressions.ToDictionary(kvp => kvp.Key, kvp => translator.TranslateInternal(kvp.Value));
-			}
-
-			public ODataExpression TranslateParameter(ParameterExpression parameter)
-			{
-				Throw.If(parameter.Type != this._projection.Parameters.Single().Type, "Bad parameter translation");
-				return this._translatedParameterExpression;
-			}
-
-			public ODataExpression TranslateParameterMemberAccess(MemberInfo member)
-			{
-				return this._translatedPropExpressions[member];
-			}
 		}
 	}
 
