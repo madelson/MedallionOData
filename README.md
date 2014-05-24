@@ -10,7 +10,7 @@ var categories = context.Query(@"http://services.odata.org/v3/odata/odata.svc/Ca
 
 var foodCategoryId = categories.Where(c => c.Get<string>("Name") == "Food")
     .Select(c => c.Get<int>("ID"))
-	// runs http://services.odata.org/v3/odata/odata.svc/Categories?$format=json&$filter=Name eq 'Food'&$select=ID
+	// hits http://services.odata.org/v3/odata/odata.svc/Categories?$format=json&$filter=Name eq 'Food'&$select=ID
 	.Single();
 Console.WriteLine(foodCategoryId); // 0
 
