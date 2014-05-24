@@ -56,11 +56,10 @@ namespace Medallion.OData.Trees
 	}
 
     /// <summary>
-    /// Represents the OData type system
+    /// Represents the OData type system. See http://msdn.microsoft.com/en-us/library/ff478141.aspx
     /// </summary>
 	public enum ODataExpressionType
 	{
-		// primitives (based on http://www.odata.org/documentation/odata-v3-documentation/)
 		/// <summary>Edm.Binary</summary>
         [ODataName("'Edm.Binary'")] Binary,
         /// <summary>Edm.Boolean</summary>

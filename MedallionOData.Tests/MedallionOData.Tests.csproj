@@ -73,6 +73,7 @@
     <Compile Include="ExceptionsTest.cs" />
     <Compile Include="HelpersTest.cs" />
     <Compile Include="Integration\IntegrationTest.cs" />
+    <Compile Include="Integration\MicrosoftODataServiceIntegrationTest.cs" />
     <Compile Include="Integration\Schema.cs" />
     <Compile Include="Integration\TestServer.cs" />
     <Compile Include="ODataParsingTest.cs" />
