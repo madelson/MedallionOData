@@ -47,6 +47,22 @@ namespace Medallion.OData.Client
             Throw.IfNull(url, "url");
             return this.Query<TElement>(new Uri(url));
         }
+
+        /// <summary>
+        /// Creates a "dynamic" query against the given uri
+        /// </summary>
+        public IQueryable<ODataEntity> Query(Uri url)
+        {
+            return this.Query<ODataEntity>(url);
+        }
+
+        /// <summary>
+        /// Creates a "dynamic" query against the given url
+        /// </summary>
+        public IQueryable<ODataEntity> Query(string url)
+        {
+            return this.Query<ODataEntity>(url);
+        }
         #endregion
 
         #region ---- IQueryProvider implementation ----
