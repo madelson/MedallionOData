@@ -272,7 +272,7 @@ namespace Medallion.OData.Client
 				return string.Format("{0}.Get<{1}>(\"{2}\")", typeof(ODataEntity), this.PropertyType, this.Name);
 			}
 
-			// TODO consider returning a static token with a new module each time instead
+			// TODO FUTURE consider returning a static token with a new module each time instead
 			public override int MetadataToken { get { return this._metadataToken; } }
 			public override Module Module { get { return EntityModule.Instance; } }
 
