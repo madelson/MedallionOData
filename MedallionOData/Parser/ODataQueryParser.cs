@@ -26,7 +26,7 @@ namespace Medallion.OData.Parser
 			if (filterString != null)
 			{
                 // TODO should probably remove these decodes, since HttpUtility.Parse does this
-				var parser = new ODataExpressionLanguageParser(elementType, HttpUtility.UrlDecode(filterString));
+				var parser = new ODataExpressionLanguageParser(elementType, filterString);
 				filter = parser.Parse();
 			}
 
@@ -34,7 +34,7 @@ namespace Medallion.OData.Parser
 			var orderByString = parameters["$orderby"];
 			if (orderByString != null)
 			{
-				var parser = new ODataExpressionLanguageParser(elementType, HttpUtility.UrlDecode(orderByString));
+				var parser = new ODataExpressionLanguageParser(elementType, orderByString);
 				orderBy = parser.ParseSortKeyList();
 			}
 
@@ -64,7 +64,7 @@ namespace Medallion.OData.Parser
             var selectString = parameters["$select"];
             if (selectString != null)
             {
-                var parser = new ODataExpressionLanguageParser(elementType, HttpUtility.UrlDecode(selectString));
+                var parser = new ODataExpressionLanguageParser(elementType, selectString);
                 select = parser.ParseSelectColumnList();
             }
 
