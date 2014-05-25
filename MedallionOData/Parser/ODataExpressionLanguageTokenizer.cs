@@ -129,7 +129,7 @@ namespace Medallion.OData.Parser
 				{ ODataTokenKind.Mod, @"mod" + followedByNonWord },
 				{ ODataTokenKind.Asc, @"asc" + followedByNonWord },
 				{ ODataTokenKind.Desc, @"desc" + followedByNonWord },
-				// TODO time, date-time offset
+				// TODO VNEXT time, date-time offset
 				{ ODataTokenKind.LeftParen, @"\(" },
 				{ ODataTokenKind.RightParen, @"\)" },
 				{ ODataTokenKind.Star, @"\*" },

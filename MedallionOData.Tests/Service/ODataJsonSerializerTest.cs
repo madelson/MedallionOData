@@ -1,9 +1,11 @@
 ﻿using Medallion.OData.Service;
+using Medallion.OData.Trees;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -36,6 +38,21 @@ namespace Medallion.OData.Tests.Service
                 result,
                 @"[{
                     'Id': 1
+                }]"
+            );
+        }
+
+        [TestMethod]
+        public void DatesTest()
+        {
+            // TODO VNEXT test datetimeoffset
+            ODataQueryProjectorTest.Base.Counter = 0;
+            var date = DateTime.Parse("2006-10-01T00:00:10");
+            var result = new ODataJsonSerializer().Serialize(new[] { new Dates { DateTime = date } }, new Dictionary<ODataSelectColumnExpression, IReadOnlyList<PropertyInfo>> { { ODataExpression.SelectStar(), Empty<PropertyInfo>.Array } }, null);
+            this.Compare(
+                result,
+                @"[{
+                    'DateTime': '2006-10-01T00:00:10'
                 }]"
             );
         }
@@ -85,6 +102,11 @@ namespace Medallion.OData.Tests.Service
         {
             public int? Count { get; set; }
             public Action<ODataQueryProjectorTest.A> ModifyAction { get; set; }
+        }
+
+        private class Dates
+        {
+            public DateTime DateTime { get; set; }
         }
 
         private string Serialize(Settings settings, params Expression<Func<ODataQueryProjectorTest.A, object>>[] expressions)

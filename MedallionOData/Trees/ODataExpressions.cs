@@ -14,7 +14,6 @@ namespace Medallion.OData.Trees
     /// </summary>
 	public sealed class ODataBinaryOpExpression : ODataExpression
 	{
-		// TODO implicit cast checks (& insertions), static factory methods
 		internal ODataBinaryOpExpression(ODataExpression left, ODataBinaryOp @operator, ODataExpression right, Type clrType)
 			: base(ODataExpressionKind.BinaryOp, clrType.ToODataExpressionType(), clrType)
 		{
@@ -269,7 +268,7 @@ namespace Medallion.OData.Trees
     public sealed class ODataSelectColumnExpression : ODataExpression
 	{
 		internal ODataSelectColumnExpression(ODataMemberAccessExpression expression, bool allColumns)
-            // TODO we have to pass typeof(object) here for select *. We could fix this with a "ParameterExpression" type
+            // TODO FUTURE we have to pass typeof(object) here for select *. We could fix this with a "ParameterExpression" type
 			: base(ODataExpressionKind.SelectColumn, expression != null ? expression.Type : ODataExpressionType.Complex, expression != null ? expression.ClrType : typeof(object))
 		{
 			this.Expression = expression;
@@ -305,8 +304,7 @@ namespace Medallion.OData.Trees
     /// </summary>
 	public class ODataQueryExpression : ODataExpression
 	{
-		// TODO expand
-		// TODO select
+		// TODO VNEXT expand
 		internal ODataQueryExpression(
 			ODataExpression filter,
 			IReadOnlyList<ODataSortKeyExpression> orderBy,

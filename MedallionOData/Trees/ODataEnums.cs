@@ -91,7 +91,7 @@ namespace Medallion.OData.Trees
         /// <summary>Edm.DateTimeOffset</summary>
 		[ODataName("'Edm.DateTimeOffset'")] DateTimeOffset,
 
-		// TODO geography/geometry types
+		// TODO FUTURE geography/geometry types
 
 		/// <summary>
 		/// Not really a type, but used to model "null" constants

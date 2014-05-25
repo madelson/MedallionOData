@@ -75,7 +75,7 @@ namespace Medallion.OData.Tests.Integration
 
     public class CustomersContext : DbContext
     {
-        // TODO instead of caching this in memory, read it back on command to sync date values (or insert reasonable date values)
+        // TODO FUTURE instead of caching this in memory, read it back on command to sync date values (or insert reasonable date values)
         private static IReadOnlyList<Customer> _customers;
         public static IReadOnlyList<Customer> GetCustomers()
         {

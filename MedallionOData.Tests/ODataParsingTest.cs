@@ -127,11 +127,11 @@ namespace Medallion.OData.Tests
         public void TestParseExpressionLanguageNegativeL() { this.TestParseExpressionLanguage("-64L"); }
         [TestMethod]
         public void TestParseExpressionLanguageHelloOData() { this.TestParseExpressionLanguage("'Hello OData'"); }
-        //[TestCase("X'23AB", Ignore = true)] // TODO not implemented
-        //[TestCase("binary'23ABFF'", Ignore = true)] // TODO not implemented
-        //[TestCase("FF", Ignore = true)] // TODO not implemented
-        //[TestCase("13:20:00", Ignore = true)] // TODO time not implemented
-		//[TestCase("datetimeoffset'2002-10-10T17:00:00Z'", Ignore = true)] // todo datetimeoffet not implemente
+        //[TestCase("X'23AB", Ignore = true)] // TODO FUTURE not implemented
+        //[TestCase("binary'23ABFF'", Ignore = true)] // TODO FUTURE not implemented
+        //[TestCase("FF", Ignore = true)] // TODO FUTURE not implemented
+        //[TestCase("13:20:00", Ignore = true)] // TODO VNEXT time not implemented
+		//[TestCase("datetimeoffset'2002-10-10T17:00:00Z'", Ignore = true)] // TODO VNEXT datetimeoffet not implemente
 		// my test cases
         [TestMethod]
         public void TestParseExpressionLanguageTextNeNull() { this.TestParseExpressionLanguage("Text ne null"); }
@@ -213,7 +213,8 @@ namespace Medallion.OData.Tests
         [TestMethod]
         public void TestOperatorInPath()
         {
-            // TODO debatable whether this should match eq as an identifier
+            // TODO FUTURE debatable whether this should match eq as an identifier. Should
+            // we use lookbehind to prevent this?
             this.TestLex("a/eq", ODataTokenKind.Identifier, ODataTokenKind.Slash, ODataTokenKind.Eq);
         }
 

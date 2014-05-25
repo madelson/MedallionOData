@@ -25,7 +25,6 @@ namespace Medallion.OData.Parser
 			var filterString = parameters["$filter"];
 			if (filterString != null)
 			{
-                // TODO should probably remove these decodes, since HttpUtility.Parse does this
 				var parser = new ODataExpressionLanguageParser(elementType, filterString);
 				filter = parser.Parse();
 			}

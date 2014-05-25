@@ -123,7 +123,6 @@ namespace Medallion.OData.Service
 					switch (call.Function)
 					{
 						// TODO NullReferenceExceptions
-						// TODO real dates
 						case ODataFunction.Cast:
 							return Expression.Convert(arguments[0], (Type)((ConstantExpression)arguments[1]).Value);
 						case ODataFunction.Ceiling:

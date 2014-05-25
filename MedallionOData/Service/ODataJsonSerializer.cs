@@ -129,7 +129,6 @@ namespace Medallion.OData.Service
 
         private static void WriteValue(object value, JsonWriter writer)
         {
-            // TODO consider whether we need to special-case any types (e. g. dates)
             writer.WriteValue(value);
         }
 
