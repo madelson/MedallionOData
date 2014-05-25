@@ -82,7 +82,7 @@ namespace Medallion.OData.Service
 					var binaryOp = (ODataBinaryOpExpression)expression;
 					var originalLeft = Translate(parameter, binaryOp.Left);
 					var originalRight = Translate(parameter, binaryOp.Right);
-                    // TODO do we still need these negotiates?
+                    // MA: nullability negotiation comes up with an expression like "NullableDoubleProp eq 0.1"
 					var left = originalLeft.NegotiateNullabilityWith(originalRight);
 					var right = originalRight.NegotiateNullabilityWith(originalLeft);
 					switch (binaryOp.Operator)
@@ -122,7 +122,7 @@ namespace Medallion.OData.Service
 						.ToArray();
 					switch (call.Function)
 					{
-						// TODO NullReferenceExceptions
+						// TODO FUTURE: rethink how we apply functions to nullables NullReferenceExceptions
 						case ODataFunction.Cast:
 							return Expression.Convert(arguments[0], (Type)((ConstantExpression)arguments[1]).Value);
 						case ODataFunction.Ceiling:
