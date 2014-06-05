@@ -49,6 +49,7 @@ namespace Medallion.OData.Service
             return this.Serialize(projectedQuery, projectResult.ProjectMapping, inlineCount);
         }
 
+        // TODO VNext consider returning object here, allowing us to use JTokenWriter at times instead of JsonTextWriter
         internal string Serialize(IEnumerable projectedQuery, IReadOnlyDictionary<ODataSelectColumnExpression, PropertyPath> projectMapping, int? inlineCount)
         {
             Throw.IfNull(projectedQuery, "projectedQuery");
