@@ -35,6 +35,8 @@ The example uses EntityFramework and .NET MVC, but the MedallionOData library do
 [Route("Categories")]
 public ActionResult Categories()
 {
+	private static readonly ODataService service = new ODataService();
+
 	using (var db = new MyDbContext())
 	{
 		IQueryable<Category> query = db.Categories;
