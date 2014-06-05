@@ -8,7 +8,7 @@ using System.Web.Security;
 using System.Web.SessionState;
 using System.Web.Http;
 
-namespace MedallionOData.Samples.Web
+namespace Medallion.OData.Samples.Web
 {
     public class Global : HttpApplication
     {

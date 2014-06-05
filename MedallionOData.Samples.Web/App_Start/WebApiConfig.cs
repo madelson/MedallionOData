@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Http;
 
-namespace MedallionOData.Samples.Web
+namespace Medallion.OData.Samples.Web
 {
     public static class WebApiConfig
     {

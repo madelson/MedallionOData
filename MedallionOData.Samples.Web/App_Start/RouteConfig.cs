@@ -5,7 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Routing;
 
-namespace MedallionOData.Samples.Web
+namespace Medallion.OData.Samples.Web
 {
     public class RouteConfig
     {

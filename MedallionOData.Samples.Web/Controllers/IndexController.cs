@@ -4,7 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 
-namespace MedallionOData.Samples.Web.Controllers
+namespace Medallion.OData.Samples.Web.Controllers
 {
     public class IndexController : Controller
     {
