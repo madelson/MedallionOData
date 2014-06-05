@@ -1,0 +1,25 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+</head>
+<body>
+    <pre>
+        Welcome to the sample app. Click on one of the links to get started! Then, try entering different OData queries
+        in your browser's url bar.
+    </pre>
+    <div> 
+        @Html.ActionLink("Mvc Example", "Companies", "ODataMvc", new RouteValueDictionary { { "$format", "json" } }, new Dictionary<string, object>())
+    </div>
+    <div>
+        <a href="/api/OData/Companies?$format=json">WebApi Example</a>
+    </div> 
+</body>
+</html>
