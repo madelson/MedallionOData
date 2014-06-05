@@ -24,7 +24,8 @@ namespace Medallion.OData.Service
         }
 
         /// <summary>
-        /// Executes the given query with the gien url query options
+        /// Executes the given query with the given url query options. A <see cref="NameValueCollection"/>
+        /// can be retrieved from a <see cref="Uri"/> using <see cref="System.Web.HttpUtility.ParseQueryString(string)"/>
         /// </summary>
         public Result Execute<TElement>(IQueryable<TElement> query, NameValueCollection urlQuery)
         {
@@ -37,6 +38,23 @@ namespace Medallion.OData.Service
             var serialized = this._pipeline.Serialize(projectResult);
 
             return new Result(serialized, parseResult.ODataQuery.Format);
+        }
+
+        /// <summary>
+        /// Executes the given query with the given url query options. Url query values can be retrieved in WebApi
+        /// via the GetQueryNameValuePairs extension method on HttpRequestMessage
+        /// </summary>
+        public Result Execute<TElement>(IQueryable<TElement> query, IEnumerable<KeyValuePair<string, string>> urlQuery)
+        {
+            Throw.IfNull(urlQuery, "urlQuery");
+
+            var nameValueCollection = new NameValueCollection();
+            foreach (var kvp in urlQuery)
+            {
+                nameValueCollection.Add(kvp.Key, kvp.Value);
+            }
+
+            return this.Execute(query, nameValueCollection);
         }
 
         /// <summary>
