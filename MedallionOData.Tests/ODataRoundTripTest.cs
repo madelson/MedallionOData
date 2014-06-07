@@ -236,6 +236,12 @@ namespace Medallion.OData.Tests
             );
         }
 
+        [TestMethod]
+        public void TestMultipleNegation()
+        {
+            this.VerifyQuery(q => q.Where(a => !!(a.Int % 2 == 1)));
+        }
+
 		private void VerifyQuery<TClient, TClientResult, TResult>(Func<IQueryable<TClient>, IQueryable<TClientResult>> clientQueryTransform, Func<IQueryable<A>, IQueryable<TResult>> expectedTransform, bool requireNonEmpty = true)
 		{
             var comparer = GetComparer<TResult>();

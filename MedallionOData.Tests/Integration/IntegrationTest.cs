@@ -273,6 +273,17 @@ namespace Medallion.OData.Tests.Integration
                 );
         }
 
+        [TestMethod]
+        public void IntegrationTestLet()
+        {
+            var query = (from c in this.CustomersODataQuery()
+                         let trimmedName = c.Name.Trim()
+                         let isBert = trimmedName.EndsWith("ert")
+                         where isBert || !c.CompanyId.HasValue
+                         select trimmedName);
+            query.CollectionShouldEqual(CustomersContext.GetCustomers().Where(c => c.Name.Trim().EndsWith("ert") || !c.CompanyId.HasValue).Select(c => c.Name.Trim()));
+        }
+
         private IQueryable<Customer> CustomersODataQuery()
         {
             return _provider.Query<Customer>(_testServer.Prefix + "customers");

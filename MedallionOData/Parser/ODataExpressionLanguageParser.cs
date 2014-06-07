@@ -17,7 +17,7 @@ namespace Medallion.OData.Parser
 		// call = id ( expressionList )
 		// memberaccess = id [/ id]*
 		// simple = [literal | call | memberaccess | group]
-		// unary = [not]? simple
+		// unary = [not]? unary
 		// factor = unary [[+ | -] unary]*
 		// term = factor [[* | / | %] factor]*
 		// comparison = term [[eq | ne | ...]* term]
@@ -188,7 +188,7 @@ namespace Medallion.OData.Parser
 		private ODataExpression ParseUnary()
 		{
 			return this.TryEat(ODataTokenKind.Not)
-				? ODataExpression.UnaryOp(this.ParseSimple(), ODataUnaryOp.Not)
+				? ODataExpression.UnaryOp(this.ParseUnary(), ODataUnaryOp.Not)
 				: this.ParseSimple();
 		}
 

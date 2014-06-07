@@ -11,7 +11,7 @@ namespace Medallion.OData.Tests.Integration
     [TestClass]
     public class MicrosoftODataServiceIntegrationTest
     {
-        private ODataQueryContext context = new ODataQueryContext();
+        private static readonly ODataQueryContext context = new ODataQueryContext();
         private const string BaseUrl = @"http://services.odata.org/v3/odata/odata.svc/";
 
         [TestMethod]

@@ -132,7 +132,8 @@ namespace Medallion.OData.Tests
         //[TestCase("FF", Ignore = true)] // TODO FUTURE not implemented
         //[TestCase("13:20:00", Ignore = true)] // TODO VNEXT time not implemented
 		//[TestCase("datetimeoffset'2002-10-10T17:00:00Z'", Ignore = true)] // TODO VNEXT datetimeoffet not implemente
-		// my test cases
+		
+        // my test cases
         [TestMethod]
         public void TestParseExpressionLanguageTextNeNull() { this.TestParseExpressionLanguage("Text ne null"); }
         [TestMethod]
@@ -145,6 +146,17 @@ namespace Medallion.OData.Tests
         public void TestParseExpressionLanguageCastIntEdmDouble() { this.TestParseExpressionLanguage("cast(Int, 'Edm.Double')"); }
         [TestMethod]
         public void TestParseExpressionLanguageSubAddMul() { this.TestParseExpressionLanguage("1 sub 2 add 3 mul 4"); }
+        [TestMethod]
+        public void TestParseUnaryPrecedence()
+        {
+            this.TestParseExpressionLanguage("not Bool and Bool");
+            this.TestParseExpressionLanguage("not(Bool and not Bool)");
+        }
+        [TestMethod]
+        public void TestParseMultipleNegation()
+        {
+            this.TestParseExpressionLanguage("not not not Bool");
+        }
 
 		private void TestParseExpressionLanguage(string input)
 		{

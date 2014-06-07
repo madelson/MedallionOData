@@ -92,7 +92,10 @@ namespace Medallion.OData.Trees
 
 		internal override string ToODataExpressionLanguage()
 		{
-			return string.Format("{0} {1}", this.Operator.ToODataString(), this.Operand);
+            // we need parens if the operand is lower priority than the operator
+            var needsParens = this.Operand.Kind == ODataExpressionKind.BinaryOp;
+
+			return string.Format(needsParens ? "{0}({1})" : "{0} {1}", this.Operator.ToODataString(), this.Operand);
 		}
 	}
 
