@@ -1,6 +1,6 @@
 # MedallionOData
 
-MedallionOData is a lightweight, zero-setup .NET library for creating and querying [OData](http://msdn.microsoft.com/en-us/library/ff478141.aspx) and OData-like services. MedallionOData is available for download as a [NuGet package](https://www.nuget.org/packages/MedallionOData). For a more detailed introduction, check out [my tutorial on CodeDucky](http://www.codeducky.org/introducing-medallionodata/).
+MedallionOData is a lightweight, zero-setup .NET library for creating and querying [OData](http://msdn.microsoft.com/en-us/library/ff478141.aspx) and OData-like services. MedallionOData is available for download as a [NuGet package](https://www.nuget.org/packages/MedallionOData). For a more detailed introduction, check out [my tutorial on Code Ducky](http://www.codeducky.org/introducing-medallionodata/).
 
 ## Querying a service
 
