@@ -32,11 +32,11 @@ var foodCategoryId2 = categories2.Where(c => c.Name == "Food")
 The example uses EntityFramework and .NET MVC, but the MedallionOData library doesn't depend on either.
 
 ```C#
-[Route("Categories")]
+private static readonly ODataService service = new ODataService();
+
+[Route("Categories")] // any form of mapping the route will do
 public ActionResult Categories()
 {
-	private static readonly ODataService service = new ODataService();
-
 	using (var db = new MyDbContext())
 	{
 		IQueryable<Category> query = db.Categories;
