@@ -66,7 +66,7 @@ namespace Medallion.OData.Trees
 			}
             else
             {
-                throw new ArgumentException(string.Format("Types {0} and {1} cannot be used with operator {2}", left.Type, right.Type, @operator));
+                throw new ArgumentException(string.Format("Operator {0} cannot be applied to operands of type '{1}' and '{2}'", @operator, left.Type, right.Type));
             }
 
             // determine the result type
