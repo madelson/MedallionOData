@@ -146,7 +146,12 @@ namespace Medallion.OData.Service
         {
             Throw.IfNull(projectResult, "projectResult");
             IODataSerializer serializer;
-            Throw<NotSupportedException>.If(!this._serializersByFormat.TryGetValue(projectResult.ODataQuery.Format, out serializer), "No serializer is available for the given format");
+            // MA: TryGetValue throws on nulls, so we need this to be a separate check
+            Throw<NotSupportedException>.If(projectResult.ODataQuery.Format == null, "No format argument was provided");
+            Throw<NotSupportedException>.If(
+                !this._serializersByFormat.TryGetValue(projectResult.ODataQuery.Format, out serializer), 
+                "No serializer is available for the given format"
+            );
 
             var result = serializer.Serialize(projectResult);
             return result;
