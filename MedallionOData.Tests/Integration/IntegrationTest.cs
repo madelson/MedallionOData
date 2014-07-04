@@ -96,6 +96,34 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
+        public void IntegrationDynamicWithIntDoubleMixup()
+        {
+            this.Test(
+                "customers",
+                (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double>("AwardCount") == 5)
+                    .Select(c => c.Get<string>("Name")),
+                    expected: CustomersContext.GetCustomers().Where(c => c.AwardCount == 5)
+                        .Select(c => c.Name)
+            );
+
+            this.Test(
+                "customers",
+                (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double>("AwardCount") > 4.7)
+                    .Select(c => c.Get<string>("Name")),
+                    expected: CustomersContext.GetCustomers().Where(c => c.AwardCount > 4.7)
+                        .Select(c => c.Name)
+            );
+
+            this.Test(
+                "customers",
+                (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double?>("Salary") > 50000)
+                    .Select(c => c.Get<string>("Name")),
+                    expected: CustomersContext.GetCustomers().Where(c => c.Salary > 50000)
+                        .Select(c => c.Name)
+            );
+        }
+
+        [TestMethod]
         public void IntegrationDynamicRowComplexQuery()
         {
             this.Test(

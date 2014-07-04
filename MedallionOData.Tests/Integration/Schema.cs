@@ -23,6 +23,8 @@ namespace Medallion.OData.Tests.Integration
         public Guid Id { get; set; }
         public string Name { get; set; }
         public DateTime DateCreated { get; set; }
+        public int AwardCount { get; set; }
+        public double Salary { get; set; }
 
         public Guid? CompanyId { get; set; }
         [ForeignKey("CompanyId")]
@@ -83,9 +85,9 @@ namespace Medallion.OData.Tests.Integration
             var farm = new Company { Name = "Farm" };
             var customers = new[]
             {
-                new Customer { Name = "Albert", Company = mine },
-                new Customer { Name = "Bert", Company = mine },
-                new Customer { Name = "Catherine", Company = farm },
+                new Customer { Name = "Albert", Company = mine, AwardCount = 5 },
+                new Customer { Name = "Bert", Company = mine, AwardCount = 1 },
+                new Customer { Name = "Catherine", Company = farm, Salary = 50000.5 },
                 new Customer { Name = "Dominic", Company = farm },
                 new Customer { Name = "Ethel", Company = farm },
                 new Customer { Name = "Fred" },
