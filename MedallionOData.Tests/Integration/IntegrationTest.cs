@@ -298,5 +298,42 @@ namespace Medallion.OData.Tests.Integration
             var result = resultQuery.ToArray();
             result.CollectionShouldEqual(expected, orderMatters: orderMatters, comparer: comparer);
         }
+
+        [TestMethod]
+        public void IntegrationTestRelativeUri()
+        {
+            var provider = new ODataQueryContext(new RelativeUriPipeline());
+            provider.Query<Customer>("/customers")
+                .Single(c => c.Name == "Albert")
+                .Id
+                .ShouldEqual(CustomersContext.GetCustomers().Single(c => c.Name == "Albert").Id);
+
+            provider.Query<Customer>(new Uri("/customers", UriKind.Relative))
+                .Single(c => c.Name == "Albert")
+                .Id
+                .ShouldEqual(CustomersContext.GetCustomers().Single(c => c.Name == "Albert").Id);
+        }
+
+        private class RelativeUriPipeline : IODataClientQueryPipeline
+        {
+            private readonly IODataClientQueryPipeline _pipeline = new DefaultODataClientQueryPipeline();
+
+            IODataTranslationResult IODataClientQueryPipeline.Translate(System.Linq.Expressions.Expression expression, ODataQueryOptions options)
+            {
+                return this._pipeline.Translate(expression, options);
+            }
+
+            Task<IODataWebResponse> IODataClientQueryPipeline.ReadAsync(Uri url)
+            {
+                Assert.IsFalse(url.IsAbsoluteUri, "relative uri expected!");
+                var finalUri = new Uri(new Uri(_testServer.Prefix), url.ToString().TrimStart('/'));
+                return this._pipeline.ReadAsync(finalUri);
+            }
+
+            Task<IODataDeserializationResult> IODataClientQueryPipeline.DeserializeAsync(IODataTranslationResult translation, System.IO.Stream response)
+            {
+                return this._pipeline.DeserializeAsync(translation, response);
+            }
+        }
     }
 }

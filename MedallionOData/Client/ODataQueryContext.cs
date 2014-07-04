@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
@@ -45,7 +46,7 @@ namespace Medallion.OData.Client
         public IQueryable<TElement> Query<TElement>(string url)
         {
             Throw.IfNull(url, "url");
-            return this.Query<TElement>(new Uri(url));
+            return this.Query<TElement>(new Uri(url, UriKind.RelativeOrAbsolute));
         }
 
         /// <summary>
@@ -114,24 +115,35 @@ namespace Medallion.OData.Client
             );
             Throw<InvalidOperationException>.If(rootQuery.Url == null, "Invalid root query");
 
-            // build the final url
-            var url = new UriBuilder(rootQuery.Url);
-            var baseQueryParams = HttpUtility.ParseQueryString(url.Query);
-            var oDataQueryParams = translationResult.ODataQuery.ToNameValueCollection();
-            foreach (string key in oDataQueryParams)
-            {
-                baseQueryParams[key] = oDataQueryParams[key];
-            }
-            // see http://stackoverflow.com/questions/3865975/namevaluecollection-to-url-query
-            url.Query = baseQueryParams.ToString();
+            // build the request url, incorporating the OData parameters
+            var requestUri = CreateRequestUri(rootQuery.Url, translationResult.ODataQuery.ToNameValueCollection());
 
-            using (var response = await this._pipeline.ReadAsync(url.Uri).ConfigureAwait(false))
+            using (var response = await this._pipeline.ReadAsync(requestUri).ConfigureAwait(false))
             {
                 var responseStream = await response.GetResponseStreamAsync().ConfigureAwait(false);
                 var deserialized = await this._pipeline.DeserializeAsync(translationResult, responseStream).ConfigureAwait(false);
                 var result = translationResult.PostProcessor(deserialized);
                 return new ExecuteResult(result, deserialized.InlineCount);
             }
+        }
+
+        // internal for testing purposes
+        internal static Uri CreateRequestUri(Uri baseUri, NameValueCollection oDataQueryParams)
+        {
+            // this is particularly annoying because the Uri class has such poor support for relative uris (e. g. you can't even get the query string)
+            // similarly, UriBuilder does not support relative uris
+            var baseUriString = baseUri.ToString();
+            var baseQueryString = (baseUri.IsAbsoluteUri ? baseUri : new Uri(new Uri("http://localhost:80"), baseUriString)).Query;
+            var baseQueryParams = HttpUtility.ParseQueryString(baseQueryString);
+            foreach (string key in oDataQueryParams)
+            {
+                baseQueryParams[key] = oDataQueryParams[key];
+            }
+            
+            // see http://stackoverflow.com/questions/3865975/namevaluecollection-to-url-query
+            var finalQueryString = baseQueryParams.ToString();
+            var finalUriString = baseUriString.Substring(startIndex: 0, length: baseUriString.Length - baseQueryString.Length) + "?" + finalQueryString;
+            return new Uri(finalUriString, UriKind.RelativeOrAbsolute);
         }
 
         private sealed class ExecuteResult : Tuple<object, int?>
