@@ -210,7 +210,7 @@ namespace Medallion.OData
             // We can't use the above code because it will mimic a cast in a generic method
             // which doesn't have the same semantics as a cast in a non-generic method
 
-            var list = new List<TTo>(capacity: 1);
+            var list = new List<TTo>(capacity: 0);
             var binder = CSharpBinder.InvokeMember(
                 flags: CSharpBinderFlags.ResultDiscarded,
                 name: "Add",
