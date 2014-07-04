@@ -22,7 +22,7 @@ namespace Medallion.OData.Client
         /// </summary>
         public ODataQueryContext(IODataClientQueryPipeline pipeline = null)
         {
-            this._pipeline = new DefaultODataClientQueryPipeline();
+            this._pipeline = pipeline ?? new DefaultODataClientQueryPipeline();
         }
 
         #region ---- Query factory methods ----
