@@ -124,7 +124,7 @@ namespace Medallion.OData.Client
 
         private sealed class HttpWebResponseWebResponse : IODataWebResponse
         {
-            private HttpWebResponse _response;
+            private readonly HttpWebResponse _response;
 
             public HttpWebResponseWebResponse(HttpWebResponse response)
             {

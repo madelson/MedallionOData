@@ -12,7 +12,7 @@ namespace Medallion.OData.Client
     /// </summary>
     public sealed class ODataQueryOptions
     {
-        private static ODataQueryOptions _defaultOptions = new ODataQueryOptions();
+        private static readonly ODataQueryOptions _defaultOptions = new ODataQueryOptions();
         internal static ODataQueryOptions Default { get { return _defaultOptions; } }
 
         /// <summary>
