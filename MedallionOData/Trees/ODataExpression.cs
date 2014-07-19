@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Medallion.OData.Client;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -49,7 +50,36 @@ namespace Medallion.OData.Trees
 
             // add in implicit conversions as needed
             ODataExpression convertedLeft, convertedRight;
-			if (left.Type == right.Type)
+            if ((left.Type == ODataExpressionType.Unknown || left.Type == ODataExpressionType.Null) 
+                && (right.Type == ODataExpressionType.Unknown || right.Type == ODataExpressionType.Null))
+            {
+                var canonicalType = GetCanonicalArgumentType(@operator);
+                if (canonicalType != typeof(Unknown))
+                {
+                    convertedLeft = left.Type == ODataExpressionType.Unknown
+                        ? ConvertFromUnknownType(left, canonicalType)
+                        : LiftNullToUnknown(left);
+                    convertedRight = right.Type == ODataExpressionType.Unknown
+                        ? ConvertFromUnknownType(right, canonicalType)
+                        : LiftNullToUnknown(right);
+                }
+                else 
+                {
+                    convertedLeft = left.Type == ODataExpressionType.Null ? LiftNullToUnknown(left) : left;
+                    convertedRight = right.Type == ODataExpressionType.Null ? LiftNullToUnknown(right) : right;
+                }
+            }
+            else if (left.Type == ODataExpressionType.Unknown)
+            {
+                convertedLeft = ConvertFromUnknownType(left, right.ClrType);
+                convertedRight = right;
+            }
+            else if (right.Type == ODataExpressionType.Unknown)
+            {
+                convertedLeft = left;
+                convertedRight = ConvertFromUnknownType(right, left.ClrType); ;
+            }
+			else if (left.Type == right.Type)
 			{
                 convertedLeft = left;
                 convertedRight = right;
@@ -87,7 +117,10 @@ namespace Medallion.OData.Trees
                 case ODataBinaryOp.LessThanOrEqual:
                 case ODataBinaryOp.GreaterThanOrEqual:
                 case ODataBinaryOp.GreaterThan:
-                    Throw.If(!operandType.IsNumeric() && !NonNumericComparableTypes.Contains(operandType), "Operator requires a type with comparison operators defined");
+                    Throw.If(
+                        !operandType.IsNumeric() && !NonNumericComparableTypes.Contains(operandType) && operandType != ODataExpressionType.Unknown, 
+                        "Operator requires a type with comparison operators defined"
+                    );
                     resultClrType = typeof(bool);
                     break;
                 case ODataBinaryOp.And:
@@ -110,9 +143,13 @@ namespace Medallion.OData.Trees
         internal static ODataUnaryOpExpression UnaryOp(ODataExpression operand, ODataUnaryOp @operator)
 		{
 			Throw.IfNull(operand, "operand");
-			Throw.If(operand.Type != ODataExpressionType.Boolean, "operand: must be a boolean type");
+			Throw.If(operand.Type != ODataExpressionType.Boolean && operand.Type != ODataExpressionType.Unknown, "operand: must be a boolean type");
 
-			return new ODataUnaryOpExpression(operand, @operator);
+            var finalOperand = operand.Type == ODataExpressionType.Unknown
+                ? ConvertFromUnknownType(operand, typeof(bool))
+                : operand;
+
+			return new ODataUnaryOpExpression(finalOperand, @operator);
 		}
 
         internal static ODataConvertExpression Convert(ODataExpression expression, Type clrType)
@@ -123,8 +160,11 @@ namespace Medallion.OData.Trees
             Throw<ArgumentException>.If(
                 // can only convert where (1) a cast is valid or (2) a cast might succeed because the target type
                 // derives from of the expression type
-                !expression.ClrType.IsCastableTo(clrType)
-                    && !clrType.IsAssignableFrom(expression.ClrType),
+                expression.Type == ODataExpressionType.Unknown
+                || (
+                    !expression.ClrType.IsCastableTo(clrType)
+                    && !clrType.IsAssignableFrom(expression.ClrType)
+                ),
                 () => "cannot convert from " + expression.ClrType + " to " + clrType
             );
 			return new ODataConvertExpression(expression, clrType);
@@ -147,6 +187,8 @@ namespace Medallion.OData.Trees
             }
             else
             {
+                Throw.If(clrType == typeof(Unknown), "clrType: cannot create an unknown constant with a value");
+
                 var finalClrType = clrType ?? value.GetType();
                 var oDataType = finalClrType.ToODataExpressionType();
                 Throw<ArgumentException>.If(!oDataType.IsPrimitive() && oDataType != ODataExpressionType.Type, () => "Cannot create a non-null constant of non-primitive type " + finalClrType);
@@ -175,31 +217,35 @@ namespace Medallion.OData.Trees
 			var signatures = FunctionSignatures[function];
 			var matches =
 				(from s in signatures
-                 let args = s.Arguments.Select((v, i) => new { Value = v, Index = i })
+                let args = s.Arguments.Select((v, i) => new { Value = v, Index = i })
 			    let score = s.Arguments.Count != argumentsList.Count ? default(int?)
-				    : args.All(iv => !iv.Value.HasValue || iv.Value.Value == argumentsList[iv.Index].Type) ? 0
-				    : args.All(iv => !iv.Value.HasValue || argumentsList[iv.Index].Type.IsImplicityCastableTo(iv.Value.Value)) ? 1
+                    : args.All(iv => !iv.Value.HasValue || iv.Value.Value == argumentsList[iv.Index].Type || argumentsList[iv.Index].Type == ODataExpressionType.Unknown) ? 0
+                    : args.All(iv => !iv.Value.HasValue || argumentsList[iv.Index].Type.IsImplicityCastableTo(iv.Value.Value) || argumentsList[iv.Index].Type == ODataExpressionType.Unknown) ? 1
 				    : default(int?)
 				where score.HasValue
 				orderby score
 				select new { sig = s, score })
 				.ToArray();
 			Throw<ArgumentException>.If(matches.Length == 0, () => string.Format("No version of {0} matched the argument types [{1}]", function, arguments.Select(a => a.Type).ToDelimitedString(", ")));
-			Throw<ArgumentException>.If(matches.Length > 1 && matches[0].score == matches[1].score, () => string.Format("Ambiguous match for argument types [{0}] between {1} and {2}", arguments.Select(a => a.Type).ToDelimitedString(", "), matches[0].sig, matches[1].sig));
+			Throw<ArgumentException>.If(
+                matches.Length > 1 && matches[0].score == matches[1].score && argumentsList.All(e => e.Type != ODataExpressionType.Unknown), 
+                () => string.Format("Ambiguous match for argument types [{0}] between {1} and {2}", arguments.Select(a => a.Type).ToDelimitedString(", "), matches[0].sig, matches[1].sig)
+            );
 
 			var match = matches[0].sig;
-			var castArguments = argumentsList.Select((a, i) => (!match.Arguments[i].HasValue || a.Type == match.Arguments[i]) 
-                    ? a 
+			var castArguments = argumentsList.Select((a, i) =>
+                    !match.Arguments[i].HasValue || a.Type == match.Arguments[i] ? a
+                    : a.Type == ODataExpressionType.Unknown ? ConvertFromUnknownType(a, match.Arguments[i].Value.ToClrType()) 
 					: Convert(a, match.Arguments[i].Value.ToClrType()))
 				.ToList()
 				.AsReadOnly();
 
-            // the ?? here on return type handles cast, whose return type is dynamic depending on its arguments
 			return new ODataCallExpression(
                 function, 
                 castArguments, 
                 match.ReturnType.HasValue
-                    ? match.ReturnType.Value.ToClrType() 
+                    ? match.ReturnType.Value.ToClrType()
+                    // this case handles cast, whose return type is dynamic depending on its arguments
                     : (Type)((ODataConstantExpression)castArguments[1]).Value
             );
 		}
@@ -208,7 +254,11 @@ namespace Medallion.OData.Trees
 		{
 			Throw.IfNull(member, "member");
 
-			return new ODataMemberAccessExpression(expression, member);
+            var finalExpression = expression != null && expression.Type == ODataExpressionType.Unknown
+                ? ConvertFromUnknownType(expression, typeof(ODataEntity))
+                : expression;
+
+			return new ODataMemberAccessExpression(finalExpression, member);
 		}
 
         internal static ODataSortKeyExpression SortKey(ODataExpression expression, bool descending = false)
@@ -225,10 +275,16 @@ namespace Medallion.OData.Trees
 
         internal static ODataSelectColumnExpression SelectColumn(ODataMemberAccessExpression memberAccess, bool allColumns)
 		{
-			Throw.If(allColumns && memberAccess != null && memberAccess.Type != ODataExpressionType.Complex, "'*' can only be selected for non-primitive types!");
+			Throw.If(
+                allColumns && memberAccess != null && memberAccess.Type != ODataExpressionType.Complex && memberAccess.Type != ODataExpressionType.Unknown, 
+                "'*' can only be selected for non-primitive types!"
+            );
 			Throw.If(memberAccess == null && !allColumns, "If no property path is specified, then '*' must be selected!");
 
-			return new ODataSelectColumnExpression(memberAccess, allColumns: allColumns);
+            var finalMemberAccess = allColumns && memberAccess != null && memberAccess.Type == ODataExpressionType.Unknown
+                ? ConvertFromUnknownType(memberAccess, typeof(object))
+                : memberAccess;
+			return new ODataSelectColumnExpression(finalMemberAccess, allColumns: allColumns);
 		}
 
         internal static ODataQueryExpression Query(
@@ -240,7 +296,11 @@ namespace Medallion.OData.Trees
 			ODataInlineCountOption inlineCount = ODataInlineCountOption.None,
 			IReadOnlyList<ODataSelectColumnExpression> select = null)
 		{
-			Throw.If(filter != null && filter.Type != ODataExpressionType.Boolean, "filter: must be boolean-typed");
+			Throw.If(filter != null && filter.Type != ODataExpressionType.Boolean && filter.Type != ODataExpressionType.Unknown, "filter: must be boolean-typed");
+            var finalFilter = filter != null && filter.Type == ODataExpressionType.Unknown
+                ? ConvertFromUnknownType(filter, typeof(bool))
+                : filter;
+
 			if (top.HasValue)
 			{
 				Throw.IfOutOfRange(top.Value, min: 0, paramName: "top");
@@ -253,7 +313,7 @@ namespace Medallion.OData.Trees
 			}
 
 			return new ODataQueryExpression(
-				filter: filter,
+				filter: finalFilter,
 				orderBy: orderBy != null ? orderBy.ToImmutableList() : Empty<ODataSortKeyExpression>.Array,
 				top: top,
 				skip: skip,
@@ -262,6 +322,60 @@ namespace Medallion.OData.Trees
 				select: select != null ? select.ToImmutableList() : Empty<ODataSelectColumnExpression>.Array
 			);
 		}
-		#endregion
-	}
+
+        #region ---- Helpers ----
+        private static TExpression ConvertFromUnknownType<TExpression>(TExpression expression, Type type)
+            where TExpression : ODataExpression
+        {
+            // sanity check
+            Throw.If(expression.Type != ODataExpressionType.Unknown, "expression: must be of unknown type");
+
+            switch (expression.Kind)
+            {
+                case ODataExpressionKind.MemberAccess:
+                    var memberAccess = (ODataMemberAccessExpression)expression.As<ODataExpression>();
+                    return (TExpression)MemberAccess(memberAccess.Expression, ODataEntity.GetProperty(memberAccess.Member.Name, type)).As<ODataExpression>();
+                default:
+                    throw Throw.UnexpectedCase(expression.Kind);
+            }
+        }
+
+        private static TExpression LiftNullToUnknown<TExpression>(TExpression expression)
+            where TExpression : ODataExpression
+        {
+            // sanity check
+            Throw.If(expression.Type != ODataExpressionType.Null, "expression: must be of null type");
+
+            switch (expression.Kind) 
+            {
+                case ODataExpressionKind.Constant:
+                    return (TExpression)Constant(((ODataConstantExpression)expression.As<ODataExpression>()).Value, typeof(Unknown)).As<ODataExpression>();
+                default:
+                    throw Throw.UnexpectedCase(expression.Kind);
+            }
+        }
+
+        private static Type GetCanonicalArgumentType(ODataBinaryOp @operator) 
+        {
+            switch (@operator) 
+            {
+                case ODataBinaryOp.Add:
+                case ODataBinaryOp.Subtract:
+                case ODataBinaryOp.Multiply:
+                case ODataBinaryOp.Divide:
+                case ODataBinaryOp.Modulo:
+                    // the reason for this is that int can be cast implicitly to most of the other primitive types,
+                    // so an expression like substring('foo', A add B) will work if A and B are integers
+                    // alternatively, we could return Unknown for these
+                    return typeof(int?);
+                case ODataBinaryOp.And:
+                case ODataBinaryOp.Or:
+                    return typeof(bool);
+                default:
+                    return typeof(Unknown);
+            }
+        }
+        #endregion
+        #endregion
+    }
 }

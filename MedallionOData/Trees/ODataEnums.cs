@@ -105,6 +105,10 @@ namespace Medallion.OData.Trees
         /// Represents any non-primitive type, such as an entity type
         /// </summary>
 		Complex,
+        /// <summary>
+        /// Represents an undetermined type
+        /// </summary>
+        Unknown,
 	}
 
     /// <summary>
@@ -258,6 +262,9 @@ namespace Medallion.OData.Trees
 	[AttributeUsage(AttributeTargets.Field, AllowMultiple = true)]
 	internal class ODataFunctionAttribute : Attribute
 	{
+        // We use null to represent "any" here. Should we switch this to Unknown?
+        // My current thinking is NO, since Unknown represents not determined rather than "object"
+
 		private bool _returnTypeSet;
 		private ODataExpressionType? _returnType;
 		public ODataFunctionAttribute(params object[] signature)
@@ -313,6 +320,7 @@ namespace Medallion.OData.Trees
 				{ ODataExpressionType.Time,			  typeof(TimeSpan) },
 				{ ODataExpressionType.DateTimeOffset, typeof(DateTimeOffset) },
 				{ ODataExpressionType.Type,           typeof(Type) },
+                { ODataExpressionType.Unknown,        typeof(Unknown) },
 			};
 
 		private static readonly Dictionary<Type, ODataExpressionType> ClrToODataTypes = ODataToClrTypes

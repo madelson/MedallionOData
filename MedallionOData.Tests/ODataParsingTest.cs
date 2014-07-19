@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Medallion.OData.Parser;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Medallion.OData.Client;
 
 namespace Medallion.OData.Tests
 {
@@ -158,11 +159,24 @@ namespace Medallion.OData.Tests
             this.TestParseExpressionLanguage("not not not Bool");
         }
 
-		private void TestParseExpressionLanguage(string input)
+        [TestMethod]
+        public void TestParseDynamic()
+        {
+            this.TestParseExpressionLanguage("1 sub Price gt Freight");
+            this.TestParseExpressionLanguage("null eq Text");
+            this.TestParseExpressionLanguage("substring('abc', 0, Int add Int)");
+            this.TestParseExpressionLanguage("FreightM add FreightM add cast(1, 'Edm.Decimal')");
+        }
+
+		private void TestParseExpressionLanguage(string input, Type type = null)
 		{
-			var parser = new ODataExpressionLanguageParser(typeof(A), input);
+			var parser = new ODataExpressionLanguageParser(type ?? typeof(A), input);
 			var parsed = parser.Parse();
 			parsed.ToString().ShouldEqual(input);
+
+            var dynamicParser = new ODataExpressionLanguageParser(typeof(ODataEntity), input);
+            var dynamicParsed = dynamicParser.Parse();
+            parsed.ToString().ShouldEqual(input, "dynamic parse");
 		}
         #endregion
 
@@ -179,6 +193,10 @@ namespace Medallion.OData.Tests
 			var parser = new ODataExpressionLanguageParser(typeof(A), input);
 			var parsed = parser.ParseSortKeyList();
 			parsed.ToDelimitedString().ShouldEqual(expected ?? input);
+
+            var dynamicParser = new ODataExpressionLanguageParser(typeof(ODataEntity), input);
+            var dynamicParsed = dynamicParser.ParseSortKeyList();
+            dynamicParsed.ToDelimitedString().ShouldEqual(expected ?? input);
 		}
         #endregion
 
@@ -197,6 +215,10 @@ namespace Medallion.OData.Tests
 			var parser = new ODataExpressionLanguageParser(typeof(A), input);
 			var parsed = parser.ParseSelectColumnList();
 			parsed.ToDelimitedString().ShouldEqual(input);
+
+            var dynamicParser = new ODataExpressionLanguageParser(typeof(ODataEntity), input);
+            var dynamicParsed = dynamicParser.ParseSelectColumnList();
+            dynamicParsed.ToDelimitedString().ShouldEqual(input);
 		}
         #endregion
 
@@ -212,6 +234,9 @@ namespace Medallion.OData.Tests
 		{
 			var parsed = ODataQueryParser.Parse(typeof(A), query);
 			parsed.ToString().ShouldEqual(query);
+
+            var dynamicParsed = ODataQueryParser.Parse(typeof(ODataEntity), query);
+            dynamicParsed.ToString().ShouldEqual(query);
 		}
         #endregion
 

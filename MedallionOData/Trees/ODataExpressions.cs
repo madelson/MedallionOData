@@ -66,6 +66,7 @@ namespace Medallion.OData.Trees
 				case ODataBinaryOp.Divide:
 				case ODataBinaryOp.Modulo:
 					return this.Operator > ODataBinaryOp.Subtract;
+
 				default:
 					throw Throw.UnexpectedCase(binaryOp);
 			}

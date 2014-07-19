@@ -143,8 +143,12 @@ namespace Medallion.OData.Client
         }
         #endregion
 
-
         #region ---- Fake property implementation ----
+        internal static PropertyInfo GetProperty(string name, Type type)
+        {
+            return EntityPropertyInfo.For(name, type);
+        }
+
         private TProperty FakeGetter<TProperty>()
 		{
 			throw new InvalidOperationException("This getter is not valid");

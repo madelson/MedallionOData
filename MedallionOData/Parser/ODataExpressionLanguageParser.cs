@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Medallion.OData.Trees;
+using Medallion.OData.Client;
 
 namespace Medallion.OData.Parser
 {
@@ -233,7 +234,9 @@ namespace Medallion.OData.Parser
 				while (true)
 				{
 					// get the property
-					var property = type.GetProperty(next.Text, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+					var property = type == typeof(ODataEntity) || type == typeof(Unknown)
+                        ? ODataEntity.GetProperty(next.Text, typeof(Unknown))
+                        : type.GetProperty(next.Text, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 					if (property == null)
 					{
 						throw new ODataParseException("Property '" + next.Text + "' could not be found on type " + type.FullName);
