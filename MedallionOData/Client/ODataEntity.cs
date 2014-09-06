@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Medallion.OData.Dynamic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
@@ -10,24 +11,32 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+// TODO VNEXT: move this out of the client namespace
 namespace Medallion.OData.Client
 {
 	/// <summary>
 	/// A dynamic entity type to provide support for dynamic client queries
 	/// </summary>
-	[JsonConverter(typeof(ODataEntity.JsonConverter))]
-    public sealed class ODataEntity
+    public sealed class ODataEntity : ODataObject
 	{
 		private static readonly IEqualityComparer<string> KeyComparer = StringComparer.OrdinalIgnoreCase;
 
-		private readonly IReadOnlyDictionary<string, object> _values;
+        internal IReadOnlyDictionary<string, object> Values { get; private set; }
 
         /// <summary>
         /// Constructs a entity from the given set of key value pairs
         /// </summary>
 		public ODataEntity(IEnumerable<KeyValuePair<string, object>> values)
 		{
-			this._values = values.ToDictionary(kvp => kvp.Key, kvp => kvp.Value, KeyComparer);
+            Throw.IfNull(values, "values");
+
+            var valuesDictionary = new Dictionary<string, object>(KeyComparer);
+            foreach (var kvp in values)
+            {
+                var oDataValue = kvp.Value as ODataValue;
+                valuesDictionary.Add(kvp.Key, oDataValue != null ? oDataValue.Value : kvp.Value);
+            }
+            this.Values = valuesDictionary;
 		}
 
 		/// <summary>
@@ -40,7 +49,7 @@ namespace Medallion.OData.Client
 		public TProperty Get<TProperty>(string propertyName)
 		{
 			object result;
-			if (!this._values.TryGetValue(propertyName, out result))
+			if (!this.Values.TryGetValue(propertyName, out result))
 			{
 				throw new ArgumentException("The entity does not contain a value for property '" + propertyName + "'!");
 			}
@@ -51,7 +60,7 @@ namespace Medallion.OData.Client
                 {
                     throw new InvalidCastException(string.Format("Property '{0}' has a null value and cannot be cast to '{1}'", propertyName, typeof(TProperty)));
                 }
-                return default(TProperty);
+                return default(TProperty); // always null due to check above
             }
 
 			if (result is TProperty)
@@ -59,7 +68,14 @@ namespace Medallion.OData.Client
                 return (TProperty)result;
             }
 
-			throw new InvalidCastException(string.Format("value '{0}' for property '{1}' is not of type {2}", result ?? "null", propertyName, typeof(TProperty)));
+            if (typeof(ODataObject).IsAssignableFrom(typeof(TProperty)))
+            {
+                // at this point, we already know it's not ODataEntity since that would be
+                // handled above. Thus, we can just handle ODataValue
+                return (TProperty)(object)ODataValue.FromObject(result);
+            }
+
+            throw new InvalidCastException(string.Format("value '{0}' for property '{1}' is not of type {2}", result ?? "null", propertyName, typeof(TProperty)));
 		}
 
         #region ---- Translation ----
@@ -220,9 +236,9 @@ namespace Medallion.OData.Client
 				Throw.IfNull(obj, "obj");
 				var entity = obj as ODataEntity;
 				Throw.If(entity == null, "obj: must be of type ODataEntity");
-				Throw<ArgumentException>.If(!entity._values.ContainsKey(this.Name), () => "the given entity instance does not contain property '" + this.Name + "'");
+				Throw<ArgumentException>.If(!entity.Values.ContainsKey(this.Name), () => "the given entity instance does not contain property '" + this.Name + "'");
 
-				return entity._values[this.Name];
+				return entity.Values[this.Name];
 			}
 
 			public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, object[] index, System.Globalization.CultureInfo culture)
@@ -312,56 +328,6 @@ namespace Medallion.OData.Client
 			public static readonly Module Instance = new EntityModule();
 		}
 		#endregion
-        #endregion
-
-        #region ---- Serialization ----
-        private sealed class JsonConverter : Newtonsoft.Json.JsonConverter
-        {
-            public override bool CanConvert(Type objectType)
-            {
-                return objectType == typeof(ODataEntity);
-            }
-
-            #region ---- Read ----
-            public override bool CanRead { get { return true; } }
-
-            public override object ReadJson(Newtonsoft.Json.JsonReader reader, Type objectType, object existingValue, Newtonsoft.Json.JsonSerializer serializer)
-            {
-                var jObject = serializer.Deserialize<JObject>(reader);
-                return ConvertJToken(jObject);
-            }
-
-            private static object ConvertJToken(JToken token)
-            {
-                switch (token.Type)
-                {
-                    case JTokenType.Object:
-                        var keyValuePairs = ((JObject)token).As<IDictionary<string, JToken>>()
-                            .Select(kvp => KeyValuePair.Create(kvp.Key, ConvertJToken(kvp.Value)));
-                        return new ODataEntity(keyValuePairs);
-                    case JTokenType.Array:
-                        return ((JArray)token).Select(ConvertJToken).ToList();
-                    default:
-                        var value = token as JValue;
-                        if (value == null)
-                        {
-                            throw new NotSupportedException("Cannot convert JSON token of type " + token.Type);
-                        }
-                        return value.Value;
-                }
-            }
-            #endregion
-
-            #region ---- Write ----
-            public override bool CanWrite { get { return true; } }
-
-            public override void WriteJson(Newtonsoft.Json.JsonWriter writer, object value, Newtonsoft.Json.JsonSerializer serializer)
-            {
-                // ODataEntity just serializes as a dictionary
-                serializer.Serialize(writer, ((ODataEntity)value)._values);
-            }
-            #endregion
-        }
         #endregion
     }
 }

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Medallion.OData.Trees;
 using PropertyPath = System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo>;
+using Medallion.OData.Client;
 
 namespace Medallion.OData.Service
 {
@@ -47,7 +48,8 @@ string.Format(
             var selectMethod = Helpers.GetMethod((IQueryable<object> q) => q.Select(o => o))
                 .GetGenericMethodDefinition()
                 .MakeGenericMethod(query.ElementType, newExpression.Type);
-            var projected = (IQueryable)selectMethod.Invoke(null, new object[] { query, lambda });
+            var denormalizedLambda = ODataEntity.Denormalize(lambda);
+            var projected = (IQueryable)selectMethod.Invoke(null, new object[] { query, denormalizedLambda });
 
             var resultMapping = BuildResultMapping(projected.ElementType, mapping);
 

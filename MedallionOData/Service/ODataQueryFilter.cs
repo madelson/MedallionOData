@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Medallion.OData.Trees;
+using Medallion.OData.Client;
 
 namespace Medallion.OData.Service
 {
@@ -19,7 +20,8 @@ namespace Medallion.OData.Service
 			{
 				var parameter = Expression.Parameter(typeof(TElement));
 				var predicate = Expression.Lambda<Func<TElement, bool>>(Translate(parameter, oDataQuery.Filter), parameter);
-				finalQuery = finalQuery.Where(predicate);
+                var denormalizedPredicate = (Expression<Func<TElement, bool>>)ODataEntity.Denormalize(predicate);
+				finalQuery = finalQuery.Where(denormalizedPredicate);
 			}
 
             inlineCountQuery = finalQuery;
@@ -68,9 +70,10 @@ namespace Medallion.OData.Service
 					throw Throw.UnexpectedCase(methodName);
 			}
 
+            var denormalizedLambda = ODataEntity.Denormalize(lambda);
 			var result = method.GetGenericMethodDefinition()
 				.MakeGenericMethod(lambda.Type.GetGenericArguments(typeof(Func<,>)))
-				.Invoke(null, new object[] { query, lambda });
+				.Invoke(null, new object[] { query, denormalizedLambda });
 			return (IQueryable<TElement>)result;
 		}
 

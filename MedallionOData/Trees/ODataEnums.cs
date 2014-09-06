@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Medallion.OData.Dynamic;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -320,7 +321,7 @@ namespace Medallion.OData.Trees
 				{ ODataExpressionType.Time,			  typeof(TimeSpan) },
 				{ ODataExpressionType.DateTimeOffset, typeof(DateTimeOffset) },
 				{ ODataExpressionType.Type,           typeof(Type) },
-                { ODataExpressionType.Unknown,        typeof(Unknown) },
+                { ODataExpressionType.Unknown,        typeof(ODataObject) },
 			};
 
 		private static readonly Dictionary<Type, ODataExpressionType> ClrToODataTypes = ODataToClrTypes
@@ -335,11 +336,19 @@ namespace Medallion.OData.Trees
 			{
 				return result;
 			}
-			// Type is abstract, so we won't find an exact match. For now, we simply special-case it here
+			
+            // Type is abstract, so we won't find an exact match. For now, we simply special-case it here
 			if (typeof(Type).IsAssignableFrom(@this))
 			{
 				return ODataExpressionType.Type;
 			}
+
+            // ODataObject is abstract, so we special-case ODataValue
+            if (@this == typeof(ODataValue))
+            {
+                return ODataExpressionType.Unknown;
+            }
+
 			return ODataExpressionType.Complex;
 		}
 

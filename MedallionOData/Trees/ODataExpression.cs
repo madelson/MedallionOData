@@ -1,4 +1,5 @@
 ﻿using Medallion.OData.Client;
+using Medallion.OData.Dynamic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,7 +55,7 @@ namespace Medallion.OData.Trees
                 && (right.Type == ODataExpressionType.Unknown || right.Type == ODataExpressionType.Null))
             {
                 var canonicalType = GetCanonicalArgumentType(@operator);
-                if (canonicalType != typeof(Unknown))
+                if (canonicalType != typeof(ODataObject))
                 {
                     convertedLeft = left.Type == ODataExpressionType.Unknown
                         ? ConvertFromUnknownType(left, canonicalType)
@@ -187,7 +188,7 @@ namespace Medallion.OData.Trees
             }
             else
             {
-                Throw.If(clrType == typeof(Unknown), "clrType: cannot create an unknown constant with a value");
+                Throw.If(clrType == typeof(ODataObject), "clrType: cannot create an unknown constant with a value");
 
                 var finalClrType = clrType ?? value.GetType();
                 var oDataType = finalClrType.ToODataExpressionType();
@@ -349,7 +350,7 @@ namespace Medallion.OData.Trees
             switch (expression.Kind) 
             {
                 case ODataExpressionKind.Constant:
-                    return (TExpression)Constant(((ODataConstantExpression)expression.As<ODataExpression>()).Value, typeof(Unknown)).As<ODataExpression>();
+                    return (TExpression)Constant(((ODataConstantExpression)expression.As<ODataExpression>()).Value, typeof(ODataObject)).As<ODataExpression>();
                 default:
                     throw Throw.UnexpectedCase(expression.Kind);
             }
@@ -372,7 +373,7 @@ namespace Medallion.OData.Trees
                 case ODataBinaryOp.Or:
                     return typeof(bool);
                 default:
-                    return typeof(Unknown);
+                    return typeof(ODataObject);
             }
         }
         #endregion

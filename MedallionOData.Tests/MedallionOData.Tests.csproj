@@ -72,9 +72,11 @@
     <Compile Include="Client\ODataQueryContextTest.cs" />
     <Compile Include="Client\ODataRowTest.cs" />
     <Compile Include="ConversionHelpersTest.cs" />
+    <Compile Include="Dynamic\ODataObjectTest.cs" />
     <Compile Include="ExceptionsTest.cs" />
     <Compile Include="HelpersTest.cs" />
     <Compile Include="Integration\IntegrationTest.cs" />
+    <Compile Include="Integration\IntegrationTestDynamic.cs" />
     <Compile Include="Integration\MicrosoftODataServiceIntegrationTest.cs" />
     <Compile Include="Integration\Schema.cs" />
     <Compile Include="Integration\TestServer.cs" />

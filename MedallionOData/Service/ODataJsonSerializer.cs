@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using PropertyPath = System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo>;
 using System.IO;
 using System.Collections;
+using Medallion.OData.Client;
 
 namespace Medallion.OData.Service
 {
@@ -18,6 +19,9 @@ namespace Medallion.OData.Service
     /// </summary>
 	public sealed class ODataJsonSerializer : IODataSerializer
 	{
+        // MA: verified that this is safe: http://json.codeplex.com/discussions/110461
+        private static readonly JsonSerializer Serializer = new JsonSerializer();
+
         object IODataSerializer.Serialize<TElement>(IODataProjectResult<TElement> projectResult)
         {
             Throw.IfNull(projectResult, "projectResult");
@@ -46,7 +50,8 @@ namespace Medallion.OData.Service
                 inlineCount = null;
             }
 
-            return this.Serialize(projectedQuery, projectResult.ProjectMapping, inlineCount);
+            var result = this.Serialize(projectedQuery, projectResult.ProjectMapping, inlineCount);
+            return result;
         }
 
         // TODO VNext consider returning object here, allowing us to use JTokenWriter at times instead of JsonTextWriter
@@ -90,7 +95,7 @@ namespace Medallion.OData.Service
             object value;
             if (oDataType == ODataExpressionType.Complex)
             {
-                IEnumerable<PropertyInfo> simpleProperties;
+                IEnumerable<KeyValuePair<string, object>> simpleProperties;
                 if (node.Select != null)
                 {
                     Throw<InvalidOperationException>.If(!node.Select.AllColumns, "should have all columns!");
@@ -100,20 +105,29 @@ namespace Medallion.OData.Service
                         return;
                     }
 
-                    simpleProperties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                        .Where(pi => pi.CanRead && pi.PropertyType.ToODataExpressionType() != ODataExpressionType.Complex);
+                    var oDataEntity = value as ODataEntity;
+                    if (oDataEntity != null)
+                    {
+                        simpleProperties = oDataEntity.Values.Where(kvp => kvp.Value == null || kvp.Value.GetType().ToODataExpressionType() != ODataExpressionType.Complex);
+                    }
+                    else
+                    {
+                        simpleProperties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                            .Where(pi => pi.CanRead && pi.PropertyType.ToODataExpressionType() != ODataExpressionType.Complex)
+                            .Select(pi => KeyValuePair.Create(pi.Name, pi.GetValue(value)));
+                    }
                 }
                 else
                 {
-                    simpleProperties = Empty<PropertyInfo>.Array;
+                    simpleProperties = Empty<KeyValuePair<string, object>>.Array;
                     value = null;
                 }
 
                 writer.WriteStartObject();
-                foreach (var prop in simpleProperties)
+                foreach (var kvp in simpleProperties)
                 {
-                    writer.WritePropertyName(prop.Name);
-                    WriteValue(prop.GetValue(value), writer);
+                    writer.WritePropertyName(kvp.Key);
+                    Serializer.Serialize(writer, kvp.Value);
                 }
                 foreach (var child in node.Children)
                 {
@@ -124,13 +138,8 @@ namespace Medallion.OData.Service
             }
             else if (node.ValueRetriever.TryGetValue(item, out value))
             {
-                WriteValue(value, writer);
+                Serializer.Serialize(writer, value);
             }
-        }
-
-        private static void WriteValue(object value, JsonWriter writer)
-        {
-            writer.WriteValue(value);
         }
 
         private class Node

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Medallion.OData.Trees;
 using Medallion.OData.Client;
+using Medallion.OData.Dynamic;
 
 namespace Medallion.OData.Parser
 {
@@ -234,8 +235,8 @@ namespace Medallion.OData.Parser
 				while (true)
 				{
 					// get the property
-					var property = type == typeof(ODataEntity) || type == typeof(Unknown)
-                        ? ODataEntity.GetProperty(next.Text, typeof(Unknown))
+					var property = typeof(ODataObject).IsAssignableFrom(type)
+                        ? ODataEntity.GetProperty(next.Text, typeof(ODataObject))
                         : type.GetProperty(next.Text, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 					if (property == null)
 					{

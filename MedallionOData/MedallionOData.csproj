@@ -60,6 +60,8 @@
     <Compile Include="Client\ParameterReplacer.cs" />
     <Compile Include="Client\QueryOperatorCanonicalizer.cs" />
     <Compile Include="ConversionHelpers.cs" />
+    <Compile Include="Dynamic\ODataValue.cs" />
+    <Compile Include="Dynamic\ODataObject.cs" />
     <Compile Include="EqualityComparers.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Parser\ODataExpressionLanguageParser.cs" />
@@ -77,7 +79,6 @@
     <Compile Include="Trees\ODataExpression.cs" />
     <Compile Include="Trees\ODataExpressions.cs" />
     <Compile Include="Trees\ODataExpressionVisitor.cs" />
-    <Compile Include="Trees\Unknown.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="MedallionOData.nuspec" />
