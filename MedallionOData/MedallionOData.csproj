@@ -64,6 +64,7 @@
     <Compile Include="Dynamic\ODataObject.cs" />
     <Compile Include="EqualityComparers.cs" />
     <Compile Include="Helpers.cs" />
+    <Compile Include="NumberHelper.cs" />
     <Compile Include="Parser\ODataExpressionLanguageParser.cs" />
     <Compile Include="Parser\ODataExpressionLanguageTokenizer.cs" />
     <Compile Include="Parser\ODataParseException.cs" />
@@ -83,6 +84,9 @@
   <ItemGroup>
     <None Include="MedallionOData.nuspec" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Sql\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />

@@ -27,7 +27,7 @@ namespace Medallion.OData
                     return true;
                 default:
                     var underlyingType = Nullable.GetUnderlyingType(@this);
-                    return @this != null && underlyingType.IsNumeric();
+                    return underlyingType != null && underlyingType.IsNumeric();
             }
         }
 
@@ -48,11 +48,11 @@ namespace Medallion.OData
 
         public static TTo CheckedConvert<TTo>(object value)
         {
-            var underlyingToType = Nullable.GetUnderlyingType(typeof(TTo)) ?? typeof(TTo);
+            var toType = typeof(TTo);
             if (value == null)
             {
-                Throw.If(!underlyingToType.IsNumeric(), "TTo: must be numeric");
-                if (underlyingToType == typeof(TTo))
+                Throw.If(!toType.IsNumeric(), "TTo: must be numeric");
+                if (Nullable.GetUnderlyingType(toType) == null)
                 {
                     throw new InvalidCastException("Cannot convert null to non-nullable type " + typeof(TTo));
                 }
@@ -60,7 +60,7 @@ namespace Medallion.OData
             }
 
             object converter;
-            var lookupKey = KeyValuePair.Create(value.GetType(), underlyingToType);
+            var lookupKey = KeyValuePair.Create(value.GetType(), toType);
             if (!converters.TryGetValue(lookupKey, out converter))
             {
                 Throw.If(!lookupKey.Key.IsNumeric(), "value: must be numeric");
@@ -76,26 +76,12 @@ namespace Medallion.OData
                 }
             }
 
-            var result = lookupKey.Value == typeof(TTo)
-                ? ((CheckedConverter<TTo>)converter).Convert(value)
-                // when TTo is nullable, the converter won't have TTo == TTo. Thus, we call the non-generic
-                // ObjectConvert method. This incurs an extra boxing, so we don't always want to do it
-                : (TTo)((CheckedConverter)converter).ObjectConvert(value);
+            var result = ((CheckedConverter<TTo>)converter).Convert(value);
             return result;
         }
 
-        private abstract class CheckedConverter
+        private abstract class CheckedConverter<TTo>
         {
-            public abstract object ObjectConvert(object value);
-        }
-
-        private abstract class CheckedConverter<TTo> : CheckedConverter
-        {
-            public override object ObjectConvert(object value) 
-            {
-                return this.Convert(value);
-            }
-
             public abstract TTo Convert(object value);
         }
 

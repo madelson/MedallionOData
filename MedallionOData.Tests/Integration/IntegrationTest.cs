@@ -108,6 +108,12 @@ namespace Medallion.OData.Tests.Integration
 
             this.Test(
                 "customers",
+                (IQueryable<ODataEntity> rows) => rows.Select(c => new { @int = c.Get<double?>("AwardCount") }),
+                expected: CustomersContext.GetCustomers().Select(c => new { @int = (double?)c.AwardCount })
+            );
+
+            this.Test(
+                "customers",
                 (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double>("AwardCount") > 4.7)
                     .Select(c => c.Get<string>("Name")),
                     expected: CustomersContext.GetCustomers().Where(c => c.AwardCount > 4.7)

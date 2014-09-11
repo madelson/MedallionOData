@@ -68,7 +68,13 @@ namespace Medallion.OData.Client
                 return (TProperty)result;
             }
 
-            if (typeof(ODataObject).IsAssignableFrom(typeof(TProperty)))
+            var tProperty = typeof(TProperty);
+            if (tProperty.IsNumeric() && result.GetType().IsNumeric())
+            {
+                return NumberHelper.CheckedConvert<TProperty>(result);
+            }
+
+            if (typeof(ODataObject).IsAssignableFrom(tProperty))
             {
                 // at this point, we already know it's not ODataEntity since that would be
                 // handled above. Thus, we can just handle ODataValue

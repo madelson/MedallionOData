@@ -117,14 +117,20 @@ namespace Medallion.OData.Tests.Integration
                         .Select(c => c.Name)
             );
 
+            this.Test(
+                "customers",
+                (IQueryable<ODataEntity> rows) => rows.Select(c => new { @int = c.Get<double?>("AwardCount") }),
+                expected: CustomersContext.GetCustomers().Select(c => new { @int = (double?)c.AwardCount })
+            );
+
             // we can't do this test because an in-memory ODataEntity will have int as award count
-            //this.Test(
-            //    "customers",
-            //    (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double>("AwardCount") > 4.7)
-            //        .Select(c => c.Get<string>("Name")),
-            //        expected: CustomersContext.GetCustomers().Where(c => c.AwardCount > 4.7)
-            //            .Select(c => c.Name)
-            //);
+            this.Test(
+                "customers",
+                (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double>("AwardCount") > 4.7)
+                    .Select(c => c.Get<string>("Name")),
+                    expected: CustomersContext.GetCustomers().Where(c => c.AwardCount > 4.7)
+                        .Select(c => c.Name)
+            );
 
             // we can't do this test because in-memory ODataEntity will have double as salary, but the other
             // side will guess int after seeing "Salary gt 50000"

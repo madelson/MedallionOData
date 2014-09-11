@@ -37,7 +37,8 @@ namespace Medallion.OData.Tests.Dynamic
                 { "A", null },
                 { "B", 1 },
                 { "C", new ODataEntity(new Dictionary<string, object> { { "X", "abc" } }) },
-                { "D", ODataValue.FromObject(-1) }
+                { "D", ODataValue.FromObject(-1) },
+                { "F", 1.5 },
             });
 
             entity.Get<string>("A").ShouldEqual(null);
@@ -49,23 +50,21 @@ namespace Medallion.OData.Tests.Dynamic
             entity.Get<int>("d").ShouldEqual(-1);
 
             UnitTestHelpers.AssertThrows<InvalidCastException>(() => entity.Get<int>("a"));
-            UnitTestHelpers.AssertThrows<InvalidCastException>(() => entity.Get<double>("B"));
+            UnitTestHelpers.AssertThrows<InvalidCastException>(() => entity.Get<long>("F"));
         }
 
         [TestMethod]
         public void TestSerialization()
         {
-            // TODO it would be nice if we didn't need to use long here, but I'm not sure what else to do
-
             var serializedODataEntity = @"{ a: 2, b: 'abc', c: { x: 2 } }";
             var entity = JsonConvert.DeserializeObject<ODataEntity>(serializedODataEntity);
-            entity.Get<ODataEntity>("C").Get<long>("X").ShouldEqual(2);
+            entity.Get<ODataEntity>("C").Get<int>("X").ShouldEqual(2);
             var @object = JsonConvert.DeserializeObject<ODataObject>(JsonConvert.SerializeObject(entity));
-            ((ODataEntity)@object).Get<ODataEntity>("C").Get<long>("X").ShouldEqual(2);
+            ((ODataEntity)@object).Get<ODataEntity>("C").Get<int>("X").ShouldEqual(2);
 
             JsonConvert.DeserializeObject<ODataObject>("null").ShouldEqual(null);
 
-            JsonConvert.DeserializeObject<ODataValue>("1").Value.ShouldEqual(1L);
+            JsonConvert.DeserializeObject<ODataValue>("1").Value.ShouldEqual(1);
             JsonConvert.SerializeObject(ODataValue.FromObject("abc")).ShouldEqual("\"abc\"");
         }
     }
