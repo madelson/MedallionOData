@@ -98,7 +98,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         public CustomersContext()
-            : base(GetConnectionString())
+            : base(ConnectionString.Value)
         {
             Database.SetInitializer(new Initializer());
         }
@@ -107,7 +107,8 @@ namespace Medallion.OData.Tests.Integration
         public DbSet<Company> Companies { get; set; }
 
         private const string Prefix = "Medallion_OData_Tests";
-        public static string GetConnectionString()
+        private static readonly Lazy<string> ConnectionString = new Lazy<string>(GetConnectionString);
+        private static string GetConnectionString()
         {
             var connectionString = new SqlConnectionStringBuilder()
             {
