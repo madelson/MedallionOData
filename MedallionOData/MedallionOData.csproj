@@ -76,6 +76,16 @@
     <Compile Include="Service\ODataJsonSerializer.cs" />
     <Compile Include="Service\ODataQueryProjector.cs" />
     <Compile Include="Service\ODataService.cs" />
+    <Compile Include="Sql\DatabaseProvider.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Sql\ODataToSqlTranslator.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Sql\SqlDatabaseProvider.cs" />
+    <Compile Include="Sql\SqlQueryProviderForOData.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Trees\ODataEnums.cs" />
     <Compile Include="Trees\ODataExpression.cs" />
     <Compile Include="Trees\ODataExpressions.cs" />
@@ -85,9 +95,7 @@
     <None Include="MedallionOData.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Sql\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
