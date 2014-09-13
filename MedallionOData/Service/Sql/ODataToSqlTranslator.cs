@@ -180,7 +180,6 @@ namespace Medallion.OData.Service.Sql
                 case ODataFunction.IsOf:
                     throw new NotSupportedException(node.Function.ToString());
             }
-            base.VisitCall(node);
         }
 
         private void VisitCallHelper(string functionName, ODataCallExpression node)
@@ -294,25 +293,28 @@ namespace Medallion.OData.Service.Sql
             }
 
             // skip/take
-            switch (this.databaseProvider.Pagination) 
+            if (hasPagination)
             {
-                case DatabaseProvider.PaginationSyntax.OffsetFetch:
-                    this.Write("OFFSET ");
-                    this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Skip));
-                    this.WriteLine(" ROWS");
-                    if (node.Top.HasValue)
-                    {
-                        this.Write("FETCH NEXT ");
-                        this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Top.Value));
-                        this.WriteLine(" ROWS ONLY");
-                    }
-                    break;
-                case DatabaseProvider.PaginationSyntax.Limit:
-                    this.Write("LIMIT ").Write(node.Skip).Write(", ")
-                        .WriteLine(node.Top ?? "18446744073709551615".As<object>());
-                    break;
-                default:
-                    throw Throw.UnexpectedCase(this.databaseProvider.Pagination);
+                switch (this.databaseProvider.Pagination)
+                {
+                    case DatabaseProvider.PaginationSyntax.OffsetFetch:
+                        this.Write("OFFSET ");
+                        this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Skip));
+                        this.WriteLine(" ROWS");
+                        if (node.Top.HasValue)
+                        {
+                            this.Write("FETCH NEXT ");
+                            this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Top.Value));
+                            this.WriteLine(" ROWS ONLY");
+                        }
+                        break;
+                    case DatabaseProvider.PaginationSyntax.Limit:
+                        this.Write("LIMIT ").Write(node.Skip).Write(", ")
+                            .WriteLine(node.Top ?? "18446744073709551615".As<object>());
+                        break;
+                    default:
+                        throw Throw.UnexpectedCase(this.databaseProvider.Pagination);
+                }
             }
         }
 
@@ -348,28 +350,28 @@ namespace Medallion.OData.Service.Sql
         }
 
         #region ---- Helpers ----
-        private ODataToSqlTranslator Write(object o, bool @if = true)
+        private ODataToSqlTranslator Write(object obj, bool @if = true)
         {
             if (@if)
             {
-                var expression = o as ODataExpression;
+                var expression = obj as ODataExpression;
                 if (expression != null)
                 {
                     this.Visit(expression);
                 }
                 else
                 {
-                    this.sqlBuilder.Append(o);
+                    this.sqlBuilder.Append(obj);
                 }
             }
             return this;
         }
 
-        private ODataToSqlTranslator WriteLine(object o = null, bool @if = true)
+        private ODataToSqlTranslator WriteLine(object obj = null, bool @if = true)
         {
             if (@if)
             {
-                this.Write(0);
+                this.Write(obj);
                 this.sqlBuilder.AppendLine();
             }
             return this;

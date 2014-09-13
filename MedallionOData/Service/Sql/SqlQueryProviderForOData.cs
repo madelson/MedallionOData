@@ -4,8 +4,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -76,7 +78,8 @@ namespace Medallion.OData.Service.Sql
         #endregion
 
         #region ---- IQueryable implementation ----
-        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        [DebuggerStepThrough]
+        IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return this.GetEnumeratorInternal();
         }
@@ -85,23 +88,26 @@ namespace Medallion.OData.Service.Sql
 
         Type IQueryable.ElementType
         {
-            get { return this.GetElementTypeInternal(); }
+            [DebuggerStepThrough] get { return this.GetElementTypeInternal(); }
         }
 
         protected abstract Type GetElementTypeInternal();
 
         System.Linq.Expressions.Expression IQueryable.Expression
         {
-            get { return this.expression; }
+            [DebuggerStepThrough] get { return this.expression; }
         }
 
         IQueryProvider IQueryable.Provider
         {
-            get { return this; }
+            [DebuggerStepThrough] get { return this; }
         }
         #endregion
 
         #region ---- Execution ----
+        private static readonly MethodInfo CastMethod = Helpers.GetMethod((IEnumerable e) => e.Cast<object>())
+            .GetGenericMethodDefinition();
+
         protected object ExecuteCommon(Expression expression)
         {
             var translator = new LinqToODataTranslator();
@@ -129,7 +135,10 @@ namespace Medallion.OData.Service.Sql
 
             // execute
             // TODO does passing null here stop count from working?
-            var results = resultTranslator(this.databaseProvider.Execute(sql, parameters, rootQuery.ElementType), inlineCount: null);
+            var rawResults = this.databaseProvider.Execute(sql, parameters, rootQuery.ElementType);
+            var castRawResults = CastMethod.MakeGenericMethod(rootQuery.ElementType)
+                .InvokeWithOriginalException(null, new object[] { rawResults });
+            var results = resultTranslator((IEnumerable)castRawResults, inlineCount: null);
 
             return results;
         }
@@ -154,11 +163,13 @@ namespace Medallion.OData.Service.Sql
             return results.GetEnumerator();
         }
 
+        [DebuggerStepThrough]
         protected override IEnumerator GetEnumeratorInternal()
         {
             return this.AsEnumerable().GetEnumerator();
         }
 
+        [DebuggerStepThrough]
         protected override Type GetElementTypeInternal()
         {
             return typeof(TElement);
