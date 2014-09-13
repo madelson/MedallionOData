@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Medallion.OData.Sql
+namespace Medallion.OData.Service.Sql
 {
     /// <summary>
     /// Presents a simple interface for accessing a database. This is an abstract class rather than an interface

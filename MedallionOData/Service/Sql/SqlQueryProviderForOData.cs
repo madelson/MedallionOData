@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Medallion.OData.Sql
+namespace Medallion.OData.Service.Sql
 {
     internal abstract class SqlQueryProviderForOData : IQueryProvider, IOrderedQueryable
     {

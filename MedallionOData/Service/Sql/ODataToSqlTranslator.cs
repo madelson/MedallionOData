@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Medallion.OData.Sql
+namespace Medallion.OData.Service.Sql
 {
     // TODO BIT MODE
     // TODO OFFSET/FETCH w/out sort

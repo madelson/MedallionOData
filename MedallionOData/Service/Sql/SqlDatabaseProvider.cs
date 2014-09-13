@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Medallion.OData.Sql
+namespace Medallion.OData.Service.Sql
 {
     /// <summary>
     /// Implements <see cref="DatabaseProvider"/> for MS SQLSERVER

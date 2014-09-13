@@ -76,14 +76,15 @@
     <Compile Include="Service\ODataJsonSerializer.cs" />
     <Compile Include="Service\ODataQueryProjector.cs" />
     <Compile Include="Service\ODataService.cs" />
-    <Compile Include="Sql\DatabaseProvider.cs">
+    <Compile Include="Service\Sql\DatabaseProvider.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Sql\ODataToSqlTranslator.cs">
+    <Compile Include="Service\Sql\ODataSqlContext.cs" />
+    <Compile Include="Service\Sql\ODataToSqlTranslator.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Sql\SqlDatabaseProvider.cs" />
-    <Compile Include="Sql\SqlQueryProviderForOData.cs">
+    <Compile Include="Service\Sql\SqlDatabaseProvider.cs" />
+    <Compile Include="Service\Sql\SqlQueryProviderForOData.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Trees\ODataEnums.cs" />
