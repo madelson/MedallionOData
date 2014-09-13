@@ -64,7 +64,7 @@ namespace Medallion.OData.Tests.Dynamic
 
             JsonConvert.DeserializeObject<ODataObject>("null").ShouldEqual(null);
 
-            JsonConvert.DeserializeObject<ODataValue>("1").Value.ShouldEqual(1);
+            JsonConvert.DeserializeObject<ODataValue>("1").Value.ShouldEqual(1L);
             JsonConvert.SerializeObject(ODataValue.FromObject("abc")).ShouldEqual("\"abc\"");
         }
     }
