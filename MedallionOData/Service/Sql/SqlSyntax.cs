@@ -14,7 +14,7 @@ namespace Medallion.OData.Service.Sql
     /// Presents a simple interface for accessing a database. This is an abstract class rather than an interface
     /// to allow us to add more virtual methods in the future without breaking backwards compatibility
     /// </summary>
-    public abstract class DatabaseProvider
+    public abstract class SqlSyntax
     {
         /// <summary>
         /// Gets the database name for the given <see cref="ODataExpressionType"/>. Throws <see cref="NotSupportedException"/>
@@ -188,45 +188,5 @@ namespace Medallion.OData.Service.Sql
         /// Specifies how pagination should be performed. Defaults to <see cref="PaginationSyntax.OffsetFetch"/>
         /// </summary>
         protected internal virtual PaginationSyntax Pagination { get { return PaginationSyntax.OffsetFetch; } }
-
-        /// <summary>
-        /// Executes the given <paramref name="sql"/> query using the given <paramref name="parameters"/>. Results should be materialized
-        /// to <paramref name="resultType"/>
-        /// </summary>
-        protected internal abstract IEnumerable Execute(string sql, IReadOnlyList<Parameter> parameters, Type resultType);
-
-        /// <summary>
-        /// Executes the given count <paramref name="sql"/> query using the given <paramref name="parameters"/>
-        /// </summary>
-        protected internal abstract int ExecuteCount(string sql, IReadOnlyList<Parameter> parameters);
-    }
-
-    /// <summary>
-    /// Represents a parameter in a SQL query. Similar to <see cref="DbParameter"/>, but not abstract
-    /// </summary>
-    public sealed class Parameter
-    {
-        internal Parameter(string name, Type type, object value) 
-        {
-            Throw.If(string.IsNullOrEmpty(name), "name");
-            Throw.IfNull(type, "type");
-
-            this.Name = name;
-            this.Type = type;
-            this.Value = value;
-        }
-
-        /// <summary>
-        /// The parameter name
-        /// </summary>
-        public string Name { get; private set; }
-        /// <summary>
-        /// The CLR parameter type
-        /// </summary>
-        public Type Type { get; private set; }
-        /// <summary>
-        /// The parameter value
-        /// </summary>
-        public object Value { get; private set; }
     }
 }

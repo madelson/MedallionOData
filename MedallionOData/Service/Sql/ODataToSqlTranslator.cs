@@ -15,16 +15,16 @@ namespace Medallion.OData.Service.Sql
         private const string Alias = "q";
 
         private readonly StringBuilder sqlBuilder = new StringBuilder();
-        private readonly DatabaseProvider databaseProvider;
+        private readonly SqlSyntax databaseProvider;
         private readonly string tableSql;
 
-        private ODataToSqlTranslator(DatabaseProvider databaseProvider, string tableSql) 
+        private ODataToSqlTranslator(SqlSyntax databaseProvider, string tableSql) 
         {
             this.databaseProvider = databaseProvider;
             this.tableSql = tableSql;
         }
 
-        public static string Translate(DatabaseProvider databaseProvider, string tableSql, ODataQueryExpression query, out List<Parameter> parameters)
+        public static string Translate(SqlSyntax databaseProvider, string tableSql, ODataQueryExpression query, out List<Parameter> parameters)
         {
             Throw.IfNull(databaseProvider, "databaseProvider");
             Throw.If(string.IsNullOrEmpty(tableSql), "tableSql is required");
@@ -219,7 +219,7 @@ namespace Medallion.OData.Service.Sql
 
             var hasPagination = (node.Skip > 0 || node.Top.HasValue);
             var hasRowNumberPagination = hasPagination
-                && this.databaseProvider.Pagination == DatabaseProvider.PaginationSyntax.RowNumber;
+                && this.databaseProvider.Pagination == SqlSyntax.PaginationSyntax.RowNumber;
 
             if (hasRowNumberPagination)
             {
@@ -297,7 +297,7 @@ namespace Medallion.OData.Service.Sql
             {
                 switch (this.databaseProvider.Pagination)
                 {
-                    case DatabaseProvider.PaginationSyntax.OffsetFetch:
+                    case SqlSyntax.PaginationSyntax.OffsetFetch:
                         this.Write("OFFSET ");
                         this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Skip));
                         this.WriteLine(" ROWS");
@@ -308,7 +308,7 @@ namespace Medallion.OData.Service.Sql
                             this.WriteLine(" ROWS ONLY");
                         }
                         break;
-                    case DatabaseProvider.PaginationSyntax.Limit:
+                    case SqlSyntax.PaginationSyntax.Limit:
                         this.Write("LIMIT ").Write(node.Skip).Write(", ")
                             .WriteLine(node.Top ?? "18446744073709551615".As<object>());
                         break;

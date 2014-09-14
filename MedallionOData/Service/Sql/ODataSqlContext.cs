@@ -11,16 +11,19 @@ namespace Medallion.OData.Service.Sql
     /// </summary>
     public sealed class ODataSqlContext
     {
-        private readonly DatabaseProvider provider;
+        private readonly SqlSyntax syntax;
+        private readonly SqlExecutor executor;
 
         /// <summary>
-        /// Creates a context that uses the given <see cref="DatabaseProvider"/>
+        /// Creates a context that uses the given <see cref="SqlSyntax"/> and <see cref="SqlExecutor"/>
         /// </summary>
-        public ODataSqlContext(DatabaseProvider provider)
+        public ODataSqlContext(SqlSyntax syntax, SqlExecutor executor)
         {
-            Throw.IfNull(provider, "provider");
+            Throw.IfNull(syntax, "provider");
+            Throw.IfNull(executor, "executor");
 
-            this.provider = provider;
+            this.syntax = syntax;
+            this.executor = executor;
         }
 
         /// <summary>
@@ -31,7 +34,7 @@ namespace Medallion.OData.Service.Sql
         {
             Throw.If(string.IsNullOrWhiteSpace(tableSql), "tableSql is required");
 
-            return new SqlQueryProviderForOData<T>(tableSql, this.provider);
+            return new SqlQueryProviderForOData<T>(tableSql, this.syntax, this.executor);
         }
     }
 }

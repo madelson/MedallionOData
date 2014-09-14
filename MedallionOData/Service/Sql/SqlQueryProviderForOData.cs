@@ -16,27 +16,35 @@ namespace Medallion.OData.Service.Sql
     internal abstract class SqlQueryProviderForOData : IQueryProvider, IOrderedQueryable
     {
         private readonly Expression expression;
-        private readonly DatabaseProvider databaseProvider;
+        private readonly SqlSyntax syntax;
+        private readonly SqlExecutor executor;
         private readonly string tableSql;
 
-        protected SqlQueryProviderForOData(Expression expression, DatabaseProvider databaseProvider)
+        protected SqlQueryProviderForOData(Expression expression, SqlSyntax syntax, SqlExecutor executor)
+            : this(syntax, executor)
         {
             Throw.IfNull(expression, "expression");
-            Throw.IfNull(databaseProvider, "databaseProvider");
-
+            
             this.expression = expression;
-            this.databaseProvider = databaseProvider;
             this.tableSql = null;
         }
 
-        protected SqlQueryProviderForOData(string tableSql, DatabaseProvider databaseProvider)
+        protected SqlQueryProviderForOData(string tableSql, SqlSyntax syntax, SqlExecutor executor)
+            : this(syntax, executor)
         {
             Throw.If(string.IsNullOrEmpty(tableSql), "tableSql is required");
-            Throw.IfNull(databaseProvider, "databaseProvider");
 
             this.expression = Expression.Constant(this);
-            this.databaseProvider = databaseProvider;
             this.tableSql = tableSql;
+        }
+
+        private SqlQueryProviderForOData(SqlSyntax syntax, SqlExecutor executor)
+        {
+            Throw.IfNull(syntax, "syntax");
+            Throw.IfNull(executor, "executor");
+
+            this.syntax = syntax;
+            this.executor = executor;
         }
 
         #region ---- IQueryProvider implementation ----
@@ -44,7 +52,7 @@ namespace Medallion.OData.Service.Sql
         {
             Throw.IfNull(expression, "expression");
 
-            return new SqlQueryProviderForOData<TQueryElement>(expression, this.databaseProvider);
+            return new SqlQueryProviderForOData<TQueryElement>(expression, this.syntax, this.executor);
         }
 
         IQueryable IQueryProvider.CreateQuery(System.Linq.Expressions.Expression expression)
@@ -131,13 +139,13 @@ namespace Medallion.OData.Service.Sql
 
             // translate ODataExpression to SQL
             List<Parameter> parameters;
-            var sql = ODataToSqlTranslator.Translate(this.databaseProvider, tableQuery.tableSql, (ODataQueryExpression)oDataExpression, out parameters);
+            var sql = ODataToSqlTranslator.Translate(this.syntax, tableQuery.tableSql, (ODataQueryExpression)oDataExpression, out parameters);
 
             // execute
-            // TODO does passing null here stop count from working?
-            var rawResults = this.databaseProvider.Execute(sql, parameters, rootQuery.ElementType);
+            var rawResults = this.executor.Execute(sql, parameters, rootQuery.ElementType);
             var castRawResults = CastMethod.MakeGenericMethod(rootQuery.ElementType)
                 .InvokeWithOriginalException(null, new object[] { rawResults });
+            // TODO does passing null here stop count from working?
             var results = resultTranslator((IEnumerable)castRawResults, inlineCount: null);
 
             return results;
@@ -147,13 +155,13 @@ namespace Medallion.OData.Service.Sql
 
     internal sealed class SqlQueryProviderForOData<TElement> : SqlQueryProviderForOData, IOrderedQueryable<TElement>
     {
-        public SqlQueryProviderForOData(Expression expression, DatabaseProvider databaseProvider)
-            : base(expression, databaseProvider)
+        public SqlQueryProviderForOData(Expression expression, SqlSyntax syntax, SqlExecutor executor)
+            : base(expression, syntax, executor)
         {
         }
 
-        public SqlQueryProviderForOData(string tableSql, DatabaseProvider databaseProvider)
-            : base(tableSql, databaseProvider)
+        public SqlQueryProviderForOData(string tableSql, SqlSyntax syntax, SqlExecutor executor)
+            : base(tableSql, syntax, executor)
         {
         }
 
