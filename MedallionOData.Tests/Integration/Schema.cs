@@ -75,6 +75,25 @@ namespace Medallion.OData.Tests.Integration
         }
     }
 
+    public class Sample
+    {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
+        public bool Bool { get; set; }
+        public bool? NullableBool { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Sample && this.GetType().GetProperties()
+                .All(p => Equals(p.GetValue(this), p.GetValue(obj)));
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Id;
+        }
+    }
+
     public class CustomersContext : DbContext
     {
         // TODO FUTURE instead of caching this in memory, read it back on command to sync date values (or insert reasonable date values)
@@ -105,6 +124,7 @@ namespace Medallion.OData.Tests.Integration
 
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Company> Companies { get; set; }
+        public DbSet<Sample> Samples { get; set; }
 
         private const string Prefix = "Medallion_OData_Tests";
         private static readonly Lazy<string> ConnectionString = new Lazy<string>(GetConnectionString);
@@ -160,6 +180,17 @@ namespace Medallion.OData.Tests.Integration
             protected override void Seed(CustomersContext context)
             {
                 context.Customers.AddRange(GetCustomers());
+
+                var rand = new Random(12345);
+                for (var i = 0; i < 20; ++i)
+                {
+                    context.Samples.Add(new Sample
+                    {
+                        Bool = rand.Next(2) != 0,
+                        NullableBool = new[] { default(bool?), false, true }[rand.Next(3)],
+                    });
+                }
+
                 context.SaveChanges();
                 base.Seed(context);
             }

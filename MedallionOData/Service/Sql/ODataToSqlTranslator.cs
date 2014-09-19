@@ -41,16 +41,36 @@ namespace Medallion.OData.Service.Sql
         private static readonly IReadOnlyList<ODataBinaryOp> BoolOps = new[] { ODataBinaryOp.And, ODataBinaryOp.Or };
         protected override void VisitBinaryOp(ODataBinaryOpExpression node)
         {
-            if (node.Operator == ODataBinaryOp.Modulo) 
+            this.Write("(");
+            switch (node.Operator) 
             {
-                this.databaseProvider.RenderModuloOperator(s => this.Write(s), () => this.Write(node.Left), () => this.Write(node.Right));
+                case ODataBinaryOp.Equal:
+                case ODataBinaryOp.NotEqual:
+                    // null-safe ==: (a is not null and b is not null and a = b) or (a is null and b is null)
+                    // null-safe !=: (a is null or b is null or a <> b) and (a is not null or b is not null)
+                    var @is = node.Operator == ODataBinaryOp.Equal ? " IS " : " IS NOT ";
+                    var isNot = node.Operator == ODataBinaryOp.Equal ? " IS NOT " : " IS ";
+                    var and = node.Operator == ODataBinaryOp.Equal ? " AND " : " OR ";
+                    var or = node.Operator == ODataBinaryOp.Equal ? " OR " : " AND ";
+                    this.Write("(")
+                        .Write(node.Left).Write(isNot).Write("NULL")
+                        .Write(and).Write(node.Right).Write(isNot).Write("NULL")
+                        .Write(and).Write(node.Left).Write(GetBinOpString(node.Operator)).Write(node.Right)
+                        .Write(")")
+                        .Write(or)
+                        .Write("(")
+                        .Write(node.Left).Write(@is).Write("NULL")
+                        .Write(and).Write(node.Right).Write(@is).Write("NULL")
+                        .Write(")");
+                    break;
+                case ODataBinaryOp.Modulo:
+                    this.databaseProvider.RenderModuloOperator(s => this.Write(s), () => this.Write(node.Left), () => this.Write(node.Right));
+                    break;
+                default:
+                    this.Write(node.Left).Write(" ").Write(GetBinOpString(node.Operator)).Write(" ").Write(node.Right);
+                    break;
             }
-            else 
-            {
-                this.Write("(").Write(node.Left).Write(" ")
-                    .Write(GetBinOpString(node.Operator))
-                    .Write(" ").Write(node.Right).Write(")");
-            }
+            this.Write(")");
         }
 
         private static string GetBinOpString(ODataBinaryOp op)

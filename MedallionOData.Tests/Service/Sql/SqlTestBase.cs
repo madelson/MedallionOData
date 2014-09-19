@@ -84,5 +84,39 @@ namespace Medallion.OData.Tests.Service.Sql
                 dynamicSorted.Skip(2).CollectionShouldEqual(expected.Select(c => c.Id).Skip(2), orderMatters: true);
             }
         }
+
+        [TestMethod]
+        public void NullableEquality()
+        {
+            var samples = this.Context.Query<Sample>("samples");
+            var dynamicSamples = this.Context.Query<ODataEntity>("samples");
+
+            var nulls = samples.Where(s => s.NullableBool == null);
+            var dynamicNulls = dynamicSamples.Where(s => s.Get<bool>("NullableBool") == null);
+            var nonNulls = samples.Where(s => s.NullableBool != null);
+            var dynamicNonNulls = dynamicSamples.Where(s => s.Get<bool?>("NullableBool") != null);
+            var negatedNulls = samples.Where(s => !(s.NullableBool == null));
+            var negatedDynamicNulls = dynamicSamples.Where(s => !(s.Get<bool?>("NullableBool") == null));
+            var negatedNonNulls = samples.Where(s => !(s.NullableBool != null));
+            var negatedDynamicNonNulls = dynamicSamples.Where(s => !(s.Get<bool?>("NullableBool") != null)); 
+
+            using (var context = new CustomersContext())
+            {
+                var efNulls = context.Samples.Where(s => s.NullableBool == null).ToArray();
+                nulls.CollectionShouldEqual(efNulls, "nulls");
+                negatedNonNulls.CollectionShouldEqual(efNulls, "negatedNonNulls");
+                dynamicNulls.Select(s => s.Get<int>("Id")).CollectionShouldEqual(efNulls.Select(s => s.Id), "dynamicNulls");
+                negatedDynamicNonNulls.Select(s => s.Get<int>("Id")).CollectionShouldEqual(efNulls.Select(s => s.Id), "negatedDynamicNonNulls");
+            }
+
+            using (var context = new CustomersContext())
+            {
+                var efNonNulls = context.Samples.Where(s => s.NullableBool != null).ToArray();
+                nonNulls.CollectionShouldEqual(efNonNulls, "nonNulls");
+                negatedNulls.CollectionShouldEqual(efNonNulls, "negatedNulls");
+                dynamicNonNulls.Select(s => s.Get<int>("Id")).CollectionShouldEqual(efNonNulls.Select(s => s.Id), "dynamicNonNulls");
+                negatedDynamicNulls.Select(s => s.Get<int>("Id")).CollectionShouldEqual(efNonNulls.Select(s => s.Id), "negatedDynamicNulls");
+            }
+        }
     }
 }
