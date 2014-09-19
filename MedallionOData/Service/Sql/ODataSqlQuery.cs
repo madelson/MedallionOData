@@ -118,12 +118,30 @@ namespace Medallion.OData.Service.Sql
 
         protected object ExecuteCommon(Expression expression)
         {
+            // translate
+            List<Parameter> parameters;
+            Type rootElementType;
+            LinqToODataTranslator.ResultTranslator resultTranslator;
+            var sql = this.ToSql(out parameters, out rootElementType, out resultTranslator);
+
+            // execute
+            var rawResults = this.executor.Execute(sql, parameters, rootElementType);
+            var castRawResults = CastMethod.MakeGenericMethod(rootElementType)
+                .InvokeWithOriginalException(null, new object[] { rawResults });
+            // TODO does passing null here stop count from working?
+            var results = resultTranslator((IEnumerable)castRawResults, inlineCount: null);
+
+            return results;
+        }
+
+        private string ToSql(out List<Parameter> parameters, out Type rootElementType, out LinqToODataTranslator.ResultTranslator resultTranslator)
+        {
             var translator = new LinqToODataTranslator();
 
             // TODO try-catch and change exception type
             IQueryable rootQuery;
-            LinqToODataTranslator.ResultTranslator resultTranslator;
             var oDataExpression = translator.Translate(expression, out rootQuery, out resultTranslator);
+            rootElementType = rootQuery.ElementType;
 
             var queryExpression = oDataExpression as ODataQueryExpression;
             Throw<InvalidOperationException>.If(oDataExpression == null, "A queryable expression must translate to a query ODataExpression");
@@ -138,19 +156,35 @@ namespace Medallion.OData.Service.Sql
             Throw<InvalidOperationException>.If(tableQuery.tableSql == null, "Invalid root query");
 
             // translate ODataExpression to SQL
-            List<Parameter> parameters;
-            var sql = ODataToSqlTranslator.Translate(this.syntax, tableQuery.tableSql, (ODataQueryExpression)oDataExpression, out parameters);
-
-            // execute
-            var rawResults = this.executor.Execute(sql, parameters, rootQuery.ElementType);
-            var castRawResults = CastMethod.MakeGenericMethod(rootQuery.ElementType)
-                .InvokeWithOriginalException(null, new object[] { rawResults });
-            // TODO does passing null here stop count from working?
-            var results = resultTranslator((IEnumerable)castRawResults, inlineCount: null);
-
-            return results;
+            var sql = ODataToSqlTranslator.Translate(this.syntax, tableQuery.tableSql, queryExpression, out parameters);
+            return sql;
         }
         #endregion
+
+        public override string ToString()
+        {
+            var builder = new StringBuilder();
+            try
+            {
+                List<Parameter> parameters;
+                Type rootElementType;
+                LinqToODataTranslator.ResultTranslator resultTranslator;
+                var sql = this.ToSql(out parameters, out rootElementType, out resultTranslator);
+                builder.AppendLine("/*")
+                    .AppendFormat(" * Materialize as {0}", rootElementType).AppendLine();
+                parameters.ForEach(p => builder.AppendFormat(" * {0} = {1}", p.Name, p.Value).AppendLine());
+                builder.AppendLine(" */")
+                    .AppendLine()
+                    .AppendLine(sql);
+            }
+            catch (Exception ex)
+            {
+                builder.AppendLine("Query could not be translated to SQL: ")
+                    .AppendLine()
+                    .Append(ex).AppendLine();
+            }
+            return builder.ToString();
+        }
     }
 
     internal sealed class ODataSqlQuery<TElement> : ODataSqlQuery, IOrderedQueryable<TElement>

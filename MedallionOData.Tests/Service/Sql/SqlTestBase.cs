@@ -118,5 +118,20 @@ namespace Medallion.OData.Tests.Service.Sql
                 negatedDynamicNulls.Select(s => s.Get<int>("Id")).CollectionShouldEqual(efNonNulls.Select(s => s.Id), "negatedDynamicNulls");
             }
         }
+
+        [TestMethod]
+        public void TestToString()
+        {
+            var query = this.Context.Query<Sample>("fake_table")
+                .Where(s => s.Id % 2 == 0);
+            var queryString = query.ToString();
+            Console.WriteLine(queryString);
+            queryString.Contains("fake_table").ShouldEqual(true);
+
+            var badQuery = this.Context.Query<Sample>("samples").Where(s => s.GetHashCode() > 5);
+            var badQueryString = badQuery.ToString();
+            Console.WriteLine(badQueryString);
+            badQueryString.Contains("Exception").ShouldEqual(true);
+        }
     }
 }
