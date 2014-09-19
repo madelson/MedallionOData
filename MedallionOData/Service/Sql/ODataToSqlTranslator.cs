@@ -34,7 +34,7 @@ namespace Medallion.OData.Service.Sql
             translator.Visit(query);
 
             var sql = translator.sqlBuilder.ToString();
-            parameters = translator.parameters;
+            parameters = translator.parameters.Values.ToList();
             return sql;
         }
 
@@ -215,7 +215,7 @@ namespace Medallion.OData.Service.Sql
 
         protected override void VisitConstant(ODataConstantExpression node)
         {
-            this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(node.ClrType, node.Value));
+            this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(node));
         }
 
         protected override void VisitConvert(ODataConvertExpression node)
@@ -291,12 +291,12 @@ namespace Medallion.OData.Service.Sql
             {
                 this.Write(") ").WriteLine(Alias); // close the subquery
                 this.Write("WHERE ");
-                this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Skip));
+                this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip)));
                 this.Write(" < ").Write(Alias).Write(".").Write(RowNumberColumnName);
                 if (node.Top.HasValue) 
                 {
                     this.Write(" AND ").Write(Alias).Write(".").Write(RowNumberColumnName).Write(" <= ");
-                    this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Skip + node.Top.Value));
+                    this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip + node.Top.Value)));
                 }
                 this.WriteLine();
             }
@@ -319,12 +319,12 @@ namespace Medallion.OData.Service.Sql
                 {
                     case SqlSyntax.PaginationSyntax.OffsetFetch:
                         this.Write("OFFSET ");
-                        this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Skip));
+                        this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip)));
                         this.WriteLine(" ROWS");
                         if (node.Top.HasValue)
                         {
                             this.Write("FETCH NEXT ");
-                            this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(typeof(int), node.Top.Value));
+                            this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Top.Value)));
                             this.WriteLine(" ROWS ONLY");
                         }
                         break;
@@ -412,11 +412,17 @@ namespace Medallion.OData.Service.Sql
 
         private bool BitMode { get { return this._bitMode.Peek(); } }
 
-        private readonly List<Parameter> parameters = new List<Parameter>();
-        private Parameter CreateParameter(Type type, object value)
+        private readonly Dictionary<ODataConstantExpression, Parameter> parameters = new Dictionary<ODataConstantExpression,Parameter>();
+        private Parameter CreateParameter(ODataConstantExpression expression)
         {
-            var parameter = new Parameter("p" + this.parameters.Count, type, value);
-            this.parameters.Add(parameter);
+            Parameter existing;
+            if (this.parameters.TryGetValue(expression, out existing))
+            {
+                return existing;
+            }
+
+            var parameter = new Parameter("p" + this.parameters.Count, expression.ClrType, expression.Value);
+            this.parameters.Add(expression, parameter);
             return parameter;
         }
         #endregion
