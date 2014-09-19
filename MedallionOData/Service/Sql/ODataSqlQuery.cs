@@ -13,14 +13,14 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service.Sql
 {
-    internal abstract class SqlQueryProviderForOData : IQueryProvider, IOrderedQueryable
+    internal abstract class ODataSqlQuery : IQueryProvider, IOrderedQueryable
     {
         private readonly Expression expression;
         private readonly SqlSyntax syntax;
         private readonly SqlExecutor executor;
         private readonly string tableSql;
 
-        protected SqlQueryProviderForOData(Expression expression, SqlSyntax syntax, SqlExecutor executor)
+        protected ODataSqlQuery(Expression expression, SqlSyntax syntax, SqlExecutor executor)
             : this(syntax, executor)
         {
             Throw.IfNull(expression, "expression");
@@ -29,7 +29,7 @@ namespace Medallion.OData.Service.Sql
             this.tableSql = null;
         }
 
-        protected SqlQueryProviderForOData(string tableSql, SqlSyntax syntax, SqlExecutor executor)
+        protected ODataSqlQuery(string tableSql, SqlSyntax syntax, SqlExecutor executor)
             : this(syntax, executor)
         {
             Throw.If(string.IsNullOrEmpty(tableSql), "tableSql is required");
@@ -38,7 +38,7 @@ namespace Medallion.OData.Service.Sql
             this.tableSql = tableSql;
         }
 
-        private SqlQueryProviderForOData(SqlSyntax syntax, SqlExecutor executor)
+        private ODataSqlQuery(SqlSyntax syntax, SqlExecutor executor)
         {
             Throw.IfNull(syntax, "syntax");
             Throw.IfNull(executor, "executor");
@@ -52,7 +52,7 @@ namespace Medallion.OData.Service.Sql
         {
             Throw.IfNull(expression, "expression");
 
-            return new SqlQueryProviderForOData<TQueryElement>(expression, this.syntax, this.executor);
+            return new ODataSqlQuery<TQueryElement>(expression, this.syntax, this.executor);
         }
 
         IQueryable IQueryProvider.CreateQuery(System.Linq.Expressions.Expression expression)
@@ -130,10 +130,10 @@ namespace Medallion.OData.Service.Sql
             Throw<InvalidOperationException>.If(queryExpression.InlineCount != ODataInlineCountOption.None, "Unexpected inline count option");
 
             // get the table SQL from the root query
-            var tableQuery = rootQuery as SqlQueryProviderForOData;
+            var tableQuery = rootQuery as ODataSqlQuery;
             Throw<InvalidOperationException>.If(
                 tableQuery == null,
-                () => "Translate: expected a root query query of type " + typeof(SqlQueryProviderForOData) + "; found " + tableQuery
+                () => "Translate: expected a root query query of type " + typeof(ODataSqlQuery) + "; found " + tableQuery
             );
             Throw<InvalidOperationException>.If(tableQuery.tableSql == null, "Invalid root query");
 
@@ -153,14 +153,14 @@ namespace Medallion.OData.Service.Sql
         #endregion
     }
 
-    internal sealed class SqlQueryProviderForOData<TElement> : SqlQueryProviderForOData, IOrderedQueryable<TElement>
+    internal sealed class ODataSqlQuery<TElement> : ODataSqlQuery, IOrderedQueryable<TElement>
     {
-        public SqlQueryProviderForOData(Expression expression, SqlSyntax syntax, SqlExecutor executor)
+        public ODataSqlQuery(Expression expression, SqlSyntax syntax, SqlExecutor executor)
             : base(expression, syntax, executor)
         {
         }
 
-        public SqlQueryProviderForOData(string tableSql, SqlSyntax syntax, SqlExecutor executor)
+        public ODataSqlQuery(string tableSql, SqlSyntax syntax, SqlExecutor executor)
             : base(tableSql, syntax, executor)
         {
         }

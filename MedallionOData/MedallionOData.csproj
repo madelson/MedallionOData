@@ -86,7 +86,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Service\Sql\SqlServerSyntax.cs" />
-    <Compile Include="Service\Sql\SqlQueryProviderForOData.cs">
+    <Compile Include="Service\Sql\ODataSqlQuery.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Trees\ODataEnums.cs" />

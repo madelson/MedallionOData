@@ -34,7 +34,7 @@ namespace Medallion.OData.Service.Sql
         {
             Throw.If(string.IsNullOrWhiteSpace(tableSql), "tableSql is required");
 
-            return new SqlQueryProviderForOData<T>(tableSql, this.syntax, this.executor);
+            return new ODataSqlQuery<T>(tableSql, this.syntax, this.executor);
         }
     }
 }
