@@ -336,11 +336,11 @@ namespace Medallion.OData.Client
                         this._resultTranslator = MakeTranslator(call.Arguments[0], e => e.Any());
                         return Take(source, 1);
                     case "Count":
-                        this._resultTranslator = (values, count) => Math.Min(count.Value - source.Skip, source.Top ?? int.MaxValue);
+                        this._resultTranslator = (values, count) => ComputeCount(count: count.Value, skip: source.Skip, top: source.Top);
                         // top 0 is so that we don't have any wasted payload of data that we won't look at
                         return source.Update(inlineCount: ODataInlineCountOption.AllPages, top: 0);
                     case "LongCount":
-                        this._resultTranslator = (values, count) => (long)Math.Min(count.Value - source.Skip, source.Top ?? int.MaxValue);
+                        this._resultTranslator = (values, count) => (long)ComputeCount(count: count.Value, skip: source.Skip, top: source.Top);
                         // top 0 is so that we don't have any wasted payload of data that we won't look at
                         return source.Update(inlineCount: ODataInlineCountOption.AllPages, top: 0);
                     case "First":
@@ -474,6 +474,17 @@ namespace Medallion.OData.Client
         private static ODataQueryExpression Take(ODataQueryExpression query, int take)
         {
             return query.Update(top: Math.Min(query.Top ?? int.MaxValue, take));
+        }
+
+        private static int ComputeCount(int count, int skip, int? top)
+        {
+            var applySkip = Math.Max(count - skip, 0);
+            if (top.HasValue)
+            {
+                var applyTop = Math.Min(applySkip, top.Value);
+                return applyTop;
+            }
+            return applySkip;
         }
 
 		private static bool TryGetValueFast(Expression expression, out object value)
