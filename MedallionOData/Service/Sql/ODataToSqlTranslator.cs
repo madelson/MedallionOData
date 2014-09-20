@@ -31,13 +31,9 @@ namespace Medallion.OData.Service.Sql
             Throw.IfNull(syntaxProvider, "databaseProvider");
             Throw.If(string.IsNullOrEmpty(tableSql), "tableSql is required");
             Throw.IfNull(query, "query");
-            
-            // normalize the expression
-            var normalizedQuery = ODataExpressionSqlNormalizer.Normalize(query);
 
-            // translate the expression
             var translator = new ODataToSqlTranslator(syntaxProvider, tableSql);
-            translator.Visit(normalizedQuery);
+            translator.Visit(query);
 
             var sql = translator.sqlBuilder.ToString();
             parameters = translator.parameters.Values.ToList();
@@ -128,6 +124,46 @@ namespace Medallion.OData.Service.Sql
                 case ODataFunction.Year:
                     this.syntaxProvider.RenderDatePartFunctionCall(node.Function, s => this.Write(s), () => this.Write(node.Arguments[0]));
                     break;
+                case ODataFunction.EndsWith:
+                    // endswith => (INDEXOF(needle, haystack) = LEN(haystack) - LEN(needle)) OR LEN(needle) = 0
+                    var needleLengthExpression = ODataExpression.Call(ODataFunction.Length, new[] { node.Arguments[1] });
+                    var endsWithExpression = ODataExpression.BinaryOp(
+                        ODataExpression.BinaryOp(
+                            ODataExpression.Call(ODataFunction.IndexOf, node.Arguments),
+                            ODataBinaryOp.Equal,
+                            ODataExpression.BinaryOp(
+                                ODataExpression.Call(ODataFunction.Length, new[] { node.Arguments[0] }),
+                                ODataBinaryOp.Subtract,
+                                needleLengthExpression
+                            )
+                        ),
+                        ODataBinaryOp.Or,
+                        ODataExpression.BinaryOp(
+                            needleLengthExpression,
+                            ODataBinaryOp.Equal,
+                            ODataExpression.Constant(0)
+                        )
+                    );
+                    this.Visit(endsWithExpression);
+                    break;
+                case ODataFunction.StartsWith:
+                    // startswith => INDEXOF(needle, haystack) = 0
+                    var startsWithExpression = ODataExpression.BinaryOp(
+                        ODataExpression.Call(ODataFunction.IndexOf, node.Arguments),
+                        ODataBinaryOp.Equal,
+                        ODataExpression.Constant(0)
+                    );
+                    this.Visit(startsWithExpression);
+                    break;
+                case ODataFunction.SubstringOf:
+                    // substringof => INDEXOF(needle, haystack) >= 0
+                    var substringOfExpression = ODataExpression.BinaryOp(
+                        ODataExpression.Call(ODataFunction.IndexOf, node.Arguments.Reverse()),
+                        ODataBinaryOp.GreaterThanOrEqual,
+                        ODataExpression.Constant(0)
+                    );
+                    this.Visit(substringOfExpression);
+                    break;
                 case ODataFunction.IndexOf:
                     this.syntaxProvider.RenderIndexOfFunctionCall(s => this.Write(s), renderNeedleArgument: () => this.Write(node.Arguments[1]), renderHaystackArgument: () => this.Write(node.Arguments[0]));
                     break;
@@ -166,10 +202,6 @@ namespace Medallion.OData.Service.Sql
                     break;
                 case ODataFunction.IsOf:
                     throw new NotSupportedException(node.Function.ToString());
-                case ODataFunction.EndsWith:
-                case ODataFunction.StartsWith:
-                case ODataFunction.SubstringOf:
-                    throw new InvalidOperationException("Call to " + node.Function + " should have been normalized");
             }
         }
 
@@ -191,7 +223,10 @@ namespace Medallion.OData.Service.Sql
 
         protected override void VisitConvert(ODataConvertExpression node)
         {
-            throw new InvalidOperationException("Convert node should have been normalized");
+            var convertExpression = node.Expression.Type.IsImplicityCastableTo(node.Type)
+                ? node.Expression
+                : ODataExpression.Call(ODataFunction.Cast, new[] { node.Expression, ODataExpression.Constant(node.ClrType) });
+            this.Visit(convertExpression);
         }
 
         protected override void VisitMemberAccess(ODataMemberAccessExpression node)

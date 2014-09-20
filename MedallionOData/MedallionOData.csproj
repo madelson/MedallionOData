@@ -77,7 +77,6 @@
     <Compile Include="Service\ODataQueryProjector.cs" />
     <Compile Include="Service\ODataService.cs" />
     <Compile Include="Service\Sql\BoolModeHelper.cs" />
-    <Compile Include="Service\Sql\ODataExpressionSqlNormalizer.cs" />
     <Compile Include="Service\Sql\SqlExecutor.cs" />
     <Compile Include="Service\Sql\SqlSyntax.cs">
       <SubType>Code</SubType>
@@ -93,7 +92,6 @@
     </Compile>
     <Compile Include="Trees\ODataEnums.cs" />
     <Compile Include="Trees\ODataExpression.cs" />
-    <Compile Include="Trees\ODataExpressionRebuildVisitor.cs" />
     <Compile Include="Trees\ODataExpressions.cs" />
     <Compile Include="Trees\ODataExpressionVisitor.cs" />
   </ItemGroup>
