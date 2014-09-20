@@ -46,6 +46,12 @@ namespace Medallion.OData.Service.Sql
                         default:
                             throw Throw.UnexpectedCase(unaryOp);
                     }
+                case ODataExpressionKind.Call:
+                    return expression.Type == ODataExpressionType.Boolean
+                        // a SQL cast to bool is a cast to bit, so the render mode is bit
+                        && ((ODataCallExpression)expression).Function != ODataFunction.Cast
+                        ? BoolMode.Bool
+                        : BoolMode.Bit;
                 default:
                     return BoolMode.Bit;
             }
