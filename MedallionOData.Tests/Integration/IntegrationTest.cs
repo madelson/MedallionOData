@@ -238,6 +238,10 @@ namespace Medallion.OData.Tests.Integration
         {
             this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3).Count().ShouldEqual(3);
             this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3).LongCount().ShouldEqual(3);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Take(0).Count().ShouldEqual(0);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Take(0).LongCount().ShouldEqual(0);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1000000).Count().ShouldEqual(0);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1000000).LongCount().ShouldEqual(0);
             this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3000).Count().ShouldEqual(CustomersContext.GetCustomers().Count - 1);
             this.CustomersODataQuery().Where(c => c.Name.Length % 2 == 1)
                 .Count()
