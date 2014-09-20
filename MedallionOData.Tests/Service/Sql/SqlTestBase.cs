@@ -120,7 +120,7 @@ namespace Medallion.OData.Tests.Service.Sql
         }
 
         [TestMethod]
-        public void TestToString()
+        public void ToString()
         {
             var query = this.Context.Query<Sample>("fake_table")
                 .Where(s => s.Id % 2 == 0);
@@ -132,6 +132,49 @@ namespace Medallion.OData.Tests.Service.Sql
             var badQueryString = badQuery.ToString();
             Console.WriteLine(badQueryString);
             badQueryString.Contains("Exception").ShouldEqual(true);
+        }
+
+        [TestMethod]
+        public void BitBoolConfusion()
+        {
+            using (var context = new CustomersContext())
+            {
+                this.Context.Query<Sample>("samples")
+                    .Where(s => (s.Bool == false) == (s.Id % 3 == 0))
+                    .CollectionShouldEqual(context.Samples.Where(s => (s.Bool == false) == (s.Id % 3 == 0)));
+
+                this.Context.Query<Sample>("samples")
+                    .Where(s => !s.Bool || !!(false == s.Bool))
+                    .CollectionShouldEqual(context.Samples.Where(s => !s.Bool || !!(false == s.Bool)));
+
+                this.Context.Query<Sample>("samples")
+                    .Select(s => s.Bool && (s.Id > 1))
+                    .CollectionShouldEqual(context.Samples.Select(s => s.Bool && (s.Id > 1)));
+
+                this.Context.Query<Sample>("samples")
+                    .Where(s => s.Bool)
+                    .CollectionShouldEqual(context.Samples.Where(s => s.Bool));
+
+                this.Context.Query<ODataEntity>("samples")
+                    .OrderByDescending(s => s.Get<bool>("Bool"))
+                    .ToArray()
+                    .Select(s => s.Get<int>("Id"))
+                    .CollectionShouldEqual(context.Samples.OrderByDescending(s => s.Bool).Select(s => s.Id), orderMatters: true);
+            }
+        }
+
+        [TestMethod]
+        public void TestStartsWithAndEndsWith()
+        {
+            this.Context.Query<Customer>("customers")
+                .Where(c => c.Name.StartsWith("A"))
+                .Select(c => c.Name)
+                .CollectionShouldEqual(new[] { "A", "Albert" });
+
+            this.Context.Query<ODataEntity>("customers")
+                .Select(c => c.Get<string>("Name"))
+                .Where(n => n.EndsWith("ert"))
+                .CollectionShouldEqual(new[] { "Bert", "Albert" });
         }
     }
 }

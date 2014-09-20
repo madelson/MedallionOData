@@ -93,6 +93,7 @@
     <Compile Include="Service\Sql\SqlTestBase.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Trees\ODataExpressionRebuildVisitorTest.cs" />
     <Compile Include="UnitTestHelpers.cs" />
   </ItemGroup>
   <ItemGroup>

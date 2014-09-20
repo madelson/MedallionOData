@@ -188,5 +188,14 @@ namespace Medallion.OData.Service.Sql
         /// Specifies how pagination should be performed. Defaults to <see cref="PaginationSyntax.OffsetFetch"/>
         /// </summary>
         protected internal virtual PaginationSyntax Pagination { get { return PaginationSyntax.OffsetFetch; } }
+
+        /// <summary>
+        /// If true, then the syntax is assumed to support a "first-class" boolean type similar to .NET's <see cref="System.Boolean"/>.
+        /// When the syntax does not support this, an expression like "BoolColumn eq (A and B)" must be translated by so that both haves
+        /// of the eq operator evaluate to 1 or 0. Conversely, an expression like "$filter=BoolColumn" must be translated like "$filter=BoolColumn eq 1".
+        /// 
+        /// Defaults to false
+        /// </summary>
+        protected internal virtual bool HasFirstClassBooleanType { get { return false; } }
     }
 }

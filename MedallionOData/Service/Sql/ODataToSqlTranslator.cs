@@ -7,31 +7,37 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service.Sql
 {
-    // TODO BIT MODE
     // TODO OFFSET/FETCH w/out sort
+    // COUNT
+    // 2008 test
+    // Integration test
 
     internal sealed class ODataToSqlTranslator : ODataExpressionVisitor
     {
         private const string Alias = "q";
 
         private readonly StringBuilder sqlBuilder = new StringBuilder();
-        private readonly SqlSyntax databaseProvider;
+        private readonly SqlSyntax syntaxProvider;
         private readonly string tableSql;
 
-        private ODataToSqlTranslator(SqlSyntax databaseProvider, string tableSql) 
+        private ODataToSqlTranslator(SqlSyntax syntaxProvider, string tableSql) 
         {
-            this.databaseProvider = databaseProvider;
+            this.syntaxProvider = syntaxProvider;
             this.tableSql = tableSql;
         }
 
-        public static string Translate(SqlSyntax databaseProvider, string tableSql, ODataQueryExpression query, out List<Parameter> parameters)
+        public static string Translate(SqlSyntax syntaxProvider, string tableSql, ODataQueryExpression query, out List<Parameter> parameters)
         {
-            Throw.IfNull(databaseProvider, "databaseProvider");
+            Throw.IfNull(syntaxProvider, "databaseProvider");
             Throw.If(string.IsNullOrEmpty(tableSql), "tableSql is required");
             Throw.IfNull(query, "query");
             
-            var translator = new ODataToSqlTranslator(databaseProvider, tableSql);
-            translator.Visit(query);
+            // normalize the expression
+            var normalizedQuery = ODataExpressionSqlNormalizer.Normalize(query);
+
+            // translate the expression
+            var translator = new ODataToSqlTranslator(syntaxProvider, tableSql);
+            translator.Visit(normalizedQuery);
 
             var sql = translator.sqlBuilder.ToString();
             parameters = translator.parameters.Values.ToList();
@@ -64,10 +70,11 @@ namespace Medallion.OData.Service.Sql
                         .Write(")");
                     break;
                 case ODataBinaryOp.Modulo:
-                    this.databaseProvider.RenderModuloOperator(s => this.Write(s), () => this.Write(node.Left), () => this.Write(node.Right));
+                    this.syntaxProvider.RenderModuloOperator(s => this.Write(s), () => this.Write(node.Left), () => this.Write(node.Right));
                     break;
                 default:
-                    this.Write(node.Left).Write(" ").Write(GetBinOpString(node.Operator)).Write(" ").Write(node.Right);
+                    var argBoolMode = BoolOps.Contains(node.Operator) ? BoolMode.Bool : BoolMode.Bit;
+                    this.Write(node.Left, boolMode: argBoolMode).Write(" ").Write(GetBinOpString(node.Operator)).Write(" ").Write(node.Right, boolMode: argBoolMode);
                     break;
             }
             this.Write(")");
@@ -103,10 +110,10 @@ namespace Medallion.OData.Service.Sql
                 case ODataFunction.Cast:
                     this.Write("CAST(").Write(node.Arguments[0]);
                     var toType = ((Type)((ODataConstantExpression)node.Arguments[1]).Value).ToODataExpressionType();
-                    this.Write(" AS ").Write(this.databaseProvider.GetSqlTypeName(toType)).Write(")");
+                    this.Write(" AS ").Write(this.syntaxProvider.GetSqlTypeName(toType)).Write(")");
                     break;
                 case ODataFunction.Ceiling:
-                    this.VisitCallHelper(this.databaseProvider.UseAbbreviatedCeilingFunction ? "CEIL" : "CEILING", node);
+                    this.VisitCallHelper(this.syntaxProvider.UseAbbreviatedCeilingFunction ? "CEIL" : "CEILING", node);
                     break;
                 case ODataFunction.Concat:
                     this.Write("(").Write(node.Arguments[0])
@@ -119,65 +126,25 @@ namespace Medallion.OData.Service.Sql
                 case ODataFunction.Day:
                 case ODataFunction.Month:
                 case ODataFunction.Year:
-                    this.databaseProvider.RenderDatePartFunctionCall(node.Function, s => this.Write(s), () => this.Write(node.Arguments[0]));
+                    this.syntaxProvider.RenderDatePartFunctionCall(node.Function, s => this.Write(s), () => this.Write(node.Arguments[0]));
                     break;
                 case ODataFunction.IndexOf:
-                    this.databaseProvider.RenderIndexOfFunctionCall(s => this.Write(s), renderNeedleArgument: () => this.Write(node.Arguments[1]), renderHaystackArgument: () => this.Write(node.Arguments[0]));
-                    break;
-                case ODataFunction.EndsWith:
-                    // endswith => (INDEXOF(needle, haystack) = LEN(haystack) - LEN(needle)) OR LEN(needle) = 0
-                    var needleLengthExpression = ODataExpression.Call(ODataFunction.Length, new[] { node.Arguments[1] });
-                    var endsWithExpression = ODataExpression.BinaryOp(
-                        ODataExpression.BinaryOp(
-                            ODataExpression.Call(ODataFunction.IndexOf, node.Arguments),
-                            ODataBinaryOp.Equal,
-                            ODataExpression.BinaryOp(
-                                ODataExpression.Call(ODataFunction.Length, new[] { node.Arguments[0] }),
-                                ODataBinaryOp.Subtract,
-                                needleLengthExpression
-                            )
-                        ),
-                        ODataBinaryOp.Or,
-                        ODataExpression.BinaryOp(
-                            needleLengthExpression,
-                            ODataBinaryOp.Equal,
-                            ODataExpression.Constant(0)
-                        )
-                    );
-                    this.Write(endsWithExpression);
-                    break;
-                case ODataFunction.StartsWith:
-                    // startswith => INDEXOF(needle, haystack) = 0
-                    var startsWithExpression = ODataExpression.BinaryOp(
-                        ODataExpression.Call(ODataFunction.IndexOf, node.Arguments),
-                        ODataBinaryOp.Equal,
-                        ODataExpression.Constant(0)
-                    );
-                    this.Write(startsWithExpression);
-                    break;
-                case ODataFunction.SubstringOf:
-                    // substringof => INDEXOF(needle, haystack) >= 0
-                    var substringOfExpression = ODataExpression.BinaryOp(
-                        ODataExpression.Call(ODataFunction.IndexOf, node.Arguments.Reverse()),
-                        ODataBinaryOp.GreaterThanOrEqual,
-                        ODataExpression.Constant(0)
-                    );
-                    this.Write(substringOfExpression);
+                    this.syntaxProvider.RenderIndexOfFunctionCall(s => this.Write(s), renderNeedleArgument: () => this.Write(node.Arguments[1]), renderHaystackArgument: () => this.Write(node.Arguments[0]));
                     break;
                 case ODataFunction.Floor:
                     this.VisitCallHelper("FLOOR", node);
                     break;
                 case ODataFunction.Length:
-                    this.VisitCallHelper(this.databaseProvider.StringLengthFunctionName, node);
+                    this.VisitCallHelper(this.syntaxProvider.StringLengthFunctionName, node);
                     break;
                 case ODataFunction.Replace:
                     this.VisitCallHelper("REPLACE", node);
                     break;
                 case ODataFunction.Round:
-                    this.databaseProvider.RenderRoundFunctionCall(s => this.Write(s), () => this.Write(node.Arguments[0]));
+                    this.syntaxProvider.RenderRoundFunctionCall(s => this.Write(s), () => this.Write(node.Arguments[0]));
                     break;
                 case ODataFunction.Substring:
-                    this.databaseProvider.RenderSubstringFunctionCall(s => this.Write(s), () => this.Write(node.Arguments[0]), () => this.Write(node.Arguments[1]), node.Arguments.Count > 2 ? new Action(() => this.Write(node.Arguments[2])) : null);
+                    this.syntaxProvider.RenderSubstringFunctionCall(s => this.Write(s), () => this.Write(node.Arguments[0]), () => this.Write(node.Arguments[1]), node.Arguments.Count > 2 ? new Action(() => this.Write(node.Arguments[2])) : null);
                     break;
                 case ODataFunction.ToLower:
                     this.VisitCallHelper("LOWER", node);
@@ -186,7 +153,7 @@ namespace Medallion.OData.Service.Sql
                     this.VisitCallHelper("UPPER", node);
                     break;
                 case ODataFunction.Trim:
-                    if (this.databaseProvider.HasTwoSidedTrim)
+                    if (this.syntaxProvider.HasTwoSidedTrim)
                     {
                         this.VisitCallHelper("TRIM", node);
                     }
@@ -199,6 +166,10 @@ namespace Medallion.OData.Service.Sql
                     break;
                 case ODataFunction.IsOf:
                     throw new NotSupportedException(node.Function.ToString());
+                case ODataFunction.EndsWith:
+                case ODataFunction.StartsWith:
+                case ODataFunction.SubstringOf:
+                    throw new InvalidOperationException("Call to " + node.Function + " should have been normalized");
             }
         }
 
@@ -215,22 +186,19 @@ namespace Medallion.OData.Service.Sql
 
         protected override void VisitConstant(ODataConstantExpression node)
         {
-            this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(node));
+            this.syntaxProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(node));
         }
 
         protected override void VisitConvert(ODataConvertExpression node)
         {
-            var convertExpression = node.Expression.Type.IsImplicityCastableTo(node.Type)
-                ? node.Expression
-                : ODataExpression.Call(ODataFunction.Cast, new[] { node.Expression, ODataExpression.Constant(node.ClrType) });
-            this.Visit(convertExpression);
+            throw new InvalidOperationException("Convert node should have been normalized");
         }
 
         protected override void VisitMemberAccess(ODataMemberAccessExpression node)
         {
             Throw<NotSupportedException>.If(node.Expression != null, () => "Only primitive properties are supported. Found " + node);
             this.Write(Alias).Write(".");
-            this.databaseProvider.RenderColumnName(s => this.Write(s), node.Member);
+            this.syntaxProvider.RenderColumnName(s => this.Write(s), node.Member);
         }
 
         protected override void VisitQuery(ODataQueryExpression node)
@@ -239,7 +207,7 @@ namespace Medallion.OData.Service.Sql
 
             var hasPagination = (node.Skip > 0 || node.Top.HasValue);
             var hasRowNumberPagination = hasPagination
-                && this.databaseProvider.Pagination == SqlSyntax.PaginationSyntax.RowNumber;
+                && this.syntaxProvider.Pagination == SqlSyntax.PaginationSyntax.RowNumber;
 
             if (hasRowNumberPagination)
             {
@@ -284,19 +252,19 @@ namespace Medallion.OData.Service.Sql
             // where
             if (node.Filter != null)
             {
-                this.Write("WHERE ").Write(node.Filter).WriteLine();
+                this.Write("WHERE ").Write(node.Filter, boolMode: BoolMode.Bool).WriteLine();
             }
 
             if (hasRowNumberPagination)
             {
                 this.Write(") ").WriteLine(Alias); // close the subquery
                 this.Write("WHERE ");
-                this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip)));
+                this.syntaxProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip)));
                 this.Write(" < ").Write(Alias).Write(".").Write(RowNumberColumnName);
                 if (node.Top.HasValue) 
                 {
                     this.Write(" AND ").Write(Alias).Write(".").Write(RowNumberColumnName).Write(" <= ");
-                    this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip + node.Top.Value)));
+                    this.syntaxProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip + node.Top.Value)));
                 }
                 this.WriteLine();
             }
@@ -315,16 +283,16 @@ namespace Medallion.OData.Service.Sql
             // skip/take
             if (hasPagination)
             {
-                switch (this.databaseProvider.Pagination)
+                switch (this.syntaxProvider.Pagination)
                 {
                     case SqlSyntax.PaginationSyntax.OffsetFetch:
                         this.Write("OFFSET ");
-                        this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip)));
+                        this.syntaxProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Skip)));
                         this.WriteLine(" ROWS");
                         if (node.Top.HasValue)
                         {
                             this.Write("FETCH NEXT ");
-                            this.databaseProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Top.Value)));
+                            this.syntaxProvider.RenderParameterReference(s => this.Write(s), this.CreateParameter(ODataExpression.Constant(node.Top.Value)));
                             this.WriteLine(" ROWS ONLY");
                         }
                         break;
@@ -333,7 +301,7 @@ namespace Medallion.OData.Service.Sql
                             .WriteLine(node.Top ?? "18446744073709551615".As<object>());
                         break;
                     default:
-                        throw Throw.UnexpectedCase(this.databaseProvider.Pagination);
+                        throw Throw.UnexpectedCase(this.syntaxProvider.Pagination);
                 }
             }
         }
@@ -359,10 +327,10 @@ namespace Medallion.OData.Service.Sql
 
         protected override void VisitUnaryOp(ODataUnaryOpExpression node)
         {
-            switch (node.Operator) 
+            switch (node.Operator)
             {
                 case ODataUnaryOp.Not:
-                    this.Write("(NOT ").Write(node.Operand).Write(")");
+                    this.Write("(NOT ").Write(node.Operand, boolMode: BoolMode.Bool).Write(")");
                     break;
                 default:
                     throw Throw.UnexpectedCase(node.Operator);
@@ -370,14 +338,24 @@ namespace Medallion.OData.Service.Sql
         }
 
         #region ---- Helpers ----
-        private ODataToSqlTranslator Write(object obj, bool @if = true)
+        private ODataToSqlTranslator Write(object obj, bool @if = true, BoolMode boolMode = BoolMode.Bit)
         {
             if (@if)
             {
                 var expression = obj as ODataExpression;
                 if (expression != null)
                 {
+                    var needsBoolModeConversion = !this.syntaxProvider.HasFirstClassBooleanType
+                        && boolMode != BoolModeHelper.GetDefaultMode(expression);
+                    if (needsBoolModeConversion)
+                    {
+                        this.Write(boolMode == BoolMode.Bit ? "(CASE WHEN " : "(");
+                    }
                     this.Visit(expression);
+                    if (needsBoolModeConversion)
+                    {
+                        this.Write(boolMode == BoolMode.Bit ? " THEN 1 ELSE 0 END)" : " = 1)");
+                    }
                 }
                 else
                 {
@@ -396,21 +374,6 @@ namespace Medallion.OData.Service.Sql
             }
             return this;
         }
-
-        private readonly Stack<bool> _bitMode = new Stack<bool>();
-        private ODataToSqlTranslator PushBitMode(bool value)
-        {
-            this._bitMode.Push(value);
-            return this;
-        }
-
-        private ODataToSqlTranslator PopBitMode()
-        {
-            this._bitMode.Pop();
-            return this;
-        }
-
-        private bool BitMode { get { return this._bitMode.Peek(); } }
 
         private readonly Dictionary<ODataConstantExpression, Parameter> parameters = new Dictionary<ODataConstantExpression,Parameter>();
         private Parameter CreateParameter(ODataConstantExpression expression)
