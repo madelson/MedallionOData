@@ -7,8 +7,9 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service.Sql
 {
-    // TODO OFFSET/FETCH w/out sort
-    // COUNT
+    // TODO 
+    // OFFSET/FETCH w/out sort
+    // kill ExecuteCount?
     // 2008 test
     // Integration test
 
@@ -240,7 +241,29 @@ namespace Medallion.OData.Service.Sql
         {
             const string RowNumberColumnName = "__medallionODataRowNumber";
 
-            var hasPagination = (node.Skip > 0 || node.Top.HasValue);
+            var isCounting = node.InlineCount == ODataInlineCountOption.AllPages;
+
+            // we never do pagination when doing counting. This is because, in OData, count ignores pagination
+            var hasPagination = !isCounting && (node.Skip > 0 || node.Top.HasValue);
+
+            // we special-case "top 0" and just do WHERE 1=0 instead. This is because offset-fetch 
+            // does not allow a fetch of 0
+            if (hasPagination && (node.Top ?? 1) == 0)
+            {
+                var emptyQuery = node.Update(
+                    filter: ODataExpression.Constant(false),
+                    top: null
+                );
+                this.Visit(emptyQuery);
+                return;
+            }
+
+            if (isCounting)
+            {
+                this.WriteLine("SELECT COUNT(1) AS theCount")
+                    .WriteLine("FROM (");
+            }
+
             var hasRowNumberPagination = hasPagination
                 && this.syntaxProvider.Pagination == SqlSyntax.PaginationSyntax.RowNumber;
 
@@ -305,7 +328,10 @@ namespace Medallion.OData.Service.Sql
             }
 
             // order by
-            if (node.OrderBy.Count > 0)
+            if (node.OrderBy.Count > 0
+                // we avoid rendering orderby when counting. We don't have to worry about pagination
+                // since hasPagination is always false when counting
+                && !isCounting)
             {
                 this.Write("ORDER BY ");
                 for (var i = 0; i < node.OrderBy.Count; ++i)
@@ -338,6 +364,11 @@ namespace Medallion.OData.Service.Sql
                     default:
                         throw Throw.UnexpectedCase(this.syntaxProvider.Pagination);
                 }
+            }
+
+            if (isCounting)
+            {
+                this.Write(") ").WriteLine(Alias); // close the subquery
             }
         }
 
@@ -389,6 +420,7 @@ namespace Medallion.OData.Service.Sql
                     this.Visit(expression);
                     if (needsBoolModeConversion)
                     {
+                        // TODO do we want more robust null-comparison logic instead of just "= 1"?
                         this.Write(boolMode == BoolMode.Bit ? " THEN 1 ELSE 0 END)" : " = 1)");
                     }
                 }

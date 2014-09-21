@@ -13,6 +13,9 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service.Sql
 {
+    /// <summary>
+    /// An <see cref="IQueryable"/> implementation that executes LINQ queries on a SQL database by first converting them to OData
+    /// </summary>
     internal abstract class ODataSqlQuery : IQueryProvider, IOrderedQueryable
     {
         private readonly Expression expression;
@@ -119,23 +122,32 @@ namespace Medallion.OData.Service.Sql
         protected object ExecuteCommon(Expression expression)
         {
             // translate
+            ODataInlineCountOption inlineCount;
             List<Parameter> parameters;
             Type rootElementType;
             LinqToODataTranslator.ResultTranslator resultTranslator;
-            var sql = this.ToSql(out parameters, out rootElementType, out resultTranslator);
+            var sql = this.ToSql(expression, out inlineCount, out parameters, out rootElementType, out resultTranslator);
 
             // execute
-            var rawResults = this.executor.Execute(sql, parameters, rootElementType);
-            var castRawResults = CastMethod.MakeGenericMethod(rootElementType)
-                .InvokeWithOriginalException(null, new object[] { rawResults });
-            // TODO does passing null here stop count from working?
-            var results = resultTranslator((IEnumerable)castRawResults, inlineCount: null);
-
-            return results;
+            object result;
+            if (inlineCount == ODataInlineCountOption.AllPages)
+            {
+                var rawResult = this.executor.ExecuteCount(sql, parameters);
+                result = resultTranslator(null, inlineCount: rawResult);
+            }
+            else
+            {
+                var rawResults = this.executor.Execute(sql, parameters, rootElementType);
+                var castRawResults = CastMethod.MakeGenericMethod(rootElementType)
+                    .InvokeWithOriginalException(null, new object[] { rawResults });
+                result = resultTranslator((IEnumerable)castRawResults, inlineCount: null);
+            }
+            return result;
         }
 
-        private string ToSql(out List<Parameter> parameters, out Type rootElementType, out LinqToODataTranslator.ResultTranslator resultTranslator)
+        private string ToSql(Expression expression, out ODataInlineCountOption inlineCount, out List<Parameter> parameters, out Type rootElementType, out LinqToODataTranslator.ResultTranslator resultTranslator)
         {
+            // translate LINQ expression to OData
             var translator = new LinqToODataTranslator();
 
             // TODO try-catch and change exception type
@@ -145,7 +157,7 @@ namespace Medallion.OData.Service.Sql
 
             var queryExpression = oDataExpression as ODataQueryExpression;
             Throw<InvalidOperationException>.If(oDataExpression == null, "A queryable expression must translate to a query ODataExpression");
-            Throw<InvalidOperationException>.If(queryExpression.InlineCount != ODataInlineCountOption.None, "Unexpected inline count option");
+            inlineCount = queryExpression.InlineCount;
 
             // get the table SQL from the root query
             var tableQuery = rootQuery as ODataSqlQuery;
@@ -166,10 +178,11 @@ namespace Medallion.OData.Service.Sql
             var builder = new StringBuilder();
             try
             {
+                ODataInlineCountOption inlineCount;
                 List<Parameter> parameters;
                 Type rootElementType;
                 LinqToODataTranslator.ResultTranslator resultTranslator;
-                var sql = this.ToSql(out parameters, out rootElementType, out resultTranslator);
+                var sql = this.ToSql(this.As<IQueryable>().Expression, out inlineCount, out parameters, out rootElementType, out resultTranslator);
                 builder.AppendLine("/*")
                     .AppendFormat(" * Materialize as {0}", rootElementType).AppendLine();
                 parameters.ForEach(p => builder.AppendFormat(" * {0} = {1}", p.Name, p.Value).AppendLine());
@@ -187,6 +200,9 @@ namespace Medallion.OData.Service.Sql
         }
     }
 
+    /// <summary>
+    /// An <see cref="IQueryable"/> implementation that executes LINQ queries on a SQL database by first converting them to OData
+    /// </summary>
     internal sealed class ODataSqlQuery<TElement> : ODataSqlQuery, IOrderedQueryable<TElement>
     {
         public ODataSqlQuery(Expression expression, SqlSyntax syntax, SqlExecutor executor)

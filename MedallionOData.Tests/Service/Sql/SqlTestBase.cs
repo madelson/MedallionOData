@@ -83,6 +83,8 @@ namespace Medallion.OData.Tests.Service.Sql
                 sorted.Take(2).CollectionShouldEqual(expected.Take(2), orderMatters: true);
                 dynamicSorted.Skip(2).CollectionShouldEqual(expected.Select(c => c.Id).Skip(2), orderMatters: true);
             }
+
+            this.Context.Query<Customer>("customers").Take(0).Count().ShouldEqual(0, "top 0");
         }
 
         [TestMethod]
@@ -175,6 +177,29 @@ namespace Medallion.OData.Tests.Service.Sql
                 .Select(c => c.Get<string>("Name"))
                 .Where(n => n.EndsWith("ert"))
                 .CollectionShouldEqual(new[] { "Bert", "Albert" });
+        }
+
+        [TestMethod]
+        public void TestCount()
+        {
+            using (var context = new CustomersContext())
+            {
+                this.Context.Query<Sample>("samples").Count()
+                    .ShouldEqual(context.Samples.Count());
+                this.Context.Query<ODataEntity>("samples").Count(s => s.Get<bool>("Bool"))
+                    .ShouldEqual(context.Samples.Count(s => s.Bool));
+                this.Context.Query<Sample>("samples").OrderBy(s => s.Id).Skip(1).Count()
+                    .ShouldEqual(context.Samples.OrderBy(s => s.Id).Skip(1).Count()); 
+
+                foreach (var val in new[] { 3, 300000 })
+                {
+                    this.Context.Query<Sample>("samples").Take(val).Count()
+                        .ShouldEqual(context.Samples.Take(val).Count());
+
+                    this.Context.Query<ODataEntity>("samples").OrderByDescending(s => s.Get<int>("Id")).Skip(val).Count()
+                        .ShouldEqual(context.Samples.OrderByDescending(s => s.Id).Skip(val).Count());
+                }
+            }
         }
     }
 }
