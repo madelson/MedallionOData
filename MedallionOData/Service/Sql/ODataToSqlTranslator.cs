@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 namespace Medallion.OData.Service.Sql
 {
     // TODO
-    // 2008 test
     // Integration test
 
     internal sealed class ODataToSqlTranslator : ODataExpressionVisitor
@@ -264,35 +263,25 @@ namespace Medallion.OData.Service.Sql
 
             var hasRowNumberPagination = hasPagination
                 && this.syntaxProvider.Pagination == SqlSyntax.PaginationSyntax.RowNumber;
-
             if (hasRowNumberPagination)
             {
-                this.WriteLine("SELECT *")
+                this.Write("SELECT ")
+                    .WriteCommaDelimitedList(node.Select, ifEmpty: "*")
+                    .WriteLine()
                     .WriteLine("FROM (");
             }
 
             // select
             this.Write("SELECT ");
-            if (node.Select.Count > 0)
+            if (hasRowNumberPagination)
             {
-                for (var i = 0; i < node.Select.Count; ++i)
-                {
-                    this.Write(", ", @if: i > 0).Write(node.Select[i]);
-                }
+                this.Write("* , ROW_NUMBER() OVER (ORDER BY ")
+                    .WriteCommaDelimitedList(node.OrderBy, ifEmpty: "RAND()")
+                    .Write(") AS ").Write(RowNumberColumnName);
             }
             else
             {
-                this.Write("*");
-            }
-            if (hasRowNumberPagination)
-            {
-                this.Write(", ROW_NUMBER() OVER (ORDER BY ");
-                for (var i = 0; i < node.OrderBy.Count; ++i)
-                {
-                    this.Write(", ", @if: i > 0).Write(node.OrderBy[i]);
-                }
-                this.Write("RAND()", @if: node.OrderBy.Count == 0)
-                    .Write(") AS ").Write(RowNumberColumnName);
+                this.WriteCommaDelimitedList(node.Select, ifEmpty: "*");
             }
             this.WriteLine();
 
@@ -326,12 +315,8 @@ namespace Medallion.OData.Service.Sql
                 // when doing offset-fetch pagination, we are required to have an order by clause
                 || (hasPagination && this.syntaxProvider.Pagination == SqlSyntax.PaginationSyntax.OffsetFetch))
             {
-                this.Write("ORDER BY ");
-                for (var i = 0; i < node.OrderBy.Count; ++i)
-                {
-                    this.Write(", ", @if: i > 0).Write(node.OrderBy[i]);
-                }
-                this.Write("RAND()", @if: node.OrderBy.Count == 0)
+                this.Write("ORDER BY ")
+                    .WriteCommaDelimitedList(node.OrderBy, ifEmpty: "RAND()")
                     .WriteLine();
             }
 
@@ -354,6 +339,9 @@ namespace Medallion.OData.Service.Sql
                     case SqlSyntax.PaginationSyntax.Limit:
                         this.Write("LIMIT ").Write(node.Skip).Write(", ")
                             .WriteLine(node.Top ?? "18446744073709551615".As<object>());
+                        break;
+                    case SqlSyntax.PaginationSyntax.RowNumber:
+                        // handled above
                         break;
                     default:
                         throw Throw.UnexpectedCase(this.syntaxProvider.Pagination);
@@ -433,6 +421,23 @@ namespace Medallion.OData.Service.Sql
                 this.Write(obj);
                 this.sqlBuilder.AppendLine();
             }
+            return this;
+        }
+
+        private ODataToSqlTranslator WriteCommaDelimitedList(IReadOnlyList<ODataExpression> list, string ifEmpty)
+        {
+            if (list.Count > 0)
+            {
+                for (var i = 0; i < list.Count; ++i)
+                {
+                    this.Write(", ", @if: i > 0).Write(list[i]);
+                }
+            }
+            else
+            {
+                this.Write(ifEmpty);
+            }
+
             return this;
         }
 
