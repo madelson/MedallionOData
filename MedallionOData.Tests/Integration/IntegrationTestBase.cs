@@ -5,64 +5,45 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 
 namespace Medallion.OData.Tests.Integration
 {
-    [TestClass]
-    public class IntegrationTestDynamic
+    public abstract class IntegrationTestBase<TTest>
+        where TTest : IntegrationTestBase<TTest>, new()
     {
-        private static TestServer _testServer;
+        #region ---- Test Server ----
+        protected abstract TestServer CreateTestServer();
 
-        [ClassInitialize]
-        public static void SetUp(TestContext context)
+        private static readonly Lazy<TestServer> testServer = new Lazy<TestServer>(() => new TTest().CreateTestServer());
+
+        protected static void DisposeTestServer()
         {
-            var service = new ODataService();
-            var dynamicQuery = CustomersContext.GetCustomers()
-                .Select(ToODataEntity)
-                .Cast<ODataEntity>()
-                .ToArray()
-                .AsQueryable();
-
-            _testServer = new TestServer(url =>
+            if (testServer.IsValueCreated)
             {
-                var result = service.Execute(dynamicQuery, HttpUtility.ParseQueryString(url.Query));
-                return result.Results.ToString();
-            });
-        }
-
-        private static object ToODataEntity(object obj)
-        {
-            if (obj is Customer || obj is Company)
-            {
-                var props = obj.GetType().GetProperties()
-                    .Select(pi => KeyValuePair.Create(pi.Name, ToODataEntity(pi.GetValue(obj))));
-                return new ODataEntity(props);
-            }
-
-            return obj;
-        }
-
-        [ClassCleanup]
-        public static void TearDown()
-        {
-            if (_testServer != null)
-            {
-                _testServer.As<IDisposable>().Dispose();
-                _testServer = null;
+                testServer.Value.As<IDisposable>().Dispose();
             }
         }
+        #endregion
 
+        #region ---- Configuration ----
+        protected virtual bool AssociationsSupported { get { return true; } }
+        protected virtual bool NullCoalescingSupported { get { return true; } }
+        protected virtual bool FullNumericMixupSupported { get { return true; } }
+        #endregion
+
+        #region ---- Test Cases ----
         [TestMethod]
-        public void IntegrationDynamicSimpleQuery()
+        public void IntegrationSimpleQuery()
         {
             this.Test<Customer, Customer>("customers", c => c, expected: CustomersContext.GetCustomers());
         }
 
         [TestMethod]
-        public void IntegrationDynamicWhere()
+        public void IntegrationWhere()
         {
             this.Test<Customer, Customer>(
                 "customers",
@@ -73,7 +54,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationDynamicSort()
+        public void IntegrationSort()
         {
             this.Test<Customer, Customer>(
                 "customers",
@@ -85,7 +66,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationDynamicSelect()
+        public void IntegrationSelect()
         {
             this.Test(
                 "customers",
@@ -99,7 +80,11 @@ namespace Medallion.OData.Tests.Integration
         {
             this.Test(
                 "customers",
-                (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<ODataEntity>("Company") != null && c.Get<ODataEntity>("Company").Get<string>("Name") == "Mine")
+                (IQueryable<ODataEntity> rows) => rows.Where(
+                        this.NullCoalescingSupported    
+                            ? (Expression<Func<ODataEntity, bool>>)(c => c.Get<ODataEntity>("Company").Get<string>("Name") == "Mine")
+                            : c => c.Get<ODataEntity>("Company") != null && c.Get<ODataEntity>("Company").Get<string>("Name") == "Mine" 
+                    )
                     .Select(c => c.Get<string>("Name")),
                     expected: CustomersContext.GetCustomers().Where(c => c.Company != null && c.Company.Name == "Mine")
                         .Select(c => c.Name)
@@ -123,24 +108,26 @@ namespace Medallion.OData.Tests.Integration
                 expected: CustomersContext.GetCustomers().Select(c => new { @int = (double?)c.AwardCount })
             );
 
-            // we can't do this test because an in-memory ODataEntity will have int as award count
             this.Test(
                 "customers",
                 (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double>("AwardCount") > 4.7)
                     .Select(c => c.Get<string>("Name")),
-                    expected: CustomersContext.GetCustomers().Where(c => c.AwardCount > 4.7)
+                expected: CustomersContext.GetCustomers().Where(c => c.AwardCount > 4.7)
                         .Select(c => c.Name)
             );
 
-            // we can't do this test because in-memory ODataEntity will have double as salary, but the other
+            // we sometimes can't do this test because in-memory ODataEntity will have double as salary, but the other
             // side will guess int after seeing "Salary gt 50000"
-            //this.Test(
-            //    "customers",
-            //    (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double?>("Salary") > 50000)
-            //        .Select(c => c.Get<string>("Name")),
-            //        expected: CustomersContext.GetCustomers().Where(c => c.Salary > 50000)
-            //            .Select(c => c.Name)
-            //);
+            if (this.FullNumericMixupSupported)
+            {
+                this.Test(
+                    "customers",
+                    (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<double?>("Salary") > 50000)
+                        .Select(c => c.Get<string>("Name")),
+                    expected: CustomersContext.GetCustomers().Where(c => c.Salary > 50000)
+                            .Select(c => c.Name)
+                );
+            }
         }
 
         [TestMethod]
@@ -148,17 +135,23 @@ namespace Medallion.OData.Tests.Integration
         {
             this.Test(
                 "customers",
-                (IQueryable<ODataEntity> rows) => rows.Select(r => new { b = r.Get<ODataEntity>("Company"), c = r.Get<string>("Name").Length * 2 })
-                    .Where(t => t.b == null || t.b.Get<string>("Name").Length % 3 != t.c % 3)
-                    .Select(t => t.c),
+                (IQueryable<ODataEntity> rows) => 
+                    this.NullCoalescingSupported
+                        ? rows.Select(r => new { b = r.Get<ODataEntity>("Company"), c = r.Get<string>("Name").Length * 2 })
+                            .Where(t => t.b.Get<string>("Name").Length % 3 != t.c % 3)
+                            .Select(t => t.c)
+                        : rows.Select(r => new { b = r.Get<ODataEntity>("Company"), c = r.Get<string>("Name").Length * 2 })
+                            .Where(t => t.b == null || t.b.Get<string>("Name").Length % 3 != t.c % 3)
+                            .Select(t => t.c),
                 expected: CustomersContext.GetCustomers().Select(c => new { b = c.Company, c = c.Name.Length * 2 })
+                    // note: we need == null here because C# nullability semantics do not match EF's 
                     .Where(t => t.b == null || t.b.Name.Length % 3 != t.c % 3)
                     .Select(t => t.c)
             );
         }
 
         [TestMethod]
-        public void IntegrationDynamicFilterByYear()
+        public void IntegrationFilterByYear()
         {
             this.Test<Customer, Customer>(
                 "customers",
@@ -168,7 +161,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicFirstAndLast()
+        public void IntegrationTestFirstAndLast()
         {
             var first = this.CustomersODataQuery().OrderBy(c => c.Name).First();
             first.Name.ShouldEqual("A");
@@ -195,23 +188,27 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicMinAndMax()
+        public void IntegrationTestMinAndMax()
         {
+            Func<IQueryable<Customer>, IQueryable<Customer>> companyFilter = this.NullCoalescingSupported 
+                    ? q => q.Where(c => c.Company != null)
+                    : new Func<IQueryable<Customer>, IQueryable<Customer>>(q => q);
+
             var minDate = CustomersContext.GetCustomers().Min(c => c.DateCreated);
             this.CustomersODataQuery().Select(c => c.DateCreated).Min().ShouldEqual(minDate);
             this.CustomersODataQuery().Min(c => c.DateCreated).ShouldEqual(minDate);
             UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Length == int.MaxValue).Min(c => c.DateCreated));
-            Assert.IsNotNull(this.CustomersODataQuery().Where(c => c.Company != null).Min(c => c.Company.DateClosed));
+            Assert.IsNotNull(companyFilter(this.CustomersODataQuery()).Min(c => c.Company.DateClosed));
 
             var maxDate = CustomersContext.GetCustomers().Max(c => c.DateCreated);
             this.CustomersODataQuery().Select(c => c.DateCreated).Max().ShouldEqual(maxDate);
             this.CustomersODataQuery().Max(c => c.DateCreated).ShouldEqual(maxDate);
             UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Length == int.MaxValue).Max(c => c.DateCreated));
-            Assert.IsNotNull(this.CustomersODataQuery().Where(c => c.Company != null).Max(c => c.Company.DateClosed));
+            Assert.IsNotNull(companyFilter(this.CustomersODataQuery()).Max(c => c.Company.DateClosed));
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicSingle()
+        public void IntegrationTestSingle()
         {
             UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Take(0).Single());
             this.CustomersODataQuery().Take(0).SingleOrDefault().ShouldEqual(null);
@@ -229,7 +226,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicOrDefaultMethodsWithValueTypes()
+        public void IntegrationTestOrDefaultMethodsWithValueTypes()
         {
             var ints = this.CustomersODataQuery().Select(c => c.Name.Length);
 
@@ -238,7 +235,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicSumAndAverage()
+        public void IntegrationTestSumAndAverage()
         {
             UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated.Year).Sum());
             UnitTestHelpers.AssertThrows<ODataCompileException>(() => this.CustomersODataQuery().Select(c => c.DateCreated.Year).Average());
@@ -247,10 +244,14 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicCount()
+        public void IntegrationTestCount()
         {
             this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3).Count().ShouldEqual(3);
             this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3).LongCount().ShouldEqual(3);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Take(0).Count().ShouldEqual(0);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Take(0).LongCount().ShouldEqual(0);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1000000).Count().ShouldEqual(0);
+            this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1000000).LongCount().ShouldEqual(0);
             this.CustomersODataQuery().OrderBy(c => c.Id).Skip(1).Take(3000).Count().ShouldEqual(CustomersContext.GetCustomers().Count - 1);
             this.CustomersODataQuery().Where(c => c.Name.Length % 2 == 1)
                 .Count()
@@ -262,7 +263,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicAnyAndAll()
+        public void IntegrationTestAnyAndAll()
         {
             this.CustomersODataQuery().Where(c => c.Name == "Dominic").Any().ShouldEqual(true);
             this.CustomersODataQuery().Where(c => c.Name == "no customer has this name").Any().ShouldEqual(false);
@@ -276,7 +277,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicContains()
+        public void IntegrationTestContains()
         {
             this.CustomersODataQuery().Select(c => c.Name)
                 .Contains("no customer has this name")
@@ -290,7 +291,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicExecuteMethodWithComplexProjection()
+        public void IntegrationTestExecuteMethodWithComplexProjection()
         {
             this.CustomersODataQuery().Select(c => c.DateCreated.Day % 5)
                 .Min()
@@ -298,14 +299,14 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicExecuteAsync()
+        public void IntegrationTestExecuteAsync()
         {
             this.CustomersODataQuery().ExecuteAsync(q => q.Count(c => c.Name.Length % 2 == 1)).Result
                 .ShouldEqual(CustomersContext.GetCustomers().Count(c => c.Name.Length % 2 == 1));
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicExecuteQueryAsync()
+        public void IntegrationTestExecuteQueryAsync()
         {
             var result = this.CustomersODataQuery().Where(c => c.Company != null)
                 .OrderBy(c => c.Id)
@@ -321,7 +322,7 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
-        public void IntegrationTestDynamicLet()
+        public void IntegrationTestLet()
         {
             var query = (from c in this.CustomersODataQuery()
                          let trimmedName = c.Name.Trim()
@@ -333,18 +334,55 @@ namespace Medallion.OData.Tests.Integration
 
         private IQueryable<Customer> CustomersODataQuery()
         {
-            return _provider.Query<Customer>(_testServer.Prefix + "customers");
+            return _provider.Query<Customer>(testServer.Value.Prefix + "customers");
         }
 
         private static readonly ODataQueryContext _provider = new ODataQueryContext();
         private void Test<TSource, TResult>(string url, Func<IQueryable<TSource>, IQueryable<TResult>> query, IEnumerable<TResult> expected, IEqualityComparer<TResult> comparer = null, bool orderMatters = false)
         {
-            var uri = new Uri(_testServer.Prefix + url);
+            var uri = new Uri(testServer.Value.Prefix + url);
             var rootQuery = _provider.Query<TSource>(uri);
             var resultQuery = query(rootQuery);
             var result = resultQuery.ToArray();
             result.CollectionShouldEqual(expected, orderMatters: orderMatters, comparer: comparer);
         }
 
+        [TestMethod]
+        public void IntegrationTestRelativeUri()
+        {
+            var provider = new ODataQueryContext(new RelativeUriPipeline());
+            provider.Query<Customer>("/customers")
+                .Single(c => c.Name == "Albert")
+                .Id
+                .ShouldEqual(CustomersContext.GetCustomers().Single(c => c.Name == "Albert").Id);
+
+            provider.Query<Customer>(new Uri("/customers", UriKind.Relative))
+                .Single(c => c.Name == "Albert")
+                .Id
+                .ShouldEqual(CustomersContext.GetCustomers().Single(c => c.Name == "Albert").Id);
+        }
+
+        private class RelativeUriPipeline : IODataClientQueryPipeline
+        {
+            private readonly IODataClientQueryPipeline _pipeline = new DefaultODataClientQueryPipeline();
+
+            IODataTranslationResult IODataClientQueryPipeline.Translate(System.Linq.Expressions.Expression expression, ODataQueryOptions options)
+            {
+                return this._pipeline.Translate(expression, options);
+            }
+
+            Task<IODataWebResponse> IODataClientQueryPipeline.ReadAsync(Uri url)
+            {
+                Assert.IsFalse(url.IsAbsoluteUri, "relative uri expected!");
+                var finalUri = new Uri(new Uri(testServer.Value.Prefix), url.ToString().TrimStart('/'));
+                return this._pipeline.ReadAsync(finalUri);
+            }
+
+            Task<IODataDeserializationResult> IODataClientQueryPipeline.DeserializeAsync(IODataTranslationResult translation, System.IO.Stream response)
+            {
+                return this._pipeline.DeserializeAsync(translation, response);
+            }
+        }
+        #endregion
     }
 }

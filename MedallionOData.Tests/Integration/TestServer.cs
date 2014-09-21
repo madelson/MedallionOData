@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Tests.Integration
 {
-    internal class TestServer : IDisposable
+    public class TestServer : IDisposable
     {
         private readonly string _prefix = "http://localhost:2020/" + Guid.NewGuid() + "/";
         private volatile HttpListener _listener;
