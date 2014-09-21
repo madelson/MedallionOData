@@ -9,7 +9,6 @@ namespace Medallion.OData.Service.Sql
 {
     // TODO 
     // OFFSET/FETCH w/out sort
-    // kill ExecuteCount?
     // 2008 test
     // Integration test
 

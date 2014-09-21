@@ -20,10 +20,5 @@ namespace Medallion.OData.Samples.Web.Models
         {
             throw new NotImplementedException();
         }
-
-        protected override int ExecuteCount(string sql, IReadOnlyList<Parameter> parameters)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

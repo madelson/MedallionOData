@@ -18,11 +18,6 @@ namespace Medallion.OData.Service.Sql
         /// to <paramref name="resultType"/>
         /// </summary>
         protected internal abstract IEnumerable Execute(string sql, IReadOnlyList<Parameter> parameters, Type resultType);
-
-        /// <summary>
-        /// Executes the given count <paramref name="sql"/> query using the given <paramref name="parameters"/>
-        /// </summary>
-        protected internal abstract int ExecuteCount(string sql, IReadOnlyList<Parameter> parameters);
     }
 
     /// <summary>

@@ -132,8 +132,10 @@ namespace Medallion.OData.Service.Sql
             object result;
             if (inlineCount == ODataInlineCountOption.AllPages)
             {
-                var rawResult = this.executor.ExecuteCount(sql, parameters);
-                result = resultTranslator(null, inlineCount: rawResult);
+                var count = this.executor.Execute(sql, parameters, resultType: typeof(int))
+                    .Cast<int>()
+                    .Single();
+                result = resultTranslator(null, inlineCount: count);
             }
             else
             {

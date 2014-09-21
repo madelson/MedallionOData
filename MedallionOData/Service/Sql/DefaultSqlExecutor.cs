@@ -53,6 +53,11 @@ namespace Medallion.OData.Service.Sql
                     return new ODataEntity(kvpArray);
                 };
             }
+            else if (resultType == typeof(int))
+            {
+                // to support count
+                materialize = r => r.GetInt32(0);
+            }
             else if (resultType.GetConstructor(Type.EmptyTypes) != null)
             {
                 // TODO FUTURE offer faster compiled materialization (should optimize for cold start and cache, though!)
@@ -96,18 +101,6 @@ namespace Medallion.OData.Service.Sql
                 {
                     yield return result;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Implements <see cref="SqlExecutor.ExecuteCount"/> using the current connection
-        /// </summary>
-        protected internal sealed override int ExecuteCount(string sql, IReadOnlyList<Parameter> parameters)
-        {
-            using (var connection = this.GetConnection())
-            using (var command = this.CreateCommand(connection.Connection, sql, parameters))
-            {
-                return (int)command.ExecuteScalar();
             }
         }
 
