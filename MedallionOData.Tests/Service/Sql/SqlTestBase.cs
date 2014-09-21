@@ -4,6 +4,7 @@ using Medallion.OData.Tests.Integration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -203,6 +204,14 @@ namespace Medallion.OData.Tests.Service.Sql
                         .ShouldEqual(context.Samples.OrderByDescending(s => s.Id).Skip(val).Count());
                 }
             }
+        }
+
+        [TestMethod]
+        public void SqlErrors()
+        {
+            var samples = this.Context.Query<Sample>("samples");
+            UnitTestHelpers.AssertThrows<ODataCompileException>(() => samples.Join(samples, s => s.Id, s => s.Id, (s1, s2) => s1.Id + s2.Id).ToArray());
+            UnitTestHelpers.AssertThrows<DbException>(() => this.Context.Query<Sample>("fake_samples").ToArray());
         }
     }
 }

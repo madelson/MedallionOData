@@ -10,7 +10,6 @@ namespace Medallion.OData.Service.Sql
     // TODO
     // 2008 test
     // Integration test
-    // Error types
 
     internal sealed class ODataToSqlTranslator : ODataExpressionVisitor
     {
