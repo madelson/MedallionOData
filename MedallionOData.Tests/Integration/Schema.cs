@@ -140,13 +140,20 @@ namespace Medallion.OData.Tests.Integration
             return connectionString.ConnectionString;
         }
 
+        private static int ranCleanup;
+
         protected override void Dispose(bool disposing)
         {
+            if (Interlocked.Exchange(ref ranCleanup, 1) == 1)
+            {
+                return;
+            }
+
             // delete old databases with the prefix
             var databasesToDelete = this.Database.SqlQuery<string>(@"
                     SELECT name FROM sys.databases
                     WHERE name LIKE '" + Prefix + @"%'
-                        AND DATEADD(d, -1, GETDATE()) > create_date"
+                        AND DATEADD(HOUR, -2, GETDATE()) > create_date"
                 )
                 .ToArray();
 
