@@ -7,9 +7,6 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service.Sql
 {
-    // TODO
-    // ODataValue
-
     internal sealed class ODataToSqlTranslator : ODataExpressionVisitor
     {
         private const string Alias = "q";

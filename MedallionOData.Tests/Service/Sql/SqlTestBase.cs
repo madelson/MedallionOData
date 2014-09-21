@@ -1,4 +1,5 @@
 ﻿using Medallion.OData.Client;
+using Medallion.OData.Dynamic;
 using Medallion.OData.Service.Sql;
 using Medallion.OData.Tests.Integration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -220,6 +221,18 @@ namespace Medallion.OData.Tests.Service.Sql
             UnitTestHelpers.AssertThrows<DbException>(
                 () => this.Context.Query<ODataEntity>("customers").Where(c => c.Get<ODataEntity>("company") != null).ToArray()
             );
+        }
+
+        [TestMethod]
+        public void SqlODataValue()
+        {
+            using (var context = new CustomersContext())
+            {
+                this.Context.Query<ODataEntity>("(SELECT * FROM samples)").Select(s => s.Get<ODataValue>("Bool"))
+                    .ToArray()
+                    .Select(b => (bool)b.Value)
+                    .CollectionShouldEqual(context.Samples.Select(s => s.Bool));
+            }
         }
     }
 }
