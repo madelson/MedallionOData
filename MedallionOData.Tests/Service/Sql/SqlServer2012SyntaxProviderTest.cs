@@ -11,26 +11,35 @@ using System.Threading.Tasks;
 namespace Medallion.OData.Tests.Service.Sql
 {
     [TestClass]
-    public class SqlSyntaxProviderTest : SqlTestBase
+    public class SqlServer2012SyntaxProviderTest : SqlTestBase
     {
         private readonly Lazy<ODataSqlContext> context = new Lazy<ODataSqlContext>(
             () =>
             {
                 using (var efContext = new CustomersContext())
                 {
-                    efContext.Database.Initialize(force: false); // needed so we can call GetVersion
-
+                    efContext.Database.Initialize(force: false);
                     var connectionString = efContext.Database.Connection.ConnectionString;
-                    using (var connection = new SqlConnection(connectionString))
-                    {
-                        return new ODataSqlContext(new SqlServerSyntax(SqlServerSyntax.GetVersion(connection)), new DefaultSqlExecutor(() => new SqlConnection(connectionString)));
-                    }
+                    return new ODataSqlContext(new SqlServerSyntax(SqlServerSyntax.Version.Sql2012), new DefaultSqlExecutor(() => new SqlConnection(connectionString)));
                 }
             }
         );
         protected override ODataSqlContext Context
         {
             get { return this.context.Value; }
+        }
+
+        [TestMethod]
+        public void SqlGetVersion()
+        {
+            using (var efContext = new CustomersContext())
+            {
+                efContext.Database.Initialize(force: false);
+                using (var connection = new SqlConnection(efContext.Database.Connection.ConnectionString))
+                {
+                    SqlServerSyntax.GetVersion(connection).ShouldEqual(SqlServerSyntax.Version.Sql2012);
+                }
+            }
         }
     }
 }

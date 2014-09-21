@@ -87,7 +87,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\ODataJsonSerializerTest.cs" />
     <Compile Include="Service\ODataQueryProjectorTest.cs" />
-    <Compile Include="Service\Sql\SqlDatabaseProviderTest.cs">
+    <Compile Include="Service\Sql\SqlServer2008SyntaxProviderTest.cs" />
+    <Compile Include="Service\Sql\SqlServer2012SyntaxProviderTest.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Service\Sql\SqlTestBase.cs">
