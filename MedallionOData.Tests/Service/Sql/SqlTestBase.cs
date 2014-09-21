@@ -82,13 +82,16 @@ namespace Medallion.OData.Tests.Service.Sql
                 dynamicSorted.Skip(1).Take(3).CollectionShouldEqual(expected.Select(c => c.Id).Skip(1).Take(3), orderMatters: true);
                 sorted.Take(2).CollectionShouldEqual(expected.Take(2), orderMatters: true);
                 dynamicSorted.Skip(2).CollectionShouldEqual(expected.Select(c => c.Id).Skip(2), orderMatters: true);
+
+                this.Context.Query<Sample>("samples").Take(10).ToArray().Count().ShouldEqual(10, "unsorted take");
+                this.Context.Query<Sample>("samples").Skip(3).ToArray().Count().ShouldEqual(context.Samples.Count() - 3, "unsorted skip");
             }
 
             this.Context.Query<Customer>("customers").Take(0).Count().ShouldEqual(0, "top 0");
         }
 
         [TestMethod]
-        public void NullableEquality()
+        public void SqlNullableEquality()
         {
             var samples = this.Context.Query<Sample>("samples");
             var dynamicSamples = this.Context.Query<ODataEntity>("samples");
@@ -122,7 +125,7 @@ namespace Medallion.OData.Tests.Service.Sql
         }
 
         [TestMethod]
-        public void ToString()
+        public void SqlToString()
         {
             var query = this.Context.Query<Sample>("fake_table")
                 .Where(s => s.Id % 2 == 0);
@@ -137,7 +140,7 @@ namespace Medallion.OData.Tests.Service.Sql
         }
 
         [TestMethod]
-        public void BitBoolConfusion()
+        public void SqlBitBoolConfusion()
         {
             using (var context = new CustomersContext())
             {
@@ -166,7 +169,7 @@ namespace Medallion.OData.Tests.Service.Sql
         }
 
         [TestMethod]
-        public void TestStartsWithAndEndsWith()
+        public void SqlTestStartsWithAndEndsWith()
         {
             this.Context.Query<Customer>("customers")
                 .Where(c => c.Name.StartsWith("A"))
@@ -180,7 +183,7 @@ namespace Medallion.OData.Tests.Service.Sql
         }
 
         [TestMethod]
-        public void TestCount()
+        public void SqlCount()
         {
             using (var context = new CustomersContext())
             {

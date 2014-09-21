@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service.Sql
 {
-    // TODO 
-    // OFFSET/FETCH w/out sort
+    // TODO
     // 2008 test
     // Integration test
+    // Error types
 
     internal sealed class ODataToSqlTranslator : ODataExpressionVisitor
     {
@@ -288,18 +288,12 @@ namespace Medallion.OData.Service.Sql
             if (hasRowNumberPagination)
             {
                 this.Write(", ROW_NUMBER() OVER (ORDER BY ");
-                if (node.OrderBy.Count > 0)
+                for (var i = 0; i < node.OrderBy.Count; ++i)
                 {
-                    for (var i = 0; i < node.OrderBy.Count; ++i)
-                    {
-                        this.Write(", ", @if: i > 0).Write(node.OrderBy[i]);
-                    }
+                    this.Write(", ", @if: i > 0).Write(node.OrderBy[i]);
                 }
-                else
-                {
-                    this.Write("RAND()");
-                }
-                this.Write(") AS ").Write(RowNumberColumnName);
+                this.Write("RAND()", @if: node.OrderBy.Count == 0)
+                    .Write(") AS ").Write(RowNumberColumnName);
             }
             this.WriteLine();
 
@@ -327,17 +321,19 @@ namespace Medallion.OData.Service.Sql
             }
 
             // order by
-            if (node.OrderBy.Count > 0
-                // we avoid rendering orderby when counting. We don't have to worry about pagination
-                // since hasPagination is always false when counting
-                && !isCounting)
+            // we avoid rendering orderby when counting. We don't have to worry about pagination
+            // since hasPagination is always false when counting
+            if ((node.OrderBy.Count > 0 && !isCounting)
+                // when doing offset-fetch pagination, we are required to have an order by clause
+                || (hasPagination && this.syntaxProvider.Pagination == SqlSyntax.PaginationSyntax.OffsetFetch))
             {
                 this.Write("ORDER BY ");
                 for (var i = 0; i < node.OrderBy.Count; ++i)
                 {
                     this.Write(", ", @if: i > 0).Write(node.OrderBy[i]);
                 }
-                this.WriteLine();
+                this.Write("RAND()", @if: node.OrderBy.Count == 0)
+                    .WriteLine();
             }
 
             // skip/take
