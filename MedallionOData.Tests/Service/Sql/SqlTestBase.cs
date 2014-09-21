@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -212,6 +213,13 @@ namespace Medallion.OData.Tests.Service.Sql
             var samples = this.Context.Query<Sample>("samples");
             UnitTestHelpers.AssertThrows<ODataCompileException>(() => samples.Join(samples, s => s.Id, s => s.Id, (s1, s2) => s1.Id + s2.Id).ToArray());
             UnitTestHelpers.AssertThrows<DbException>(() => this.Context.Query<Sample>("fake_samples").ToArray());
+            UnitTestHelpers.AssertThrows<NotSupportedException>(
+                () => this.Context.Query<Customer>("customers").Where(c => c.Company.Name.Contains("e")).ToArray()
+            );
+            // see note in ODataToSqlTranslator.VisitMemberAccess about why we can't throw NotSupported here
+            UnitTestHelpers.AssertThrows<DbException>(
+                () => this.Context.Query<ODataEntity>("customers").Where(c => c.Get<ODataEntity>("company") != null).ToArray()
+            );
         }
     }
 }

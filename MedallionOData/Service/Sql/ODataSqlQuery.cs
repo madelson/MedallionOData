@@ -152,7 +152,6 @@ namespace Medallion.OData.Service.Sql
             // translate LINQ expression to OData
             var translator = new LinqToODataTranslator();
 
-            // TODO try-catch and change exception type
             IQueryable rootQuery;
             var oDataExpression = translator.Translate(expression, out rootQuery, out resultTranslator);
             rootElementType = rootQuery.ElementType;

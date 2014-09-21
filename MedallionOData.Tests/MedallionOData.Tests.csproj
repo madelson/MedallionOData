@@ -77,11 +77,10 @@
     <Compile Include="HelpersTest.cs" />
     <Compile Include="Integration\EntityFrameworkIntegrationTest.cs" />
     <Compile Include="Integration\InMemoryODataEntityIntegrationTest.cs" />
-    <Compile Include="Integration\IntegrationTest.cs" />
     <Compile Include="Integration\IntegrationTestBase.cs" />
-    <Compile Include="Integration\IntegrationTestDynamic.cs" />
     <Compile Include="Integration\MicrosoftODataServiceIntegrationTest.cs" />
     <Compile Include="Integration\Schema.cs" />
+    <Compile Include="Integration\SqlODataEntityIntegrationTest.cs" />
     <Compile Include="Integration\TestServer.cs" />
     <Compile Include="NumberHelperTest.cs" />
     <Compile Include="ODataParsingTest.cs" />

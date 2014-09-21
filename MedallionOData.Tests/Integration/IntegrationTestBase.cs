@@ -68,27 +68,33 @@ namespace Medallion.OData.Tests.Integration
         [TestMethod]
         public void IntegrationSelect()
         {
-            this.Test(
-                "customers",
-                (IQueryable<Customer> cc) => cc.Select(c => new { c.Company, c.Name }),
-                expected: CustomersContext.GetCustomers().Select(c => new { c.Company, c.Name })
-            );
+            if (this.AssociationsSupported)
+            {
+                this.Test(
+                    "customers",
+                    (IQueryable<Customer> cc) => cc.Select(c => new { c.Company, c.Name }),
+                    expected: CustomersContext.GetCustomers().Select(c => new { c.Company, c.Name })
+                );
+            }
         }
 
         [TestMethod]
         public void IntegrationDynamicRowFilterAndProjectToSimpleType()
         {
-            this.Test(
-                "customers",
-                (IQueryable<ODataEntity> rows) => rows.Where(
-                        this.NullCoalescingSupported    
-                            ? (Expression<Func<ODataEntity, bool>>)(c => c.Get<ODataEntity>("Company").Get<string>("Name") == "Mine")
-                            : c => c.Get<ODataEntity>("Company") != null && c.Get<ODataEntity>("Company").Get<string>("Name") == "Mine" 
-                    )
-                    .Select(c => c.Get<string>("Name")),
+            if (this.AssociationsSupported)
+            {
+                this.Test(
+                    "customers",
+                    (IQueryable<ODataEntity> rows) => rows.Where(
+                            this.NullCoalescingSupported
+                                ? (Expression<Func<ODataEntity, bool>>)(c => c.Get<ODataEntity>("Company").Get<string>("Name") == "Mine")
+                                : c => c.Get<ODataEntity>("Company") != null && c.Get<ODataEntity>("Company").Get<string>("Name") == "Mine"
+                        )
+                        .Select(c => c.Get<string>("Name")),
                     expected: CustomersContext.GetCustomers().Where(c => c.Company != null && c.Company.Name == "Mine")
                         .Select(c => c.Name)
-            );
+                );
+            }
         }
 
         [TestMethod]
@@ -133,9 +139,11 @@ namespace Medallion.OData.Tests.Integration
         [TestMethod]
         public void IntegrationDynamicRowComplexQuery()
         {
-            this.Test(
+            if (this.AssociationsSupported)
+            {
+                this.Test(
                 "customers",
-                (IQueryable<ODataEntity> rows) => 
+                (IQueryable<ODataEntity> rows) =>
                     this.NullCoalescingSupported
                         ? rows.Select(r => new { b = r.Get<ODataEntity>("Company"), c = r.Get<string>("Name").Length * 2 })
                             .Where(t => t.b.Get<string>("Name").Length % 3 != t.c % 3)
@@ -143,21 +151,25 @@ namespace Medallion.OData.Tests.Integration
                         : rows.Select(r => new { b = r.Get<ODataEntity>("Company"), c = r.Get<string>("Name").Length * 2 })
                             .Where(t => t.b == null || t.b.Get<string>("Name").Length % 3 != t.c % 3)
                             .Select(t => t.c),
-                expected: CustomersContext.GetCustomers().Select(c => new { b = c.Company, c = c.Name.Length * 2 })
-                    // note: we need == null here because C# nullability semantics do not match EF's 
-                    .Where(t => t.b == null || t.b.Name.Length % 3 != t.c % 3)
-                    .Select(t => t.c)
-            );
+                    expected: CustomersContext.GetCustomers().Select(c => new { b = c.Company, c = c.Name.Length * 2 })
+                        // note: we need == null here because C# nullability semantics do not match EF's 
+                        .Where(t => t.b == null || t.b.Name.Length % 3 != t.c % 3)
+                        .Select(t => t.c)
+                );
+            }
         }
 
         [TestMethod]
         public void IntegrationFilterByYear()
         {
-            this.Test<Customer, Customer>(
-                "customers",
-                cc => cc.Where(c => c.Company != null && c.Company.DateClosed.HasValue && ((DateTime)c.Company.DateClosed).Year == 1988),
-                expected: CustomersContext.GetCustomers().Where(c => c.Company != null && c.Company.DateClosed.HasValue && ((DateTime)c.Company.DateClosed).Year == 1988)
-            );
+            if (this.AssociationsSupported)
+            {
+                this.Test<Customer, Customer>(
+                    "customers",
+                    cc => cc.Where(c => c.Company != null && c.Company.DateClosed.HasValue && ((DateTime)c.Company.DateClosed).Year == 1988),
+                    expected: CustomersContext.GetCustomers().Where(c => c.Company != null && c.Company.DateClosed.HasValue && ((DateTime)c.Company.DateClosed).Year == 1988)
+                );
+            }
         }
 
         [TestMethod]
@@ -191,20 +203,26 @@ namespace Medallion.OData.Tests.Integration
         public void IntegrationTestMinAndMax()
         {
             Func<IQueryable<Customer>, IQueryable<Customer>> companyFilter = this.NullCoalescingSupported 
-                    ? q => q.Where(c => c.Company != null)
-                    : new Func<IQueryable<Customer>, IQueryable<Customer>>(q => q);
+                    ? new Func<IQueryable<Customer>, IQueryable<Customer>>(q => q)
+                    : q => q.Where(c => c.Company != null);
 
             var minDate = CustomersContext.GetCustomers().Min(c => c.DateCreated);
             this.CustomersODataQuery().Select(c => c.DateCreated).Min().ShouldEqual(minDate);
             this.CustomersODataQuery().Min(c => c.DateCreated).ShouldEqual(minDate);
             UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Length == int.MaxValue).Min(c => c.DateCreated));
-            Assert.IsNotNull(companyFilter(this.CustomersODataQuery()).Min(c => c.Company.DateClosed));
+            if (this.AssociationsSupported)
+            {
+                Assert.IsNotNull(companyFilter(this.CustomersODataQuery()).Min(c => c.Company.DateClosed));
+            }
 
             var maxDate = CustomersContext.GetCustomers().Max(c => c.DateCreated);
             this.CustomersODataQuery().Select(c => c.DateCreated).Max().ShouldEqual(maxDate);
             this.CustomersODataQuery().Max(c => c.DateCreated).ShouldEqual(maxDate);
             UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Length == int.MaxValue).Max(c => c.DateCreated));
-            Assert.IsNotNull(companyFilter(this.CustomersODataQuery()).Max(c => c.Company.DateClosed));
+            if (this.AssociationsSupported)
+            {
+                Assert.IsNotNull(companyFilter(this.CustomersODataQuery()).Max(c => c.Company.DateClosed));
+            }
         }
 
         [TestMethod]
@@ -308,15 +326,25 @@ namespace Medallion.OData.Tests.Integration
         [TestMethod]
         public void IntegrationTestExecuteQueryAsync()
         {
-            var result = this.CustomersODataQuery().Where(c => c.Company != null)
+            Expression<Func<Customer, bool>> filter;
+            if (this.AssociationsSupported)
+            {
+                filter = c => c.Company != null;
+            }
+            else
+            {
+                filter = c => c.AwardCount != 0;
+            }
+
+            var result = this.CustomersODataQuery().Where(filter)
                 .OrderBy(c => c.Id)
                 .Skip(1)
                 .Take(2)
                 .ExecuteQueryAsync(new ODataQueryOptions(inlineCount: ODataInlineCountOption.AllPages)).Result;
-            result.TotalCount.ShouldEqual(this.CustomersODataQuery().Where(c => c.Company != null).Count());
+            result.TotalCount.ShouldEqual(this.CustomersODataQuery().Where(filter).Count());
             result.Results.Select(c => c.Id)
                 .CollectionShouldEqual(
-                    this.CustomersODataQuery().Where(c => c.Company != null).OrderBy(c => c.Id).Skip(1).Take(2).Select(c => c.Id),
+                    this.CustomersODataQuery().Where(filter).OrderBy(c => c.Id).Skip(1).Take(2).Select(c => c.Id),
                     orderMatters: true
                 );
         }

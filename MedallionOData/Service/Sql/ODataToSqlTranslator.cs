@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Medallion.OData.Service.Sql
 {
     // TODO
-    // Integration test
+    // ODataValue
 
     internal sealed class ODataToSqlTranslator : ODataExpressionVisitor
     {
@@ -229,6 +229,8 @@ namespace Medallion.OData.Service.Sql
 
         protected override void VisitMemberAccess(ODataMemberAccessExpression node)
         {
+            // MA: we can't check for node.Type != Complex here because if we are dynamic then we can get confused with
+            // statements like x => x.Foo != null
             Throw<NotSupportedException>.If(node.Expression != null, () => "Only primitive properties are supported. Found " + node);
             this.Write(Alias).Write(".");
             this.syntaxProvider.RenderColumnName(s => this.Write(s), node.Member);
