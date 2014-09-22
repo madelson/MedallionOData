@@ -33,9 +33,10 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 
+// 2014-09-21 Version 1.4.0 adds direct support for SQL-based OData services. These services can have fully dynamic schemas, unlike the static typing imposed by providers like EntityFramework
 // 2014-09-20 Version 1.3.1 fixes a bug where Skip([large #]).Count() could return negative values
 // 2014-09-11 Version 1.3.0 adds support for fully dynamic services based on in-memory ODataEntity collections
-[assembly: AssemblyVersion("1.3.1.0")]
+[assembly: AssemblyVersion("1.4.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
 [assembly: InternalsVisibleTo("MedallionOData.Tests")]
