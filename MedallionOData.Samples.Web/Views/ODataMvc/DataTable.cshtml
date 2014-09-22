@@ -1,0 +1,65 @@
+﻿@using Medallion.OData.Samples.Web.Controllers;
+
+@{
+    this.Layout = null;
+}
+
+<head>
+    <title>JQuery DataTable example</title>
+
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css"/>
+
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/Scripts/jquery.dataTables.odata.js"></script>
+</head>
+<body>
+    <div>JQuery DataTable example</div>
+    <div>
+        <div>
+            Example using a MSFT service
+            <table id="products"></table>
+            <script type="text/javascript">
+                $('table#products').dataTable({
+                    "sAjaxSource": "http://services.odata.org/V4/OData/OData.svc/Products",
+                    "iODataVersion": 4,
+                    "aoColumns": [
+                        { mDataProp: "Name" },
+                        { mDataProp: "Description" },
+                        { mDataProp: "Rating", sType: 'numeric' },
+                        { mDataProp: "Price", sType: 'numeric' },
+                        { mDataProp: "ReleaseDate", sType: 'date' }
+                    ],
+                    "fnServerData": fnServerOData, // required
+                    "bServerSide": true,  // optional
+                    "bUseODataViaJSONP": true,  // set to true if using cross-domain requests
+                });
+            </script>
+        </div>
+        <div>
+            Example using a MedallionOData dynamic service
+            @{
+                var id = Guid.NewGuid().GetHashCode();
+                var schema = ODataMvcController.GenerateRandomSchema(id);
+            }
+            <table id="medallion"></table>
+            <script type="text/javascript">
+                $('table#medallion').dataTable({
+                    "sAjaxSource": "/ODataMvc/Data/@(id)",
+                    "iODataVersion": 4,
+                    "aoColumns": [
+                        @foreach (var t in schema.Keys.Select((key, index) => new { key, index })) 
+                        { 
+                            <text>
+                                @(t.index == 0 ? string.Empty : ", "){ mDataProp: "@(t.key)" }
+                            </text> 
+                        }
+                    ],
+                    "fnServerData": fnServerOData, // required
+                    "bServerSide": true,  // optional
+                    "bUseODataViaJSONP": false,  // set to true if using cross-domain requests
+                });
+            </script>
+        </div>
+    </div>
+</body>
