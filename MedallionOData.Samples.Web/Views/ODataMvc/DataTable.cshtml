@@ -46,7 +46,7 @@
             <script type="text/javascript">
                 $('table#medallion').dataTable({
                     "sAjaxSource": "/ODataMvc/Data/@(id)",
-                    "iODataVersion": 4,
+                    "iODataVersion": 3,
                     "aoColumns": [
                         @foreach (var t in schema.Keys.Select((key, index) => new { key, index })) 
                         { 

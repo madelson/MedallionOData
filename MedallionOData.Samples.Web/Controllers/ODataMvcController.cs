@@ -53,17 +53,17 @@ namespace Medallion.OData.Samples.Web.Controllers
                 var service = new ODataService();
                 // hack on OData v4 handling
                 var queryParameters = HttpUtility.ParseQueryString(this.Request.Url.Query);
-                if (bool.Parse(queryParameters["$count"] ?? bool.FalseString)) 
-                {
-                    queryParameters["$inlinecount"] = "allpages";
-                }
+                //if (bool.Parse(queryParameters["$count"] ?? bool.FalseString)) 
+                //{
+                //    queryParameters["$inlinecount"] = "allpages";
+                //}
                 var result = service.Execute(query, queryParameters);
                 var resultJObject = JObject.Parse(result.Results.ToString());
-                JToken count;
-                if (resultJObject.TryGetValue("odata.count", out count))
-                {
-                    resultJObject["@odata.count"] = count;
-                }
+                //JToken count;
+                //if (resultJObject.TryGetValue("odata.count", out count))
+                //{
+                //    resultJObject["@odata.count"] = count;
+                //}
                 return this.Content(resultJObject.ToString(), "application/json");
             }
         }
