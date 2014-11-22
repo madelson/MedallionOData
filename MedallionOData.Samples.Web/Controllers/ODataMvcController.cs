@@ -82,6 +82,47 @@ namespace Medallion.OData.Samples.Web.Controllers
                 );
             return result;
         }
+
+        [HttpGet]
+        public ActionResult PivotedData(string productNames) 
+        {
+            var productNameList = productNames.Split(',');
+            
+            Product[] products;
+            using (var context = new OrdersContext()) 
+            {
+                products = context.Products.Where(p => productNames.Contains(p.Name)).ToArray();
+
+                var pivotQuery = string.Format(@"(
+                        SELECT c.name AS customer
+                            , {0}
+                        FROM orders o
+                        JOIN customers c ON c.id = o.customer_Id
+                        JOIN products p ON p.id = o.product_Id
+                        WHERE p.id IN ({1})
+                        GROUP BY c.id, c.name
+                    )",
+                    string.Join(", ", products.Select(p => string.Format("SUM(CASE WHEN p.id = {0} THEN o.units ELSE 0 END) AS [{1}]", p.Id, p.Name))),
+                    string.Join(", ", products.Select(p => p.Id))
+                );
+
+                var sqlContext = new ODataSqlContext(
+                    new SqlServerSyntax(SqlServerSyntax.Version.Sql2012), 
+                    new DefaultSqlExecutor(() => new SqlConnection(context.Database.Connection.ConnectionString))
+                );
+                var query = sqlContext.Query<ODataEntity>(pivotQuery);
+
+                var service = new ODataService();
+                var result = service.Execute(query, HttpUtility.ParseQueryString(this.Request.Url.Query));
+                return this.Content(result.Results.ToString(), "application/json");
+            }
+        }
+
+        [HttpGet]
+        public ActionResult PivotedDataTable()
+        {
+            return this.View("PivotedDataTable");
+        }
 	}
 
     public class ODataController : System.Web.Http.ApiController

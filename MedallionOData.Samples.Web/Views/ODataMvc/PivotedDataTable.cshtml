@@ -1,0 +1,42 @@
+﻿
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Pivoted Data Table</title>
+
+    <link rel="stylesheet" type="text/css" href="//cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css" />
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" src="/Scripts/jquery.dataTables.odata.js"></script>
+</head>
+<body>
+    <div> 
+        <div>Enter product name columns here:</div>
+        <div>@Html.TextBox("productNames", string.Empty, new { id = "productNames" })</div>
+        <div id="grid"></div>
+        <script type="text/javascript">
+            $('#productNames').change(function () {
+                // clear the existing grid
+                $('div#grid').empty();
+                $('div#grid').append('<table id="grid" />');
+
+                // create a new grid using data tables
+                $('table#grid').dataTable({
+                    "sAjaxSource": "/ODataMvc/PivotedData?productNames=" + $('#productNames').val(),
+                    "iODataVersion": 3,
+                    "aoColumns": $.map(['customer'].concat($('#productNames').val().split(',')), function (name) { return { sTitle: name, mDataProp: name }; }),
+                    "fnServerData": fnServerOData, // required
+                    "bServerSide": true,  // optional
+                    "bUseODataViaJSONP": false,  // set to true if using cross-domain requests
+                });
+            });
+        </script>
+    </div>
+</body>
+</html>

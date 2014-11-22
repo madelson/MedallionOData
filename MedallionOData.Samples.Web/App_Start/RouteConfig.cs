@@ -18,6 +18,8 @@ namespace Medallion.OData.Samples.Web
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Index", action = "Index", id = UrlParameter.Optional }
             );
+
+            routes.MapMvcAttributeRoutes();
         }
     }
 }
