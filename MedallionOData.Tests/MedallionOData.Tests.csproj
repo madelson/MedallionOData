@@ -82,6 +82,7 @@
     <Compile Include="Integration\Schema.cs" />
     <Compile Include="Integration\SqlODataEntityIntegrationTest.cs" />
     <Compile Include="Integration\TestServer.cs" />
+    <Compile Include="Client\LinqToODataTest.cs" />
     <Compile Include="NumberHelperTest.cs" />
     <Compile Include="ODataParsingTest.cs" />
     <Compile Include="ODataRoundTripTest.cs" />
