@@ -107,6 +107,8 @@ namespace Medallion.OData.Client
 					return this.TranslateBinary(linq, ODataBinaryOp.Subtract);
 				case ExpressionType.Multiply:
 					return this.TranslateBinary(linq, ODataBinaryOp.Multiply);
+                case ExpressionType.Divide:
+                    return this.TranslateBinary(linq, ODataBinaryOp.Divide);
 				case ExpressionType.Modulo:
 					return this.TranslateBinary(linq, ODataBinaryOp.Modulo);
 				case ExpressionType.Equal:
@@ -123,9 +125,21 @@ namespace Medallion.OData.Client
 					return this.TranslateBinary(linq, ODataBinaryOp.GreaterThanOrEqual);
 				case ExpressionType.Not:
 					return ODataExpression.UnaryOp(this.TranslateInternal(((UnaryExpression)linq).Operand), ODataUnaryOp.Not);
+                case ExpressionType.Negate:
+                    // we translate -a.B as (-1 * a.B) for numeric types
+                    var negated = ((UnaryExpression)linq).Operand;
+                    var underlyingNegatedType = Nullable.GetUnderlyingType(negated.Type) ?? negated.Type;
+                    if (!underlyingNegatedType.IsNumeric())
+                    {
+                        throw new ODataCompileException("Expression '" + linq + "' could not be translated to OData: only negation of numeric types is supported");
+                    }
+                    var multiplyNegate = Expression.Multiply(
+                        Expression.Constant(Convert.ChangeType(-1, underlyingNegatedType), negated.Type),
+                        negated
+                    );
+                    return this.TranslateInternal(multiplyNegate);
 				case ExpressionType.MemberAccess:
 					return this._memberAndParameterTranslator.TranslateMemberAccess((MemberExpression)linq);
-					//return this.TranslateMemberAccess((MemberExpression)linq);
 				case ExpressionType.Convert:
 				case ExpressionType.ConvertChecked:
 				case ExpressionType.TypeAs:
@@ -157,70 +171,6 @@ namespace Medallion.OData.Client
 		{
 			var binary = (BinaryExpression)linq;
 			return ODataExpression.BinaryOp(this.TranslateInternal(binary.Left), op, this.TranslateInternal(binary.Right));
-		}
-
-		private ODataExpression TranslateMemberAccess(MemberExpression memberAccess)
-		{
-			var @this = this.TranslateInternal(memberAccess.Expression);
-
-			// first try known members which compile to ODataFunctions
-			if (memberAccess.Member.DeclaringType == typeof(string) && memberAccess.Member.Name == "Length")
-			{
-				return ODataExpression.Call(ODataFunction.Length, new[] { @this });
-			}
-			if (memberAccess.Member.DeclaringType == typeof(DateTime) && memberAccess.Member.Name == "Year")
-			{
-				return ODataExpression.Call(ODataFunction.Year, new[] { @this });
-			}
-			if (memberAccess.Member.DeclaringType == typeof(DateTime) && memberAccess.Member.Name == "Month")
-			{
-				return ODataExpression.Call(ODataFunction.Month, new[] { @this });
-			}
-			if (memberAccess.Member.DeclaringType == typeof(DateTime) && memberAccess.Member.Name == "Day")
-			{
-				return ODataExpression.Call(ODataFunction.Day, new[] { @this });
-			}
-			if (memberAccess.Member.DeclaringType == typeof(DateTime) && memberAccess.Member.Name == "Hour")
-			{
-				return ODataExpression.Call(ODataFunction.Hour, new[] { @this });
-			}
-			if (memberAccess.Member.DeclaringType == typeof(DateTime) && memberAccess.Member.Name == "Minute")
-			{
-				return ODataExpression.Call(ODataFunction.Minute, new[] { @this });
-			}
-			if (memberAccess.Member.DeclaringType == typeof(DateTime) && memberAccess.Member.Name == "Second")
-			{
-				return ODataExpression.Call(ODataFunction.Second, new[] { @this });
-			}
-
-			// nullable properties
-			if (memberAccess.Member.Name == "HasValue" && Nullable.GetUnderlyingType(memberAccess.Member.DeclaringType) != null)
-			{
-				// for HasValue we just re-translate expr != null
-				return this.TranslateInternal(Expression.NotEqual(memberAccess.Expression, Expression.Constant(null, memberAccess.Expression.Type)));
-			}
-            if (memberAccess.Member.Name == "Value" && Nullable.GetUnderlyingType(memberAccess.Member.DeclaringType) != null)
-			{
-				// .Value calls can just be ignored, since OData doesn't have the notion of nullable types
-				return this.TranslateInternal(memberAccess.Expression);
-			}
-
-			// otherwise, it could be an OData member access expression
-			var property = memberAccess.Member as PropertyInfo;
-			if (property == null)
-			{
-				throw new ODataCompileException("Only properties are supported. Found: " + memberAccess.Member);
-			}
-			if ((property.GetMethod ?? property.SetMethod).IsStatic)
-			{
-				throw new ODataCompileException("Static properties are not supported. Found: " + property);
-			}
-			if (@this == null || @this.Kind == ODataExpressionKind.MemberAccess)
-			{
-				return ODataExpression.MemberAccess((ODataMemberAccessExpression)@this, property);
-			}
-
-			throw new ODataCompileException("Property " + property + " is not supported in OData");
 		}
 
 		private ODataExpression TranslateCall(MethodCallExpression call)

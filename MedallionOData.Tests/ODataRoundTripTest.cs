@@ -254,6 +254,18 @@ namespace Medallion.OData.Tests
             this.VerifyQuery(q => q.Take(5).Take(4));
         }
 
+        [TestMethod]
+        public void TestDivide()
+        {
+            this.VerifyQuery(q => q.Where(a => a.Int / 3 > 1));
+        }
+
+        [TestMethod]
+        public void TestNumericNegate()
+        {
+            this.VerifyQuery(q => q.OrderBy(a => -a.Int));
+        }
+
 		private void VerifyQuery<TClient, TClientResult, TResult>(Func<IQueryable<TClient>, IQueryable<TClientResult>> clientQueryTransform, Func<IQueryable<A>, IQueryable<TResult>> expectedTransform, bool requireNonEmpty = true)
 		{
             var comparer = GetComparer<TResult>();

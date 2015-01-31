@@ -209,6 +209,7 @@ namespace Medallion.OData.Tests.Integration
             var minDate = CustomersContext.GetCustomers().Min(c => c.DateCreated);
             this.CustomersODataQuery().Select(c => c.DateCreated).Min().ShouldEqual(minDate);
             this.CustomersODataQuery().Min(c => c.DateCreated).ShouldEqual(minDate);
+            // this check is because we're doing min(valueType) of an empty list
             UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Length == int.MaxValue).Min(c => c.DateCreated));
             if (this.AssociationsSupported)
             {
@@ -218,6 +219,7 @@ namespace Medallion.OData.Tests.Integration
             var maxDate = CustomersContext.GetCustomers().Max(c => c.DateCreated);
             this.CustomersODataQuery().Select(c => c.DateCreated).Max().ShouldEqual(maxDate);
             this.CustomersODataQuery().Max(c => c.DateCreated).ShouldEqual(maxDate);
+            // this check is because we're doing max(valueType) of an empty list
             UnitTestHelpers.AssertThrows<InvalidOperationException>(() => this.CustomersODataQuery().Where(c => c.Name.Length == int.MaxValue).Max(c => c.DateCreated));
             if (this.AssociationsSupported)
             {
