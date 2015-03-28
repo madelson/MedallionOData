@@ -21,6 +21,9 @@ namespace Medallion.OData.Client
 	{
 		private static readonly IEqualityComparer<string> KeyComparer = StringComparer.OrdinalIgnoreCase;
 
+        // TODO we could potentially optimized this class by sharing "class" definitions like ExpandoObject does
+        // note that we can't use ExpandoObject directly because it doesn't support case-insensitive comparison
+
         internal IReadOnlyDictionary<string, object> Values { get; private set; }
 
         /// <summary>
@@ -48,6 +51,8 @@ namespace Medallion.OData.Client
 		/// <returns>the property value</returns>
 		public TProperty Get<TProperty>(string propertyName)
 		{
+            Throw.IfNull(propertyName, "propertyName");
+
 			object result;
 			if (!this.Values.TryGetValue(propertyName, out result))
 			{
@@ -58,7 +63,11 @@ namespace Medallion.OData.Client
             {
                 if (!typeof(TProperty).CanBeNull())
                 {
-                    throw new InvalidCastException(string.Format("Property '{0}' has a null value and cannot be cast to '{1}'", propertyName, typeof(TProperty)));
+                    throw new InvalidCastException(string.Format(
+                        "Property '{0}' has a null value and cannot be cast to requested type '{1}'", 
+                        propertyName, 
+                        typeof(TProperty)
+                    ));
                 }
                 return default(TProperty); // always null due to check above
             }
@@ -71,7 +80,23 @@ namespace Medallion.OData.Client
             var tProperty = typeof(TProperty);
             if (tProperty.IsNumeric() && result.GetType().IsNumeric())
             {
-                return NumberHelper.CheckedConvert<TProperty>(result);
+                try
+                {
+                    return NumberHelper.CheckedConvert<TProperty>(result);
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidCastException(
+                        string.Format(
+                            "Failed to convert property '{0}' value '{1}' of type {2} to requested type {3}",
+                            propertyName,
+                            result,
+                            result.GetType(),
+                            tProperty
+                        ),
+                        ex
+                    );
+                }
             }
 
             if (typeof(ODataObject).IsAssignableFrom(tProperty))
@@ -81,7 +106,13 @@ namespace Medallion.OData.Client
                 return (TProperty)(object)ODataValue.FromObject(result);
             }
 
-            throw new InvalidCastException(string.Format("value '{0}' for property '{1}' is not of type {2}", result ?? "null", propertyName, typeof(TProperty)));
+            throw new InvalidCastException(string.Format(
+                "value '{0}' of type {1} for property '{2}' is not compatible with requested type {3}", 
+                result, 
+                result.GetType(), // already checked for null above!
+                propertyName,
+                tProperty
+            ));
 		}
 
         #region ---- Translation ----
