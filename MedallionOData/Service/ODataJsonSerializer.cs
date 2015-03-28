@@ -25,30 +25,12 @@ namespace Medallion.OData.Service
         object IODataSerializer.Serialize<TElement>(IODataProjectResult<TElement> projectResult)
         {
             Throw.IfNull(projectResult, "projectResult");
-
-            int? inlineCount;
+ 
+            // TODO VNext this doesn't seem like the best place for this logic. Consider changing
+            // the pipeline APIs so that this logic can happen earlier
             IEnumerable projectedQuery;
-            if (projectResult.ODataQuery.InlineCount == ODataInlineCountOption.AllPages)
-            {
-                // if we're not skipping or taking, then we can do the inlineCount "for free"
-                if (projectResult.ODataQuery.Skip == 0 && !projectResult.ODataQuery.Top.HasValue)
-                {
-                    // use Enumerable.Cast<> because we want an in-memory cast
-                    var projectedQueryArray = Enumerable.Cast<object>(projectResult.ProjectedResultQuery).ToArray();
-                    projectedQuery = projectedQueryArray;
-                    inlineCount = projectedQueryArray.Length;
-                }
-                else
-                {
-                    projectedQuery = projectResult.ProjectedResultQuery;
-                    inlineCount = projectResult.InlineCountQuery.Count();
-                }
-            }
-            else
-            {
-                projectedQuery = projectResult.ProjectedResultQuery;
-                inlineCount = null;
-            }
+            int? inlineCount;
+            PaginationHelper.Paginate(projectResult, out projectedQuery, out inlineCount);
 
             var result = this.Serialize(projectedQuery, projectResult.ProjectMapping, inlineCount);
             return result;

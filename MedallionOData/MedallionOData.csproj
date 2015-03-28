@@ -76,6 +76,7 @@
     <Compile Include="Service\ODataJsonSerializer.cs" />
     <Compile Include="Service\ODataQueryProjector.cs" />
     <Compile Include="Service\ODataService.cs" />
+    <Compile Include="Service\PaginationHelper.cs" />
     <Compile Include="Service\Sql\BoolModeHelper.cs" />
     <Compile Include="Service\Sql\SqlExecutor.cs" />
     <Compile Include="Service\Sql\SqlSyntax.cs">

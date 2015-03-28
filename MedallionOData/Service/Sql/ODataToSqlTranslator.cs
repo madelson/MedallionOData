@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Service.Sql
 {
+    // TODO VNext: you can inline counting in SQLServer by selecting COUNT(*) OVER () alongside your other columns
+    // it would be neat if this could take advantage of that somehow
+
     internal sealed class ODataToSqlTranslator : ODataExpressionVisitor
     {
         private const string Alias = "q";

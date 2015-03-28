@@ -81,7 +81,7 @@ namespace Medallion.OData.Service.Sql
         {
             Throw.IfNull(expression, "expression");
 
-            return Helpers.GetMethod((IQueryProvider p) => p.CreateQuery<object>(null))
+            return Helpers.GetMethod((IQueryProvider p) => p.Execute<object>(null))
                 .GetGenericMethodDefinition()
                 .MakeGenericMethod(expression.Type)
                 .Invoke(this, new[] { expression });
