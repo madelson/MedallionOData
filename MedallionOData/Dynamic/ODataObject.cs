@@ -15,7 +15,7 @@ namespace Medallion.OData.Dynamic
     [JsonConverter(typeof(ODataObject.JsonConverter))]
     public abstract class ODataObject
     {
-        // prevent externa inheritors
+        // prevent external inheritors
         internal ODataObject()
         {
         }
