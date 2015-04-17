@@ -87,5 +87,17 @@ namespace Medallion.OData.Tests
             Assert.Fail("Expected {0}, but no exception was thrown", typeof(TException));
             return null;
         }
+
+        public static void AssertDoesNotThrow(Action action)
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception ex)
+            {
+                Assert.Fail("Threw " + ex.ToString());
+            }
+        }
     }
 }

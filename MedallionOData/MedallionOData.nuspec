@@ -15,7 +15,7 @@
       MedallionOData is a lightweight, zero-setup .NET library for creating and querying OData and OData-like services.
     </description>
     <releaseNotes>
-      Version 1.4.2 optimizes server-side pagination and improves ODataEntity error messages
+      Version 1.4.3 fixes parsing bug for empty OData query parameters
     </releaseNotes>
     <copyright>Copyright 2014</copyright>
     <tags>odata linq ef entity framework ado.net mvc webapi</tags>

@@ -23,7 +23,7 @@ namespace Medallion.OData.Parser
 
 			ODataExpression filter = null;
 			var filterString = parameters["$filter"];
-			if (filterString != null)
+			if (!string.IsNullOrEmpty(filterString))
 			{
 				var parser = new ODataExpressionLanguageParser(elementType, filterString);
 				filter = parser.Parse();
@@ -31,7 +31,7 @@ namespace Medallion.OData.Parser
 
 			IReadOnlyList<ODataSortKeyExpression> orderBy = Empty<ODataSortKeyExpression>.Array;
 			var orderByString = parameters["$orderby"];
-			if (orderByString != null)
+			if (!string.IsNullOrEmpty(orderByString))
 			{
 				var parser = new ODataExpressionLanguageParser(elementType, orderByString);
 				orderBy = parser.ParseSortKeyList();
@@ -39,7 +39,7 @@ namespace Medallion.OData.Parser
 
 			int? top = null;
 			var topString = parameters["$top"];
-			if (topString != null)
+			if (!string.IsNullOrEmpty(topString))
 			{
 				int topValue;
 				if (!int.TryParse(topString, out topValue))
@@ -51,7 +51,7 @@ namespace Medallion.OData.Parser
 
 			var skip = 0;
 			var skipString = parameters["$skip"];
-			if (skipString != null)
+			if (!string.IsNullOrEmpty(skipString))
 			{
 				if (!int.TryParse(skipString, out skip))
 				{
@@ -61,17 +61,27 @@ namespace Medallion.OData.Parser
 
             IReadOnlyList<ODataSelectColumnExpression> select = Empty<ODataSelectColumnExpression>.Array;
             var selectString = parameters["$select"];
-            if (selectString != null)
+            if (!string.IsNullOrEmpty(selectString))
             {
                 var parser = new ODataExpressionLanguageParser(elementType, selectString);
                 select = parser.ParseSelectColumnList();
             }
 
-			var format = parameters["$format"];
+			var formatParameter = parameters["$format"];
+            string format;
+            if (!string.IsNullOrEmpty(formatParameter))
+            {
+                Throw<ODataParseException>.If(string.IsNullOrWhiteSpace(formatParameter), "$format may not be whitespace");
+                format = formatParameter;
+            }
+            else
+            {
+                format = null;
+            }
 
 			var inlineCount = ODataInlineCountOption.None;
 			var inlineCountString = parameters["$inlinecount"];
-			if (inlineCountString != null)
+			if (!string.IsNullOrEmpty(inlineCountString))
 			{
 				if (!Enum.TryParse(inlineCountString, ignoreCase: true, result: out inlineCount))
 				{

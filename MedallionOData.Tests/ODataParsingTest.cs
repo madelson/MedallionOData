@@ -238,6 +238,24 @@ namespace Medallion.OData.Tests
             var dynamicParsed = ODataQueryParser.Parse(typeof(ODataEntity), query);
             dynamicParsed.ToString().ShouldEqual(query);
 		}
+
+        [TestMethod]
+        public void TestParseQueryWithEmpty()
+        {
+            var parameters = new[] { "top", "skip", "filter", "select", "orderby", "format", "inlinecount" };
+
+            // empty is allowed (see http://services.odata.org/v3/odata/odata.svc/Categories?$filter=&$format=json)
+            foreach (var parameter in parameters)
+            {
+                UnitTestHelpers.AssertDoesNotThrow(() => ODataQueryParser.Parse(typeof(A), string.Format("?${0}=", parameter)));
+            }
+
+            // whitespace is not allowed (see http://services.odata.org/v3/odata/odata.svc/Categories?$orderby=%20&$format=json)
+            foreach (var parameter in parameters)
+            {
+                UnitTestHelpers.AssertThrows<ODataParseException>(() => ODataQueryParser.Parse(typeof(A), string.Format("?${0}= ", parameter)));
+            }
+        }
         #endregion
 
         #region ---- Lex tests ----
