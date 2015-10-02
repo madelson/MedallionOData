@@ -141,6 +141,12 @@ namespace Medallion.OData.Tests
             UnitTestHelpers.AssertThrows<ODataParseException>(() => this.VerifyQuery((IQueryable<ODataEntity> q) => q.Where(r => r.Get<int>("FakeInt") < 100), q => q));
 		}
 
+        [TestMethod]
+        public void TestRowDateFilter()
+        {
+            this.VerifyQuery((IQueryable<ODataEntity> q) => q.Where(r => r.Get<DateTime>("Date") > BaseDate), q => q.Where(a => a.Date > BaseDate));
+        }
+
 		[TestMethod]
 		public void TestNestedProperties()
 		{
@@ -304,7 +310,9 @@ namespace Medallion.OData.Tests
 			this.VerifyQuery(queryTransform, queryTransform, requireNonEmpty);
 		}
 
-		private IQueryable<A> RandomQueryable(Random random)
+        private static readonly DateTime BaseDate = DateTime.Parse("2015-10-01T04:00:00.000Z");
+
+        private IQueryable<A> RandomQueryable(Random random)
 		{
 			var result = Enumerable.Range(0, random.Next(0, 21))
 				.Select(_ => new A
@@ -312,6 +320,7 @@ namespace Medallion.OData.Tests
 					Int = random.Next(-10, 11),
 					NullableDouble = random.Next(2) == 1 ? random.NextDouble() : default(double?),
 					Text = random.Next(-10, 11).ToString(),
+                    Date = BaseDate.AddDays(random.Next(-10, 11)),
 					B = new B
 					{
 						Id = random.Next(4),
@@ -348,6 +357,7 @@ namespace Medallion.OData.Tests
 			public int Int { get; set; }
 			public double? NullableDouble { get; set; }
 			public string Text { get; set; }
+            public DateTime Date { get; set; }
 			public B B { get; set; }
 		}
 

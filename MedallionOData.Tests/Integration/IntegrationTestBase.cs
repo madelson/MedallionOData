@@ -160,6 +160,19 @@ namespace Medallion.OData.Tests.Integration
         }
 
         [TestMethod]
+        public void IntegrationDynamicRowDateFilter()
+        {
+            var date = DateTime.Today.AddDays(5);
+            this.Test(
+                "customers",
+                (IQueryable<ODataEntity> rows) => rows.Where(c => c.Get<DateTime>("DateCreated") < date)
+                    .Select(c => c.Get<string>("Name")), 
+                expected: CustomersContext.GetCustomers().Where(c => c.DateCreated < date)
+                    .Select(c => c.Name)
+            );
+        }
+
+        [TestMethod]
         public void IntegrationFilterByYear()
         {
             if (this.AssociationsSupported)
