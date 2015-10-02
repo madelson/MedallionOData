@@ -17,18 +17,30 @@ namespace Medallion.OData.Service.Sql
     public class DefaultSqlExecutor : SqlExecutor
     {
         private readonly Func<DbConnection> connectionFactory;
-        private readonly bool executorOwnsConnection;
+        private readonly Options options;
 
         /// <summary>
-        /// Creates a <see cref="DefaultSqlExecutor"/> using connections from <param name="connectionFactory"/>. The created
-        /// connections will be disposed if and only if <param name="executorOwnsConnection"/>
+        /// Creates a <see cref="DefaultSqlExecutor"/> using connections from <paramref name="connectionFactory"/>.
+        /// The <paramref name="options"/> parameter allows for additional configuration.
         /// </summary>
-        public DefaultSqlExecutor(Func<DbConnection> connectionFactory, bool executorOwnsConnection = true)
+        public DefaultSqlExecutor(Func<DbConnection> connectionFactory, Action<OptionsBuilder> options)
         {
             Throw.IfNull(connectionFactory, "connectionFactory");
-            
+            Throw.IfNull(options, "options");
+
             this.connectionFactory = connectionFactory;
-            this.executorOwnsConnection = executorOwnsConnection;
+            var builder = new OptionsBuilder();
+            options(builder);
+            this.options = builder.Build();
+        }
+
+        /// <summary>
+        /// Creates a <see cref="DefaultSqlExecutor"/> using connections from <paramref name="connectionFactory"/>. The created
+        /// connections will be disposed if and only if <paramref name="executorOwnsConnection"/>
+        /// </summary>
+        public DefaultSqlExecutor(Func<DbConnection> connectionFactory, bool executorOwnsConnection = true)
+            : this(connectionFactory, o => o.ExecutorOwnsConnection(executorOwnsConnection))
+        {
         }
 
         /// <summary>
@@ -95,11 +107,18 @@ namespace Medallion.OData.Service.Sql
         {
             using (var connection = this.GetConnection())
             using (var command = this.CreateCommand(connection.Connection, sql, parameters))
-            using (var reader = command.ExecuteReader())
             {
-                foreach (var result in this.MaterializeReader(reader, resultType))
+                if (this.options.CommandTimeout.HasValue)
                 {
-                    yield return result;
+                    command.CommandTimeout = this.options.CommandTimeout.Value;
+                }
+
+                using (var reader = command.ExecuteReader())
+                {
+                    foreach (var result in this.MaterializeReader(reader, resultType))
+                    {
+                        yield return result;
+                    }
                 }
             }
         }
@@ -134,7 +153,7 @@ namespace Medallion.OData.Service.Sql
             {
                 connection.Open();
             }
-            return new ConnectionHelper(connection, this.executorOwnsConnection);
+            return new ConnectionHelper(connection, ownsConnection: this.options.ExecutorOwnsConnection);
         }
 
         private class ConnectionHelper : IDisposable
@@ -160,6 +179,59 @@ namespace Medallion.OData.Service.Sql
                     }
                     this.Connection = null;
                 }
+            }
+        }
+
+        internal sealed class Options
+        {
+            public Options()
+            {
+                this.ExecutorOwnsConnection = true;
+            }
+
+            public bool ExecutorOwnsConnection { get; set; }
+            public int? CommandTimeout { get; set; }
+        }
+
+        /// <summary>
+        /// Fluent options configuration for the <see cref="DefaultSqlExecutor"/>
+        /// </summary>
+        public sealed class OptionsBuilder
+        {
+            private Options options = new Options();
+
+            internal OptionsBuilder()
+            {
+            }
+
+            /// <summary>
+            /// Sepecifies whether connections created by the executor's connection factory should
+            /// be disposed by the executor. Defaults to true.
+            /// </summary>
+            public OptionsBuilder ExecutorOwnsConnection(bool value = true)
+            {
+                this.options.ExecutorOwnsConnection = true;
+                return this;
+            }
+
+            /// <summary>
+            /// Specifies a value to use for <see cref="DbCommand.CommandTimeout"/>. Defaults
+            /// to the default value for <see cref="DbCommand"/>s created by <see cref="DbConnection.CreateCommand"/>
+            /// for <see cref="DbConnection"/>s produced by the executor's factory
+            /// </summary>
+            public OptionsBuilder CommandTimeout(int seconds)
+            {
+                Throw.IfOutOfRange(seconds, "seconds", min: 0);
+
+                this.options.CommandTimeout = seconds;
+                return this;
+            }
+
+            internal Options Build()
+            {
+                var options = this.options;
+                this.options = null;
+                return options;
             }
         }
     }
