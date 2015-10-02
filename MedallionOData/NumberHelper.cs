@@ -44,6 +44,7 @@ namespace Medallion.OData
             }
         }
 
+        private static readonly object ConvertersLock = new object();
         private static volatile Dictionary<KeyValuePair<Type, Type>, object> converters = new Dictionary<KeyValuePair<Type, Type>, object>(capacity: 0);
 
         public static TTo CheckedConvert<TTo>(object value)
@@ -67,7 +68,7 @@ namespace Medallion.OData
                 Throw.If(!lookupKey.Value.IsNumeric(), "TTo: must be numeric");
 
                 converter = Activator.CreateInstance(typeof(CheckedConverter<,>).MakeGenericType(lookupKey.Key, lookupKey.Value));
-                lock (typeof(NumberHelper))
+                lock (ConvertersLock)
                 {
                     var convertersCopy = new Dictionary<KeyValuePair<Type, Type>, object>(converters);
                     // assign, don't add because of the race condition (we could also do double-checked locking)
