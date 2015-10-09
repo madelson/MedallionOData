@@ -133,7 +133,7 @@ namespace Medallion.OData.Parser
 				{ ODataTokenKind.LeftParen, @"\(" },
 				{ ODataTokenKind.RightParen, @"\)" },
 				{ ODataTokenKind.Star, @"\*" },
-				{ ODataTokenKind.Identifier, @"[a-zA-z_][a-zA-Z_0-9]*" },
+				{ ODataTokenKind.Identifier, @"[a-zA-Z_][a-zA-Z_0-9]*" },
 				{ ODataTokenKind.WhiteSpace, @"\s+" },
 				{ ODataTokenKind.Comma, "," },
 				{ ODataTokenKind.Slash, "/" },
