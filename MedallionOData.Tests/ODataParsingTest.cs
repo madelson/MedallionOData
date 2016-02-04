@@ -160,6 +160,12 @@ namespace Medallion.OData.Tests
         }
 
         [TestMethod]
+        public void TestParseIntegerOverflow()
+        {
+            UnitTestHelpers.AssertThrows<OverflowException>(() => this.TestParseExpressionLanguage("Int lt 2147483648"));
+        }
+
+        [TestMethod]
         public void TestParseDynamic()
         {
             this.TestParseExpressionLanguage("1 sub Price gt Freight");

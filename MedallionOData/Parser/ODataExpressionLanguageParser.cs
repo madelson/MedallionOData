@@ -310,7 +310,9 @@ namespace Medallion.OData.Parser
 			}
 			if (this.TryEat(ODataTokenKind.Int32Literal, out next))
 			{
-				return ODataExpression.Constant(int.Parse(next.Text));
+                // Note: this will fail hard if we have an out-of-range int value. However, this is consistent
+                // with MSFT's implementation (see http://services.odata.org/v3/odata/odata.svc/Products?$format=json&$filter=Price%20ge%202147483648)
+                return ODataExpression.Constant(int.Parse(next.Text));
 			}
 			if (this.TryEat(ODataTokenKind.Int64Literal, out next))
 			{
