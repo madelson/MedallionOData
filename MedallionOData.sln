@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2013 for Web
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedallionOData", "MedallionOData\MedallionOData.csproj", "{1DF9B15D-60B2-4EBF-A984-F54B420F658D}"
 EndProject
@@ -15,6 +15,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{D6C09C
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MedallionOData.Samples.Web", "MedallionOData.Samples.Web\MedallionOData.Samples.Web.csproj", "{D22F1468-A534-44BF-9200-321F8152CE34}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "MedallionOData.NetCore", "MedallionOData.NetCore\MedallionOData.NetCore.xproj", "{74FF2BF7-AE1B-40C3-BF66-4A30DF844EBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,6 +36,10 @@ Global
 		{D22F1468-A534-44BF-9200-321F8152CE34}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D22F1468-A534-44BF-9200-321F8152CE34}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D22F1468-A534-44BF-9200-321F8152CE34}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74FF2BF7-AE1B-40C3-BF66-4A30DF844EBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74FF2BF7-AE1B-40C3-BF66-4A30DF844EBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74FF2BF7-AE1B-40C3-BF66-4A30DF844EBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74FF2BF7-AE1B-40C3-BF66-4A30DF844EBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
