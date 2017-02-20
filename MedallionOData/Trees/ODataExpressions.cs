@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -411,7 +412,7 @@ namespace Medallion.OData.Trees
 			}
 			builder.Append(paramName)
 				.Append('=')
-				.Append(HttpUtility.UrlEncode(value));
+				.Append(WebUtility.UrlEncode(value));
 		}
 	}
 }

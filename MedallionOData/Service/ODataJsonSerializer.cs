@@ -46,7 +46,7 @@ namespace Medallion.OData.Service
 
             using (var stringWriter = new StringWriter())
             {
-                using (var writer = new JsonTextWriter(stringWriter))
+                using (var writer = new JsonTextWriter(stringWriter) { CloseOutput = false })
                 {
                     writer.WriteStartObject();
 

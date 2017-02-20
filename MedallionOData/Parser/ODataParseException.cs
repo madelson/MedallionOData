@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,7 +9,9 @@ namespace Medallion.OData.Parser
     /// <summary>
     /// Represents an error during the parsing of an OData url
     /// </summary>
-	[Serializable]
+#if !NETCORE
+    [SerializableAttribute]
+#endif
     public sealed class ODataParseException : Exception
 	{
         /// <summary>
@@ -30,7 +31,9 @@ namespace Medallion.OData.Parser
         public ODataParseException(string message, Exception inner)
             : base(message, inner) { }
 
-        internal ODataParseException(SerializationInfo info, StreamingContext context)
+#if !NETCORE
+        internal ODataParseException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context) { }
-	}
+#endif
+    }
 }

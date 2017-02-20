@@ -232,9 +232,9 @@ namespace Medallion.OData.Tests
         [TestMethod]
         public void TestParseQueryTopSkip() { this.TestParseQuery("?$top=1&$skip=5"); }
         [TestMethod]
-        public void TestParseQueryFilter() { this.TestParseQuery("?$filter=1+ne+2+and+substringof(Address%2fCity%2c+%27blah%27)"); }
+        public void TestParseQueryFilter() { this.TestParseQuery("?$filter=1+ne+2+and+substringof(Address%2FCity%2C+%27blah%27)"); }
         [TestMethod]
-        public void TestParseQuerySelect() { this.TestParseQuery("?$select=Freight%2cBool"); }
+        public void TestParseQuerySelect() { this.TestParseQuery("?$select=Freight%2CBool"); }
 
 		private void TestParseQuery(string query)
 		{

@@ -81,7 +81,7 @@ namespace Medallion.OData.Client
 				// special case the handling of queryable constants, since these can be the "root"
 				// of the query expression tree. We check for isInsideQuery since we don't allow multiple
 				// roots. An example of a multiply-rooted tree would be: q.Where(x => q.Any(xx => xx.A < x.A))
-				if (!this._isInsideQuery && typeof(IQueryable).IsAssignableFrom(linq.Type))
+				if (!this._isInsideQuery && typeof(IQueryable).GetTypeInfo().IsAssignableFrom(linq.Type.GetTypeInfo()))
 				{
 					this._rootQuery = (IQueryable)value;
 					return ODataExpression.Query();
@@ -446,8 +446,10 @@ namespace Medallion.OData.Client
     /// <summary>
     /// Represents an error in compiling an <see cref="IQueryable"/> to OData
     /// </summary>
+#if !NETCORE
     [Serializable]
-	public sealed class ODataCompileException : Exception
+#endif
+    public sealed class ODataCompileException : Exception
 	{
         /// <summary>
         /// Constructs an exception with a default message
@@ -466,7 +468,9 @@ namespace Medallion.OData.Client
         public ODataCompileException(string message, Exception innerException)
             : base(message, innerException) { }
 
+#if !NETCORE
         internal ODataCompileException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
-	}
+#endif
+    }
 }

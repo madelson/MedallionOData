@@ -46,4 +46,14 @@ public ActionResult Categories()
 }
 ```
 
+## Release notes
+- 1.5.0 adds support for .NET Core via .NET Standard 1.5. Dynamic ODataEntity queries are not supported in the .NET Standard build
+- 1.4.3 fixes parsing bug for empty OData query parameters
+- 1.4.2 optimizes server-side pagination and improves ODataEntity error messages
+- 1.4.1 adds missing support for numeric division and negation
+- 1.4.0 adds direct support for SQL-based OData services. These services can have fully dynamic schemas, unlike the static typing imposed by providers like EntityFramework
+- 1.3.1 fixes a bug where Skip([large #]).Count() could return negative values
+- 1.3.0 adds support for fully dynamic services based on in-memory ODataEntity collections
+- 1.2.0.0 fixes (enables) support for overriding the client query pipeline. It also adds support for creating queries using relative URIs as well as some improved error messages
+- [1.0, 1.2) initial non-semantically-versioned releases
 

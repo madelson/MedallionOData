@@ -57,8 +57,8 @@ namespace Medallion.OData
                 }
                 else if (m1.MemberType == MemberTypes.TypeInfo || m1.MemberType == MemberTypes.NestedType)
                 {
-                    var type1 = (Type)m1;
-                    var type2 = (Type)m2;
+                    var type1 = (TypeInfo)m1;
+                    var type2 = (TypeInfo)m2;
                     if (type1.IsGenericType)
                     {
                         return type1.GetGenericArguments().SequenceEqual(type2.GetGenericArguments());
@@ -84,18 +84,18 @@ namespace Medallion.OData
         {
             Throw.IfNull(@this, "this");
             Throw.IfNull(genericTypeDefinition, "genericTypeDefinition");
-            Throw.If(!genericTypeDefinition.IsGenericTypeDefinition, "genericTypeDefinition: must be a generic type definition");
+            Throw.If(!genericTypeDefinition.GetTypeInfo().IsGenericTypeDefinition, "genericTypeDefinition: must be a generic type definition");
 
-            if (@this.IsGenericType && @this.GetGenericTypeDefinition() == genericTypeDefinition)
+            if (@this.GetTypeInfo().IsGenericType && @this.GetGenericTypeDefinition() == genericTypeDefinition)
             {
                 return @this.GetGenericArguments();
             }
-            if (genericTypeDefinition.IsInterface)
+            if (genericTypeDefinition.GetTypeInfo().IsInterface)
             {
-                var @interface = @this.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == genericTypeDefinition);
+                var @interface = @this.GetInterfaces().FirstOrDefault(i => i.GetTypeInfo().IsGenericType && i.GetGenericTypeDefinition() == genericTypeDefinition);
                 return @interface.NullSafe(i => i.GetGenericArguments(), Type.EmptyTypes);
             }
-            return @this.BaseType.NullSafe(t => t.GetGenericArguments(genericTypeDefinition), Type.EmptyTypes);
+            return @this.GetTypeInfo().BaseType.NullSafe(t => t.GetGenericArguments(genericTypeDefinition), Type.EmptyTypes);
         }
 
         public static bool IsGenericOfType(this Type @this, Type genericTypeDefinition)
@@ -139,10 +139,11 @@ namespace Medallion.OData
             Throw.IfNull(@this, "this");
 
             // HACK: The only way to detect anonymous types right now.
-            return Attribute.IsDefined(@this, typeof(CompilerGeneratedAttribute), false)
-                && @this.IsGenericType && @this.Name.Contains("AnonymousType")
-                && (@this.Name.StartsWith("<>") || @this.Name.StartsWith("VB$"))
-                && (@this.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
+            var typeInfo = @this.GetTypeInfo();
+            return typeInfo.IsDefined(typeof(CompilerGeneratedAttribute), false)
+                && typeInfo.IsGenericType && typeInfo.Name.Contains("AnonymousType")
+                && (typeInfo.Name.StartsWith("<>") || typeInfo.Name.StartsWith("VB$"))
+                && (typeInfo.Attributes & TypeAttributes.NotPublic) == TypeAttributes.NotPublic;
         }
 
         public static IEnumerable<T> Enumerate<T>(this T @this)
@@ -164,7 +165,7 @@ namespace Medallion.OData
         public static bool CanBeNull(this Type @this)
         {
             Throw.IfNull(@this, "this");
-            return !@this.IsValueType || Nullable.GetUnderlyingType(@this) != null;
+            return !@this.GetTypeInfo().IsValueType || Nullable.GetUnderlyingType(@this) != null;
         }
 
         public static int IndexWhere<T>(this IEnumerable<T> @this, Func<T, bool> predicate)
