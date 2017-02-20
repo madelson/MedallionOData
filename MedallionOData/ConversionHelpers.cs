@@ -53,7 +53,7 @@ namespace Medallion.OData
 
             bool result;
 
-            if (from.IsValueType)
+            if (from.GetTypeInfo().IsValueType)
             {
                 try
                 {
@@ -79,14 +79,14 @@ namespace Medallion.OData
                 // succeed OR we get a runtime failure related to the inability to cast null to 
                 // the desired type, which may or may not indicate an actual issue. thus, we do 
                 // the work manually
-                result = from.IsNonValueTypeExplicitlyCastableTo(to);
+                result = from.GetTypeInfo().IsNonValueTypeExplicitlyCastableTo(to.GetTypeInfo());
             }
 
             CastCache.UpdateCache(key, result);
             return result;
         }
 
-        private static bool IsNonValueTypeExplicitlyCastableTo(this Type from, Type to)
+        private static bool IsNonValueTypeExplicitlyCastableTo(this TypeInfo from, TypeInfo to)
         {
             if ((to.IsInterface && !from.IsSealed)
                 || (from.IsInterface && !to.IsSealed))
@@ -101,8 +101,8 @@ namespace Medallion.OData
             // (see http://msmvps.com/blogs/jon_skeet/archive/2013/06/22/array-covariance-not-just-ugly-but-slow-too.aspx).
             // Thus, we have to allow for things like var x = (IEnumerable<string>)new object[0];
             // and var x = (object[])default(IEnumerable<string>);
-            var arrayType = from.IsArray && !from.GetElementType().IsValueType ? from
-                : to.IsArray && !to.GetElementType().IsValueType ? to
+            var arrayType = from.IsArray && !from.GetElementType().GetTypeInfo().IsValueType ? from
+                : to.IsArray && !to.GetElementType().GetTypeInfo().IsValueType ? to
                 : null;
             if (arrayType != null)
             {
@@ -112,7 +112,7 @@ namespace Medallion.OData
                 if (genericInterfaceType != null)
                 {
                     return arrayType.GetInterfaces()
-                        .Any(i => i.IsGenericType
+                        .Any(i => i.GetTypeInfo().IsGenericType
                             && i.GetGenericTypeDefinition() == genericInterfaceType.GetGenericTypeDefinition()
                             && i.GetGenericArguments().Zip(to.GetGenericArguments(), (ia, ta) => ta.IsAssignableFrom(ia) || ia.IsAssignableFrom(ta)).All(b => b));
                 }
@@ -128,23 +128,23 @@ namespace Medallion.OData
                     && m.Attributes.HasFlag(MethodAttributes.SpecialName)
                     && m.GetParameters().Length == 1
                     && (
-                    // the from argument of the conversion function can be an indirect match to from in
-                    // either direction. For example, if we have A : B and Foo defines a conversion from B => Foo,
-                    // then C# allows A to be cast to Foo
-                        m.GetParameters()[0].ParameterType.IsAssignableFrom(from)
+                        // the from argument of the conversion function can be an indirect match to from in
+                        // either direction. For example, if we have A : B and Foo defines a conversion from B => Foo,
+                        // then C# allows A to be cast to Foo
+                        m.GetParameters()[0].ParameterType.IsAssignableFrom(from.AsType())
                         || from.IsAssignableFrom(m.GetParameters()[0].ParameterType)
                     )
                 );
 
-            if (to.IsPrimitive && typeof(IConvertible).IsAssignableFrom(to))
+            if (to.IsPrimitive && typeof(IConvertible).IsAssignableFrom(to.AsType()))
             {
                 // as mentioned above, primitive convertible types (i. e. not IntPtr) get special 
                 // treatment in the sense that if you can convert from Foo => int, you can convert
                 // from Foo => double as well
-                return conversionMethods.Any(m => m.ReturnType.IsCastableTo(to));
+                return conversionMethods.Any(m => m.ReturnType.IsCastableTo(to.AsType()));
             }
 
-            return conversionMethods.Any(m => m.ReturnType == to);
+            return conversionMethods.Any(m => m.ReturnType == to.AsType());
         }
 
         private static void AttemptExplicitCast<TFrom, TTo>()

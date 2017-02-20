@@ -89,6 +89,7 @@
     <Compile Include="ODataRoundTripTest.cs" />
     <Compile Include="ODataServiceTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueryStringParserTest.cs" />
     <Compile Include="Service\ODataJsonSerializerTest.cs" />
     <Compile Include="Service\ODataQueryProjectorTest.cs" />
     <Compile Include="Service\PaginationHelperTest.cs" />

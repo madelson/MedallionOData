@@ -379,16 +379,23 @@ namespace Medallion.OData.Parser
 			// by loading all referenced assemblies, but this is probably fine given that
 			// any derived entity is likely in the same assembly as the base entity, which 
 			// got loaded when this ran
-			var type = AppDomain.CurrentDomain.GetAssemblies()
+			var type =
+#if NETCORE
+                // NOTE: from what I can tell, this should have the same behavior as the non-Core code and thus
+                // should probably replace that in vNext. For now I'm being cautious
+                Type.GetType(value);
+#else
+                AppDomain.CurrentDomain.GetAssemblies()
 				.Select(a => a.GetType(value))
 				.FirstOrDefault(t => t != null);
-			if (type != null)
+#endif
+            if (type != null)
 			{
 				return type;
 			}
 
 			throw new ODataParseException("Could not parse '" + value + "' as a type");
 		}
-		#endregion
+#endregion
 	}
 }

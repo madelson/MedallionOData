@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -113,32 +114,38 @@ namespace Medallion.OData.Client
             Func<IODataDeserializationResult, object> IODataTranslationResult.PostProcessor { get { return this.Item3; } }
         }
 
-        async Task<IODataWebResponse> IODataClientQueryPipeline.ReadAsync(Uri url)
+        Task<IODataWebResponse> IODataClientQueryPipeline.ReadAsync(Uri url)
         {
-            Throw.IfNull(url, "url");
+            Throw.IfNull(url, nameof(url));
 
-            var request = (HttpWebRequest)WebRequest.Create(url);
-            var response = (HttpWebResponse)await request.GetResponseAsync().ConfigureAwait(false);
-            return new HttpWebResponseWebResponse(response);
+            return HttpClientWebResponse.CreateAsync(url);
         }
 
-        private sealed class HttpWebResponseWebResponse : IODataWebResponse
+        private sealed class HttpClientWebResponse : IODataWebResponse
         {
-            private readonly HttpWebResponse _response;
+            private static readonly HttpClient Client = new HttpClient();
 
-            public HttpWebResponseWebResponse(HttpWebResponse response)
+            private readonly HttpResponseMessage _response;
+
+            private HttpClientWebResponse(HttpResponseMessage response)
             {
                 this._response = response;
             }
 
-            Task<Stream> IODataWebResponse.GetResponseStreamAsync()
+            public static async Task<IODataWebResponse> CreateAsync(Uri uri)
             {
-                return Task.FromResult(this._response.GetResponseStream());
+                var response = await Client.GetAsync(uri).ConfigureAwait(false);
+                return new HttpClientWebResponse(response);
             }
 
             void IDisposable.Dispose()
             {
                 this._response.Dispose();
+            }
+
+            Task<Stream> IODataWebResponse.GetResponseStreamAsync()
+            {
+                return this._response.Content.ReadAsStreamAsync();
             }
         }
 

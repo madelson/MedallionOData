@@ -51,9 +51,8 @@ namespace Medallion.OData.Service.Sql
             Func<DbDataReader, object> materialize;
             if (resultType == typeof(ODataEntity))
             {
-                var columnNames = reader.GetSchemaTable().Rows.Cast<DataRow>()
-                    .OrderBy(r => r.Field<int>("ColumnOrdinal"))
-                    .Select(r => r.Field<string>("ColumnName"))
+                var columnNames = Enumerable.Range(0, reader.VisibleFieldCount)
+                    .Select(reader.GetName)
                     .ToArray();
                 materialize = r =>
                 {
@@ -73,8 +72,8 @@ namespace Medallion.OData.Service.Sql
             else if (resultType.GetConstructor(Type.EmptyTypes) != null)
             {
                 // TODO FUTURE offer faster compiled materialization (should optimize for cold start and cache, though!)
-                var ordinalPropertyMapping = reader.GetSchemaTable().Rows.Cast<DataRow>()
-                    .Select(row => KeyValuePair.Create(row.Field<int>("ColumnOrdinal"), resultType.GetProperty(row.Field<string>("ColumnName"), BindingFlags.Public | BindingFlags.Instance)))
+                var ordinalPropertyMapping = Enumerable.Range(0, reader.VisibleFieldCount)
+                    .Select(i => KeyValuePair.Create(i, resultType.GetProperty(reader.GetName(i), BindingFlags.Public | BindingFlags.Instance)))
                     .Where(kvp => kvp.Value != null)
                     .ToArray();
                 materialize = r =>

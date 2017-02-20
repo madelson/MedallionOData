@@ -24,7 +24,7 @@ namespace Medallion.OData.Client
         // TODO we could potentially optimized this class by sharing "class" definitions like ExpandoObject does
         // note that we can't use ExpandoObject directly because it doesn't support case-insensitive comparison
 
-        internal IReadOnlyDictionary<string, object> Values { get; private set; }
+        internal IReadOnlyDictionary<string, object> Values { get; }
 
         /// <summary>
         /// Constructs a entity from the given set of key value pairs
@@ -116,18 +116,31 @@ namespace Medallion.OData.Client
 		}
 
         #region ---- Translation ----
+#if NETCORE
+        private static PlatformNotSupportedException ODataEntityQueriesNotSupported() =>
+            new PlatformNotSupportedException($"Queries with the {typeof(ODataEntity)} class are not yet supported on .NET Core. See https://github.com/madelson/MedallionOData/issues/9 for more details");
+#endif
+
+#if !NETCORE
         private static readonly MethodInfo GetMethod = Helpers.GetMethod((ODataEntity r) => r.Get<int>(null))
             .GetGenericMethodDefinition();
+#endif
 
         /// <summary>
         /// Replaces calls to <see cref="ODataEntity.Get{T}"/> with property accesses
         /// </summary>
+        // TODO vNext this should not be public
         public static Expression Normalize(Expression expression)
         {
+#if !NETCORE
             var result = Normalizer.Instance.Visit(expression);
             return result;
+#else
+            throw ODataEntityQueriesNotSupported();
+#endif
         }
 
+#if !NETCORE
         #region ---- Normalizer ----
         private sealed class Normalizer : ExpressionVisitor
         {
@@ -165,16 +178,23 @@ namespace Medallion.OData.Client
             }
         }
         #endregion
+#endif
 
         /// <summary>
         /// Reverts changes to an expression made by <see cref="ODataEntity.Normalize"/>
         /// </summary>
+        // TODO vNext this should not be public
         public static Expression Denormalize(Expression expression)
         {
+#if !NETCORE
             var result = Denormalizer.Instance.Visit(expression);
             return result;
+#else
+            throw ODataEntityQueriesNotSupported();
+#endif
         }
 
+#if !NETCORE
         #region ---- Denormalizer ----
         private sealed class Denormalizer : ExpressionVisitor
         {
@@ -195,13 +215,19 @@ namespace Medallion.OData.Client
             }
         }
         #endregion
+#endif
 
         #region ---- Fake property implementation ----
         internal static PropertyInfo GetProperty(string name, Type type)
         {
+#if !NETCORE
             return EntityPropertyInfo.For(name, type);
+#else
+            throw ODataEntityQueriesNotSupported();
+#endif
         }
 
+#if !NETCORE
         private TProperty FakeGetter<TProperty>()
 		{
 			throw new InvalidOperationException("This getter is not valid");
@@ -364,7 +390,8 @@ namespace Medallion.OData.Client
 		{
 			public static readonly Module Instance = new EntityModule();
 		}
-		#endregion
+#endif
         #endregion
+#endregion
     }
 }

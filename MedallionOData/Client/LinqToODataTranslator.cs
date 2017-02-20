@@ -468,7 +468,9 @@ namespace Medallion.OData.Client
         public ODataCompileException(string message, Exception innerException)
             : base(message, innerException) { }
 
+#if !NETCORE
         internal ODataCompileException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
-	}
+#endif
+    }
 }

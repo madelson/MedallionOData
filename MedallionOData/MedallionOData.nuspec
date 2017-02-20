@@ -17,7 +17,7 @@
     <releaseNotes>
       Version 1.4.3 fixes parsing bug for empty OData query parameters
     </releaseNotes>
-    <copyright>Copyright 2014</copyright>
+    <copyright>Copyright 2017</copyright>
     <tags>odata linq ef entity framework ado.net mvc webapi</tags>
     <dependencies>
       <!-- This is the default, but I want to manually specify it in case I forget and reference a newer version -->

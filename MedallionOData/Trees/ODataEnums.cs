@@ -414,9 +414,9 @@ namespace Medallion.OData.Trees
 		public static string ToODataString<TEnum>(this TEnum @this)
 			where TEnum : struct, IConvertible
 		{
-			Throw.If(!typeof(TEnum).IsEnum, "TEnum: must be an enum type");
+			Throw.If(!typeof(TEnum).GetTypeInfo().IsEnum, "TEnum: must be an enum type");
 
-			var field = typeof(TEnum).GetField(@this.ToString(), BindingFlags.Public | BindingFlags.Static);
+			var field = typeof(TEnum).GetTypeInfo().GetField(@this.ToString(), BindingFlags.Public | BindingFlags.Static);
 			Throw.If(field == null, "@this: was not a valid enum value");
 			
 			return field.GetCustomAttribute<ODataNameAttribute>().Name;
