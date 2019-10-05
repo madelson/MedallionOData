@@ -392,8 +392,7 @@ namespace Medallion.OData.Service.Sql
         {
             if (@if)
             {
-                var expression = obj as ODataExpression;
-                if (expression != null)
+                if (obj is ODataExpression expression)
                 {
                     var needsBoolModeConversion = !this.syntaxProvider.HasFirstClassBooleanType
                         && boolMode != BoolModeHelper.GetDefaultMode(expression);
@@ -446,8 +445,7 @@ namespace Medallion.OData.Service.Sql
         private readonly Dictionary<ODataConstantExpression, Parameter> parameters = new Dictionary<ODataConstantExpression, Parameter>();
         private Parameter CreateParameter(ODataConstantExpression expression)
         {
-            Parameter existing;
-            if (this.parameters.TryGetValue(expression, out existing))
+            if (this.parameters.TryGetValue(expression, out var existing))
             {
                 return existing;
             }

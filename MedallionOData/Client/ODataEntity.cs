@@ -117,7 +117,7 @@ namespace Medallion.OData.Client
         #region ---- Translation ----
 #if NETSTANDARD1_5
         private static PlatformNotSupportedException ODataEntityQueriesNotSupported() =>
-            new PlatformNotSupportedException($"Queries with the {typeof(ODataEntity)} class are not yet supported on .NET Core. See https://github.com/madelson/MedallionOData/issues/9 for more details");
+            new PlatformNotSupportedException($"Queries with the {typeof(ODataEntity)} class are not supported on .NET Standard < 2.0. See https://github.com/madelson/MedallionOData/issues/9 for more details");
 #endif
 
 #if !NETSTANDARD1_5

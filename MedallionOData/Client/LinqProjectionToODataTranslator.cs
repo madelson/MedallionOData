@@ -57,8 +57,7 @@ namespace Medallion.OData.Client
 
                 // otherwise, we can only evaluate a parameter if we have a (empty) path for it in the mapping
                 // this will happen in cases like q.Select(a => a.Text).Where(t => t.Length > 0)
-                ODataExpression result;
-                if (!this._pathStack.Peek().TryGetValue(Empty<MemberInfo>.Array, out result))
+                if (!this._pathStack.Peek().TryGetValue(Empty<MemberInfo>.Array, out var result))
                 {
                     throw new ODataCompileException("Could not translate parameter of type " + parameterExpression.Type + " to OData in this context!");
                 }
@@ -68,8 +67,7 @@ namespace Medallion.OData.Client
             public ODataExpression TranslateMemberAccess(MemberExpression memberAccess)
             {
                 // translate special properties
-                ODataExpression result;
-                if (this.TryTranslateMemberAccessAsSpecialMember(memberAccess, out result))
+                if (this.TryTranslateMemberAccessAsSpecialMember(memberAccess, out var result))
                 {
                     return result;
                 }

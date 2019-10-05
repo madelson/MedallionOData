@@ -123,8 +123,7 @@ namespace Medallion.OData.Service
             Throw.IfNull(query, "query");
             Throw.IfNull(parseResult, "parseResult");
 
-            IQueryable<TElement> inlineCountQuery;
-            var resultQuery = ODataQueryFilter.Apply(query, parseResult.ODataQuery, out inlineCountQuery);
+            var resultQuery = ODataQueryFilter.Apply(query, parseResult.ODataQuery, out var inlineCountQuery);
             return new Result<TElement>(parseResult.ODataQuery, resultQuery: resultQuery, inlineCountQuery: inlineCountQuery);
         }
 
@@ -145,11 +144,10 @@ namespace Medallion.OData.Service
         object IODataServiceQueryPipeline.Serialize<TElement>(IODataProjectResult<TElement> projectResult)
         {
             Throw.IfNull(projectResult, "projectResult");
-            IODataSerializer serializer;
             // MA: TryGetValue throws on nulls, so we need this to be a separate check
             Throw<NotSupportedException>.If(projectResult.ODataQuery.Format == null, "No format argument was provided");
             Throw<NotSupportedException>.If(
-                !this._serializersByFormat.TryGetValue(projectResult.ODataQuery.Format, out serializer), 
+                !this._serializersByFormat.TryGetValue(projectResult.ODataQuery.Format, out var serializer), 
                 "No serializer is available for the given format"
             );
 
