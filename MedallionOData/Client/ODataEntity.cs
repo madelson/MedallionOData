@@ -1,7 +1,4 @@
-﻿using Medallion.OData.Dynamic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,16 +7,19 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Medallion.OData.Dynamic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 // TODO VNEXT: move this out of the client namespace
 namespace Medallion.OData.Client
 {
-	/// <summary>
-	/// A dynamic entity type to provide support for dynamic client queries
-	/// </summary>
+    /// <summary>
+    /// A dynamic entity type to provide support for dynamic client queries
+    /// </summary>
     public sealed class ODataEntity : ODataObject
-	{
-		private static readonly IEqualityComparer<string> KeyComparer = StringComparer.OrdinalIgnoreCase;
+    {
+        private static readonly IEqualityComparer<string> KeyComparer = StringComparer.OrdinalIgnoreCase;
 
         // TODO we could potentially optimized this class by sharing "class" definitions like ExpandoObject does
         // note that we can't use ExpandoObject directly because it doesn't support case-insensitive comparison
@@ -29,8 +29,8 @@ namespace Medallion.OData.Client
         /// <summary>
         /// Constructs a entity from the given set of key value pairs
         /// </summary>
-		public ODataEntity(IEnumerable<KeyValuePair<string, object>> values)
-		{
+        public ODataEntity(IEnumerable<KeyValuePair<string, object>> values)
+        {
             Throw.IfNull(values, "values");
 
             var valuesDictionary = new Dictionary<string, object>(KeyComparer);
@@ -40,24 +40,23 @@ namespace Medallion.OData.Client
                 valuesDictionary.Add(kvp.Key, oDataValue != null ? oDataValue.Value : kvp.Value);
             }
             this.Values = valuesDictionary;
-		}
+        }
 
-		/// <summary>
-		/// Gets the strongly-typed value of the named property. This method can be used in OData queries as long as <paramref name="propertyName"/>
-		/// is a constant or local variable capture
-		/// </summary>
-		/// <typeparam name="TProperty">the property type</typeparam>
-		/// <param name="propertyName">the property name</param>
-		/// <returns>the property value</returns>
-		public TProperty Get<TProperty>(string propertyName)
-		{
+        /// <summary>
+        /// Gets the strongly-typed value of the named property. This method can be used in OData queries as long as <paramref name="propertyName"/>
+        /// is a constant or local variable capture
+        /// </summary>
+        /// <typeparam name="TProperty">the property type</typeparam>
+        /// <param name="propertyName">the property name</param>
+        /// <returns>the property value</returns>
+        public TProperty Get<TProperty>(string propertyName)
+        {
             Throw.IfNull(propertyName, "propertyName");
 
-			object result;
-			if (!this.Values.TryGetValue(propertyName, out result))
-			{
-				throw new ArgumentException("The entity does not contain a value for property '" + propertyName + "'!");
-			}
+            if (!this.Values.TryGetValue(propertyName, out var result))
+            {
+                throw new ArgumentException("The entity does not contain a value for property '" + propertyName + "'!");
+            }
 
             if (result == null)
             {
@@ -72,8 +71,8 @@ namespace Medallion.OData.Client
                 return default(TProperty); // always null due to check above
             }
 
-			if (result is TProperty)
-			{
+            if (result is TProperty)
+            {
                 return (TProperty)result;
             }
 
@@ -99,7 +98,7 @@ namespace Medallion.OData.Client
                 }
             }
 
-            if (typeof(ODataObject).IsAssignableFrom(tProperty))
+            if (typeof(ODataObject).GetTypeInfo().IsAssignableFrom(tProperty))
             {
                 // at this point, we already know it's not ODataEntity since that would be
                 // handled above. Thus, we can just handle ODataValue
@@ -113,15 +112,15 @@ namespace Medallion.OData.Client
                 propertyName,
                 tProperty
             ));
-		}
+        }
 
         #region ---- Translation ----
-#if NETCORE
+#if NETSTANDARD1_5
         private static PlatformNotSupportedException ODataEntityQueriesNotSupported() =>
             new PlatformNotSupportedException($"Queries with the {typeof(ODataEntity)} class are not yet supported on .NET Core. See https://github.com/madelson/MedallionOData/issues/9 for more details");
 #endif
 
-#if !NETCORE
+#if !NETSTANDARD1_5
         private static readonly MethodInfo GetMethod = Helpers.GetMethod((ODataEntity r) => r.Get<int>(null))
             .GetGenericMethodDefinition();
 #endif
@@ -132,7 +131,7 @@ namespace Medallion.OData.Client
         // TODO vNext this should not be public
         public static Expression Normalize(Expression expression)
         {
-#if !NETCORE
+#if !NETSTANDARD1_5
             var result = Normalizer.Instance.Visit(expression);
             return result;
 #else
@@ -140,7 +139,7 @@ namespace Medallion.OData.Client
 #endif
         }
 
-#if !NETCORE
+#if !NETSTANDARD1_5
         #region ---- Normalizer ----
         private sealed class Normalizer : ExpressionVisitor
         {
@@ -151,9 +150,8 @@ namespace Medallion.OData.Client
                 if (methodCall.Method.MetadataToken == GetMethod.MetadataToken
                     && Equals(methodCall.Method.Module, GetMethod.Module))
                 {
-                    object value;
                     Throw<ODataCompileException>.If(
-                        !LinqHelpers.TryGetValue(methodCall.Arguments[0], LinqHelpers.GetValueOptions.All, out value),
+                        !LinqHelpers.TryGetValue(methodCall.Arguments[0], LinqHelpers.GetValueOptions.All, out var value),
                         () => string.Format(
                             "Unable to extract value for parameter '{0}' of {1}. Ensure that the value for the parameter can be statically determined",
                             methodCall.Method.GetParameters()[0].Name,
@@ -186,7 +184,7 @@ namespace Medallion.OData.Client
         // TODO vNext this should not be public
         public static Expression Denormalize(Expression expression)
         {
-#if !NETCORE
+#if !NETSTANDARD1_5
             var result = Denormalizer.Instance.Visit(expression);
             return result;
 #else
@@ -194,11 +192,11 @@ namespace Medallion.OData.Client
 #endif
         }
 
-#if !NETCORE
+#if !NETSTANDARD1_5
         #region ---- Denormalizer ----
         private sealed class Denormalizer : ExpressionVisitor
         {
-            public static Denormalizer Instance = new Denormalizer();
+            public static readonly Denormalizer Instance = new Denormalizer();
 
             protected override Expression VisitMember(MemberExpression node)
             {
@@ -220,178 +218,177 @@ namespace Medallion.OData.Client
         #region ---- Fake property implementation ----
         internal static PropertyInfo GetProperty(string name, Type type)
         {
-#if !NETCORE
+#if !NETSTANDARD1_5
             return EntityPropertyInfo.For(name, type);
 #else
             throw ODataEntityQueriesNotSupported();
 #endif
         }
 
-#if !NETCORE
+#if !NETSTANDARD1_5
         private TProperty FakeGetter<TProperty>()
-		{
-			throw new InvalidOperationException("This getter is not valid");
-		}
-	
-		private sealed class EntityPropertyInfo : PropertyInfo
-		{
-			private readonly string _name;
-			private readonly Type _type;
-			private readonly int _metadataToken;
+        {
+            throw new InvalidOperationException("This getter is not valid");
+        }
+    
+        private sealed class EntityPropertyInfo : PropertyInfo
+        {
+            private static readonly ConcurrentDictionary<Tuple<Type, string>, EntityPropertyInfo> Cache = new ConcurrentDictionary<Tuple<Type, string>, EntityPropertyInfo>(
+                EqualityComparers.Create<Tuple<Type, string>>(
+                    equals: (t1, t2) => t1.Item1 == t2.Item1 && KeyComparer.Equals(t1.Item2, t2.Item2),
+                    hash: t => t.Item1.GetHashCode() ^ KeyComparer.GetHashCode(t.Item2)
+                )   
+            );        
+            private static int _lastMetadataToken = 0; 
 
-			private EntityPropertyInfo(string name, Type type, int metadataToken)
-			{
-				Throw.IfNull(name, "name");
-				Throw.IfNull(type, "type");
+            private readonly string _name;
+            private readonly Type _type;
+            private readonly int _metadataToken;
 
-				this._name = name;
-				this._type = type;
-				this._metadataToken = metadataToken;
-			}
+            private EntityPropertyInfo(string name, Type type, int metadataToken)
+            {
+                Throw.IfNull(name, "name");
+                Throw.IfNull(type, "type");
 
-			public override PropertyAttributes Attributes
-			{
-				get { return PropertyAttributes.None; }
-			}
+                this._name = name;
+                this._type = type;
+                this._metadataToken = metadataToken;
+            }
 
-			public override bool CanRead
-			{
-				get { return true; }
-			}
+            public override PropertyAttributes Attributes
+            {
+                get { return PropertyAttributes.None; }
+            }
 
-			public override bool CanWrite
-			{
-				get { return true; }
-			}
+            public override bool CanRead
+            {
+                get { return true; }
+            }
 
-			public override MethodInfo[] GetAccessors(bool nonPublic)
-			{
-				return new[] { this.GetMethod };
-			}
+            public override bool CanWrite
+            {
+                get { return true; }
+            }
 
-			public override MethodInfo GetGetMethod(bool nonPublic)
-			{
-				// we need to implement this because it's checked by Expression.Property calls
-				return Helpers.GetMethod((ODataEntity r) => r.FakeGetter<object>())
-					.GetGenericMethodDefinition()
-					.MakeGenericMethod(this.PropertyType);
-			}
+            public override MethodInfo[] GetAccessors(bool nonPublic)
+            {
+                return new[] { this.GetMethod };
+            }
 
-			public override ParameterInfo[] GetIndexParameters()
-			{
-				return Empty<ParameterInfo>.Array;
-			}
+            public override MethodInfo GetGetMethod(bool nonPublic)
+            {
+                // we need to implement this because it's checked by Expression.Property calls
+                return Helpers.GetMethod((ODataEntity r) => r.FakeGetter<object>())
+                    .GetGenericMethodDefinition()
+                    .MakeGenericMethod(this.PropertyType);
+            }
 
-			public override MethodInfo GetSetMethod(bool nonPublic)
-			{
-				return null; // read-only
-			}
+            public override ParameterInfo[] GetIndexParameters()
+            {
+                return Empty<ParameterInfo>.Array;
+            }
 
-			public override Type PropertyType
-			{
-				get { return this._type; }
-			}
+            public override MethodInfo GetSetMethod(bool nonPublic)
+            {
+                return null; // read-only
+            }
 
-			public override object GetValue(object obj, BindingFlags invokeAttr, Binder binder, object[] index, System.Globalization.CultureInfo culture)
-			{
-				Throw.If(index != null && index.Length > 0, "index: properties cannot have indexers");
+            public override Type PropertyType
+            {
+                get { return this._type; }
+            }
 
-				Throw.IfNull(obj, "obj");
-				var entity = obj as ODataEntity;
-				Throw.If(entity == null, "obj: must be of type ODataEntity");
-				Throw<ArgumentException>.If(!entity.Values.ContainsKey(this.Name), () => "the given entity instance does not contain property '" + this.Name + "'");
+            public override object GetValue(object obj, BindingFlags invokeAttr, Binder binder, object[] index, System.Globalization.CultureInfo culture)
+            {
+                Throw.If(index != null && index.Length > 0, "index: properties cannot have indexers");
 
-				return entity.Values[this.Name];
-			}
+                Throw.IfNull(obj, "obj");
+                var entity = obj as ODataEntity;
+                Throw.If(entity == null, "obj: must be of type ODataEntity");
+                Throw<ArgumentException>.If(!entity.Values.ContainsKey(this.Name), () => "the given entity instance does not contain property '" + this.Name + "'");
 
-			public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, object[] index, System.Globalization.CultureInfo culture)
-			{
-				throw new InvalidOperationException("ODataEntity properties are read-only!");
-			}
+                return entity.Values[this.Name];
+            }
 
-			public override Type DeclaringType
-			{
-				get { return typeof(ODataEntity); }
-			}
+            public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, object[] index, System.Globalization.CultureInfo culture)
+            {
+                throw new InvalidOperationException("ODataEntity properties are read-only!");
+            }
 
-			public override object[] GetCustomAttributes(Type attributeType, bool inherit)
-			{
-				return Empty<object>.Array;
-			}
+            public override Type DeclaringType
+            {
+                get { return typeof(ODataEntity); }
+            }
 
-			public override object[] GetCustomAttributes(bool inherit)
-			{
+            public override object[] GetCustomAttributes(Type attributeType, bool inherit)
+            {
                 return Empty<object>.Array;
-			}
+            }
 
-			public override bool IsDefined(Type attributeType, bool inherit)
-			{
-				return false;
-			}
+            public override object[] GetCustomAttributes(bool inherit)
+            {
+                return Empty<object>.Array;
+            }
 
-			public override string Name
-			{
-				get { return this._name; }
-			}
+            public override bool IsDefined(Type attributeType, bool inherit)
+            {
+                return false;
+            }
 
-			public override Type ReflectedType
-			{
-				get { return typeof(ODataEntity); }
-			}
+            public override string Name
+            {
+                get { return this._name; }
+            }
 
-			public override bool Equals(object obj)
-			{
-				var that = obj as EntityPropertyInfo;
-				return that != null && KeyComparer.Equals(this.Name, that.Name) && this.PropertyType == that.PropertyType;
-			}
+            public override Type ReflectedType
+            {
+                get { return typeof(ODataEntity); }
+            }
 
-			public override int GetHashCode()
-			{
-				return KeyComparer.GetHashCode(this.Name) ^ this.PropertyType.GetHashCode();
-			}
+            public override bool Equals(object obj)
+            {
+                var that = obj as EntityPropertyInfo;
+                return that != null && KeyComparer.Equals(this.Name, that.Name) && this.PropertyType == that.PropertyType;
+            }
 
-			public override string ToString()
-			{
-				return string.Format("{0}.Get<{1}>(\"{2}\")", typeof(ODataEntity), this.PropertyType, this.Name);
-			}
+            public override int GetHashCode()
+            {
+                return KeyComparer.GetHashCode(this.Name) ^ this.PropertyType.GetHashCode();
+            }
 
-			// TODO FUTURE consider returning a static token with a new module each time instead
-			public override int MetadataToken { get { return this._metadataToken; } }
-			public override Module Module { get { return EntityModule.Instance; } }
+            public override string ToString()
+            {
+                return string.Format("{0}.Get<{1}>(\"{2}\")", typeof(ODataEntity), this.PropertyType, this.Name);
+            }
 
-			private static int _lastMetadataToken = 0;
-			private static readonly ConcurrentDictionary<Tuple<Type, string>, EntityPropertyInfo> Cache = new ConcurrentDictionary<Tuple<Type, string>, EntityPropertyInfo>(
-				EqualityComparers.Create<Tuple<Type, string>>(
-					equals: (t1, t2) => t1.Item1 == t2.Item1 && KeyComparer.Equals(t1.Item2, t2.Item2),
-					hash: t => t.Item1.GetHashCode() ^ KeyComparer.GetHashCode(t.Item2)
-				)	
-			);
+            // TODO FUTURE consider returning a static token with a new module each time instead
+            public override int MetadataToken { get { return this._metadataToken; } }
+            public override Module Module { get { return EntityModule.Instance; } }
 
-			public static EntityPropertyInfo For(string name, Type type)
-			{
-				var cacheKey = Tuple.Create(type, name);
-				EntityPropertyInfo cached;
-				if (Cache.TryGetValue(cacheKey, out cached))
-				{
-					return cached;
-				}
+            public static EntityPropertyInfo For(string name, Type type)
+            {
+                var cacheKey = Tuple.Create(type, name);
+                if (Cache.TryGetValue(cacheKey, out var cached))
+                {
+                    return cached;
+                }
 
-				var metadataToken = Interlocked.Increment(ref _lastMetadataToken);
-				var newProp = new EntityPropertyInfo(name, type, metadataToken);
-				// to avoid ever having equivalent props with different tokens, we only return
-				// the new prop if it becomes the cached instance
-				return Cache.TryAdd(cacheKey, newProp)
-					? newProp
-					: Cache[cacheKey];
-			}
-		}
+                var metadataToken = Interlocked.Increment(ref _lastMetadataToken);
+                var newProp = new EntityPropertyInfo(name, type, metadataToken);
+                // to avoid ever having equivalent props with different tokens, we only return
+                // the new prop if it becomes the cached instance
+                return Cache.TryAdd(cacheKey, newProp)
+                    ? newProp
+                    : Cache[cacheKey];
+            }
+        }
 
-		private sealed class EntityModule : Module
-		{
-			public static readonly Module Instance = new EntityModule();
-		}
+        private sealed class EntityModule : Module
+        {
+            public static readonly Module Instance = new EntityModule();
+        }
 #endif
         #endregion
-#endregion
+        #endregion
     }
 }

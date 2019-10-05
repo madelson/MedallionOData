@@ -1,18 +1,17 @@
-﻿using Medallion.OData.Client;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Client;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Client
 {
-    [TestClass]
     public class ClientSideProjectionBuilderTest
     {
-        [TestMethod]
+        [Test]
         public void TestCompose()
         {
             var lambdas = new Expression<Func<T, T>>[] 
@@ -27,18 +26,18 @@ namespace Medallion.OData.Tests.Client
             output.A.ShouldEqual(100);
         }
 
-        [TestMethod]
+        [Test]
         public void TestSimplify()
         {
             Expression<Func<T, T>> lambda = t => new T
             {
-                A = new { x = Err<int>(1), y = new { z = Err<T>(2), val = (2 * t.A) }.val + 1 }.y,
+                A = new { x = Err<int>(1), y = new { z = Err<T>(2), val = 2 * t.A }.val + 1 }.y,
                 C = new T { A = new T { B = "abcd", C = Err<bool>(3) }.B.Length, D = new T { A = Err<int>(4) } }.A > 0,
                 D = new T
                 {
                     A = Convert.ToInt32(new T { A = Err<int>(5), C = true }.C),
                     B = new { m = Err<string>(6), t = new T { A = new { k = Err<bool>(7), j = 2 }.j } }.t.A.ToString(),
-                }
+                },
             };
 
             var simplified = (Expression<Func<T, T>>)ClientSideProjectionBuilder.CreateProjection(new[] { lambda });
@@ -60,7 +59,7 @@ namespace Medallion.OData.Tests.Client
         private static T Err<T>(int i)
         {
             Assert.Fail("Failed at call " + i);
-            return default(T);
+            return default;
         }
     }
 }

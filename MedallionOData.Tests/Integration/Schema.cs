@@ -32,8 +32,7 @@ namespace Medallion.OData.Tests.Integration
 
         public override bool Equals(object obj)
         {
-            var that = obj as Customer;
-            return that != null
+            return obj is Customer that
                 && that.Id == this.Id
                 && that.Name == this.Name
                 && (that.DateCreated - this.DateCreated).Duration() < TimeSpan.FromMilliseconds(10)
@@ -62,8 +61,7 @@ namespace Medallion.OData.Tests.Integration
 
         public override bool Equals(object obj)
         {
-            var that = obj as Company;
-            return that != null
+            return obj is Company that
                 && this.Id == that.Id
                 && this.Name == that.Name
                 && (this.DateCreated - that.DateCreated).Duration() < TimeSpan.FromMilliseconds(10);
@@ -96,6 +94,8 @@ namespace Medallion.OData.Tests.Integration
 
     public class CustomersContext : DbContext
     {
+        private const string Prefix = "Medallion_OData_Tests";
+
         // TODO FUTURE instead of caching this in memory, read it back on command to sync date values (or insert reasonable date values)
         private static IReadOnlyList<Customer> _customers;
         public static IReadOnlyList<Customer> GetCustomers()
@@ -126,7 +126,6 @@ namespace Medallion.OData.Tests.Integration
         public DbSet<Company> Companies { get; set; }
         public DbSet<Sample> Samples { get; set; }
 
-        private const string Prefix = "Medallion_OData_Tests";
         private static readonly Lazy<string> ConnectionString = new Lazy<string>(GetConnectionString);
         private static string GetConnectionString()
         {

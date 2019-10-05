@@ -1,16 +1,15 @@
-﻿using Medallion.OData.Client;
-using Medallion.OData.Service;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Medallion.OData.Client;
+using Medallion.OData.Service;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Integration
 {
-    [TestClass]
     public class InMemoryODataEntityIntegrationTest : IntegrationTestBase<InMemoryODataEntityIntegrationTest>
     {
         protected override TestServer CreateTestServer()
@@ -44,7 +43,7 @@ namespace Medallion.OData.Tests.Integration
         protected override bool NullCoalescingSupported { get { return false; } }
         protected override bool FullNumericMixupSupported { get { return false; } }
 
-        [ClassCleanup]
+        [OneTimeTearDown]
         public static void TearDown()
         {
             DisposeTestServer();

@@ -1,17 +1,16 @@
-﻿using Medallion.OData.Client;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Client;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests
 {
-    [TestClass]
     public class ODataEntityTest
     {
-        [TestMethod]
+        [Test]
         public void ODataEntityTestIncompatibleGet()
         {
             var entity = new ODataEntity(new[] { KeyValuePair.Create("A", "100".As<object>()) });
@@ -20,7 +19,7 @@ namespace Medallion.OData.Tests
             ex.Message.ShouldEqual("value '100' of type System.String for property 'A' is not compatible with requested type System.Nullable`1[System.Double]");
         }
 
-        [TestMethod]
+        [Test]
         public void ODataEntityTestNumericCastIssue()
         {
             var entity = new ODataEntity(new[] { new KeyValuePair<string, object>("x", 1.5), new KeyValuePair<string, object>("y", long.MaxValue) });

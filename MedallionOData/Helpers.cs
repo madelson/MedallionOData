@@ -240,7 +240,7 @@ namespace Medallion.OData
                         var reWrapped = constructor.Invoke(new object[] 
                         {
                             realException.Message + " (inner exception extracted from wrapping AggregateException/TargetInvocationException(s))",
-                            @this
+                            @this,
                         });
                         return (Exception)reWrapped;
                     }

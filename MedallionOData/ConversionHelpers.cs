@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData
 {
-    using Microsoft.CSharp.RuntimeBinder;
     using System;
     using System.Collections;
     using System.Collections.Concurrent;
@@ -18,6 +17,7 @@ namespace Medallion.OData
     using System.Text;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
+    using Microsoft.CSharp.RuntimeBinder;
     using CSharpBinder = Microsoft.CSharp.RuntimeBinder.Binder;
 
     internal static class ConversionHelpers
@@ -37,8 +37,7 @@ namespace Medallion.OData
             }
 
             var key = new KeyValuePair<Type, Type>(from, to);
-            bool cachedValue;
-            if (CastCache.TryGetCachedValue(key, out cachedValue))
+            if (CastCache.TryGetCachedValue(key, out var cachedValue))
             {
                 return cachedValue;
             }
@@ -172,8 +171,7 @@ namespace Medallion.OData
             }
 
             var key = new KeyValuePair<Type, Type>(from, to);
-            bool cachedValue;
-            if (ImplicitCastCache.TryGetCachedValue(key, out cachedValue))
+            if (ImplicitCastCache.TryGetCachedValue(key, out var cachedValue))
             {
                 return cachedValue;
             }

@@ -1,23 +1,22 @@
-﻿using Medallion.OData.Client;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Client;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Integration
 {
-    [TestClass]
     public class MicrosoftODataServiceIntegrationTest
     {
-        private static readonly ODataQueryContext context = new ODataQueryContext();
         private const string BaseUrl = @"http://services.odata.org/v3/odata/odata.svc/";
-
-        [TestMethod]
+        private static readonly ODataQueryContext Context = new ODataQueryContext();
+        
+        [Test]
         public void TestCategories()
         {
-            var categories = context.Query<Category>(BaseUrl + "Categories");
+            var categories = Context.Query<Category>(BaseUrl + "Categories");
 
             var food = categories.Where(c => c.Name == "Food")
                 .Select(c => c.ID)
@@ -25,15 +24,15 @@ namespace Medallion.OData.Tests.Integration
                 .ShouldEqual(0);
         }
 
-        [TestMethod]
+        [Test]
         public void TestProducts()
         {
-            var products = context.Query<ODataEntity>(BaseUrl + "Products");
+            var products = Context.Query<ODataEntity>(BaseUrl + "Products");
 
             var cranberries = products.Single(p => p.Get<string>("Name") == "Cranberry Juice");
             cranberries.Get<DateTime>("ReleaseDate").Year.ShouldEqual(2006);
 
-            var expensiveNovemberProducts = context.Query<ODataEntity>(BaseUrl + "Products")
+            var expensiveNovemberProducts = Context.Query<ODataEntity>(BaseUrl + "Products")
                 .Where(p => p.Get<double>("Price") >= 20)
                 .Where(p => p.Get<DateTime>("ReleaseDate").Month == 11)
                 .Select(p => p.Get<string>("Name"))

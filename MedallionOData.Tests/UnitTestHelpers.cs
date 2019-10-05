@@ -1,10 +1,10 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests
 {
@@ -24,13 +24,13 @@ namespace Medallion.OData.Tests
             }
 
             var cmp = comparer ?? EqualityComparer<T>.Default;
-            Func<IEnumerable<T>, List<Tuple<T, int>>> makeTuples = seq => seq.Select((t, globalIndex) => new { t, globalIndex })
+            List<Tuple<T, int>> MakeTuples(IEnumerable<T> seq) => seq.Select((t, globalIndex) => new { t, globalIndex })
                 .GroupBy(tt => tt.t, cmp)
                 .SelectMany(g => g.Select((tt, groupIndex) => Tuple.Create(tt.t, orderMatters ? tt.globalIndex : groupIndex)))
                 .ToList();
 
-            var actualTuples = makeTuples(@this);
-            var expectedTuples = makeTuples(that);
+            var actualTuples = MakeTuples(@this);
+            var expectedTuples = MakeTuples(that);
 
             var messageBuilder = new StringBuilder();
             if (message != null)

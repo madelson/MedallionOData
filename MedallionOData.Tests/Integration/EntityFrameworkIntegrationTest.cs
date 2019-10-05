@@ -1,15 +1,14 @@
-﻿using Medallion.OData.Service;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Medallion.OData.Service;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Integration
 {
-    [TestClass]
     public class EntityFrameworkIntegrationTest : IntegrationTestBase<EntityFrameworkIntegrationTest>
     {
         protected override TestServer CreateTestServer()
@@ -26,7 +25,7 @@ namespace Medallion.OData.Tests.Integration
             });
         }
 
-        [ClassCleanup]
+        [OneTimeTearDown]
         public static void TearDown()
         {
             DisposeTestServer();

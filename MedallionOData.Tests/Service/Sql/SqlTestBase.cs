@@ -1,15 +1,15 @@
-﻿using Medallion.OData.Client;
-using Medallion.OData.Dynamic;
-using Medallion.OData.Service.Sql;
-using Medallion.OData.Tests.Integration;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Client;
+using Medallion.OData.Dynamic;
+using Medallion.OData.Service.Sql;
+using Medallion.OData.Tests.Integration;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Service.Sql
 {
@@ -17,7 +17,7 @@ namespace Medallion.OData.Tests.Service.Sql
     {
         protected abstract ODataSqlContext Context { get; }
 
-        [TestMethod]
+        [Test]
         public void SqlSimpleSelect()
         {
             var names = this.Context.Query<Customer>("customers").Select(c => c.Name).ToArray();
@@ -30,7 +30,7 @@ namespace Medallion.OData.Tests.Service.Sql
             }
         }
 
-        [TestMethod]
+        [Test]
         public void SqlFilter()
         {
             var filtered = this.Context.Query<Customer>("customers")
@@ -45,7 +45,7 @@ namespace Medallion.OData.Tests.Service.Sql
             }
         }
 
-        [TestMethod]
+        [Test]
         public void SqlSort()
         {
             var sorted = this.Context.Query<Customer>("customers")
@@ -69,7 +69,7 @@ namespace Medallion.OData.Tests.Service.Sql
             }
         }
 
-        [TestMethod]
+        [Test]
         public void SqlPaginate()
         {
             var sorted = this.Context.Query<Customer>("customers").OrderByDescending(c => c.Name.Length)
@@ -93,14 +93,15 @@ namespace Medallion.OData.Tests.Service.Sql
             this.Context.Query<Customer>("customers").Take(0).Count().ShouldEqual(0, "top 0");
         }
 
-        [TestMethod]
+        [Test]
         public void SqlNullableEquality()
         {
             var samples = this.Context.Query<Sample>("samples");
             var dynamicSamples = this.Context.Query<ODataEntity>("samples");
 
             var nulls = samples.Where(s => s.NullableBool == null);
-            var dynamicNulls = dynamicSamples.Where(s => s.Get<bool>("NullableBool") == null);
+            bool? nullBool = null;
+            var dynamicNulls = dynamicSamples.Where(s => s.Get<bool>("NullableBool") == nullBool);
             var nonNulls = samples.Where(s => s.NullableBool != null);
             var dynamicNonNulls = dynamicSamples.Where(s => s.Get<bool?>("NullableBool") != null);
             var negatedNulls = samples.Where(s => !(s.NullableBool == null));
@@ -127,7 +128,7 @@ namespace Medallion.OData.Tests.Service.Sql
             }
         }
 
-        [TestMethod]
+        [Test]
         public void SqlToString()
         {
             var query = this.Context.Query<Sample>("fake_table")
@@ -142,7 +143,7 @@ namespace Medallion.OData.Tests.Service.Sql
             badQueryString.Contains("Exception").ShouldEqual(true);
         }
 
-        [TestMethod]
+        [Test]
         public void SqlBitBoolConfusion()
         {
             using (var context = new CustomersContext())
@@ -152,8 +153,10 @@ namespace Medallion.OData.Tests.Service.Sql
                     .CollectionShouldEqual(context.Samples.Where(s => (s.Bool == false) == (s.Id % 3 == 0)));
 
                 this.Context.Query<Sample>("samples")
+#pragma warning disable SA1131 // Use readable conditions
                     .Where(s => !s.Bool || !!(false == s.Bool))
                     .CollectionShouldEqual(context.Samples.Where(s => !s.Bool || !!(false == s.Bool)));
+#pragma warning restore SA1131 // Use readable conditions
 
                 this.Context.Query<Sample>("samples")
                     .Select(s => s.Bool && (s.Id > 1))
@@ -171,7 +174,7 @@ namespace Medallion.OData.Tests.Service.Sql
             }
         }
 
-        [TestMethod]
+        [Test]
         public void SqlTestStartsWithAndEndsWith()
         {
             this.Context.Query<Customer>("customers")
@@ -185,7 +188,7 @@ namespace Medallion.OData.Tests.Service.Sql
                 .CollectionShouldEqual(new[] { "Bert", "Albert" });
         }
 
-        [TestMethod]
+        [Test]
         public void SqlCount()
         {
             using (var context = new CustomersContext())
@@ -208,7 +211,7 @@ namespace Medallion.OData.Tests.Service.Sql
             }
         }
 
-        [TestMethod]
+        [Test]
         public void SqlErrors()
         {
             var samples = this.Context.Query<Sample>("samples");
@@ -223,7 +226,7 @@ namespace Medallion.OData.Tests.Service.Sql
             );
         }
 
-        [TestMethod]
+        [Test]
         public void SqlODataValue()
         {
             using (var context = new CustomersContext())

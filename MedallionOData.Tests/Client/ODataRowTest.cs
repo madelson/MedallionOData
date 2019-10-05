@@ -6,44 +6,42 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Medallion.OData.Client;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using Newtonsoft.Json;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Client
 {
-	[TestClass]
     public class ODataRowTest
     {
-		[TestMethod]
-		public void TestGetProperty()
-		{
-			Expression<Func<ODataEntity, object>> getString = r => r.Get<string>("Text");
-			PropertyInfo prop;
-			TryConvertMethodCallToRowProperty((MethodCallExpression)getString.Body, out prop).ShouldEqual(true);
-			prop.Name.ShouldEqual("Text");
-			prop.PropertyType.ShouldEqual(typeof(string));
+        [Test]
+        public void TestGetProperty()
+        {
+            Expression<Func<ODataEntity, object>> getString = r => r.Get<string>("Text");
+            this.TryConvertMethodCallToRowProperty((MethodCallExpression)getString.Body, out var prop).ShouldEqual(true);
+            prop.Name.ShouldEqual("Text");
+            prop.PropertyType.ShouldEqual(typeof(string));
 
-			Expression<Func<ODataEntity, object>> toString = r => r.ToString();
-			TryConvertMethodCallToRowProperty((MethodCallExpression)toString.Body, out prop).ShouldEqual(false);
-			prop.ShouldEqual(null);
-		}
+            Expression<Func<ODataEntity, object>> toString = r => r.ToString();
+            this.TryConvertMethodCallToRowProperty((MethodCallExpression)toString.Body, out prop).ShouldEqual(false);
+            prop.ShouldEqual(null);
+        }
 
-		[TestMethod]
-		public void TestGet()
-		{
-			var row = new ODataEntity(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
-			row.Get<int>("A").ShouldEqual(1);
-			row.Get<string>("b").ShouldEqual("2");
-			UnitTestHelpers.AssertThrows<InvalidCastException>(() => row.Get<string>("a"));
+        [Test]
+        public void TestGet()
+        {
+            var row = new ODataEntity(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
+            row.Get<int>("A").ShouldEqual(1);
+            row.Get<string>("b").ShouldEqual("2");
+            UnitTestHelpers.AssertThrows<InvalidCastException>(() => row.Get<string>("a"));
             UnitTestHelpers.AssertThrows<ArgumentException>(() => row.Get<string>("c"));
-		}
+        }
 
-		[TestMethod]
-		public void TestSerialization()
-		{
-			var row = new ODataEntity(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
-		}
+        [Test]
+        public void TestSerialization()
+        {
+            var row = new ODataEntity(new Dictionary<string, object> { { "a", 1 }, { "b", "2" } });
+        }
 
         public bool TryConvertMethodCallToRowProperty(MethodCallExpression methodCall, out PropertyInfo property)
         {

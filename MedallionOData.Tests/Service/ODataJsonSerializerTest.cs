@@ -1,7 +1,4 @@
-﻿using Medallion.OData.Service;
-using Medallion.OData.Trees;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -9,13 +6,15 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Medallion.OData.Service;
+using Medallion.OData.Trees;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Service
 {
-    [TestClass]
     public class ODataJsonSerializerTest
     {
-        [TestMethod]
+        [Test]
         public void SimpleTest()
         {
             ODataQueryProjectorTest.Base.Counter = 0;
@@ -29,7 +28,7 @@ namespace Medallion.OData.Tests.Service
             );
         }
 
-        [TestMethod]
+        [Test]
         public void DuplicatePathsTest()
         {
             ODataQueryProjectorTest.Base.Counter = 0;
@@ -42,7 +41,7 @@ namespace Medallion.OData.Tests.Service
             );
         }
 
-        [TestMethod]
+        [Test]
         public void DatesTest()
         {
             // TODO VNEXT test datetimeoffset
@@ -57,7 +56,7 @@ namespace Medallion.OData.Tests.Service
             );
         }
 
-        [TestMethod]
+        [Test]
         public void NestingTest()
         {
             ODataQueryProjectorTest.Base.Counter = 0;
@@ -85,7 +84,7 @@ namespace Medallion.OData.Tests.Service
             );
         }
 
-        [TestMethod]
+        [Test]
         public void TestWithNulls()
         {
             ODataQueryProjectorTest.Base.Counter = 0;

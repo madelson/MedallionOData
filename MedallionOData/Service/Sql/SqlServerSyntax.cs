@@ -1,15 +1,13 @@
-﻿using Medallion.OData.Client;
-using Medallion.OData.Trees;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Trees;
 
 namespace Medallion.OData.Service.Sql
 {

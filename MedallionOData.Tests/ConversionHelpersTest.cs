@@ -6,25 +6,23 @@ using System.Threading.Tasks;
 
 namespace Medallion.OData.Tests
 {
-    using Microsoft.CSharp;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using System;
     using System.CodeDom.Compiler;
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-
-    [TestClass]
+    using Microsoft.CSharp;
+    using NUnit.Framework;
     public class ConversionHelpersTest
     {
-        [TestMethod]
+        [Test]
         public void ImplicitlyCastable()
         {
             this.RunTests((from, to) => from.IsImplicitlyCastableTo(to), @implicit: true);
         }
 
-        [TestMethod]
+        [Test]
         public void ExplicitlyCastable()
         {
             this.RunTests((from, to) => from.IsCastableTo(to), @implicit: false);

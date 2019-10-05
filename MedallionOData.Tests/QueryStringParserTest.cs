@@ -1,24 +1,23 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests
 {
-    [TestClass]
     public class QueryStringParserTest
     {
-        [TestMethod]
+        [Test]
         public void TestArgumentValidation()
         {
             UnitTestHelpers.AssertThrows<ArgumentNullException>(() => QueryStringParser.ParseQueryString(null));
             UnitTestHelpers.AssertThrows<ArgumentNullException>(() => HttpUtility.ParseQueryString(null));
         }
 
-        [TestMethod]
+        [Test]
         public void TestAddAfterParse()
         {
             var p1 = QueryStringParser.ParseQueryString("a=2&c=3");
@@ -34,7 +33,7 @@ namespace Medallion.OData.Tests
             p2.ToString().ShouldEqual("a=hi&c=3&c=x&b=bye");
         }
 
-        [TestMethod]
+        [Test]
         public void TestAgainstHttpUtility()
         {
             Assert.IsTrue(typeof(HttpUtility).IsPublic, "don't bother running this against the shim");

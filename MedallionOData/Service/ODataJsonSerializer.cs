@@ -1,24 +1,23 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Client;
 using Medallion.OData.Trees;
 using Newtonsoft.Json;
-
 using PropertyPath = System.Collections.Generic.IReadOnlyList<System.Reflection.PropertyInfo>;
-using System.IO;
-using System.Collections;
-using Medallion.OData.Client;
 
 namespace Medallion.OData.Service
 {
     /// <summary>
     /// Serializes to OData's JSON lite format
     /// </summary>
-	public sealed class ODataJsonSerializer : IODataSerializer
-	{
+    public sealed class ODataJsonSerializer : IODataSerializer
+    {
         // MA: verified that this is safe: http://json.codeplex.com/discussions/110461
         private static readonly JsonSerializer Serializer = new JsonSerializer();
 

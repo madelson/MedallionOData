@@ -1,18 +1,17 @@
-﻿using Medallion.OData.Client;
-using Medallion.OData.Service;
-using Medallion.OData.Service.Sql;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using Medallion.OData.Client;
+using Medallion.OData.Service;
+using Medallion.OData.Service.Sql;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Integration
 {
-    [TestClass]
     public class SqlODataEntityIntegrationTest : IntegrationTestBase<SqlODataEntityIntegrationTest>
     {
         protected override TestServer CreateTestServer()
@@ -39,7 +38,7 @@ namespace Medallion.OData.Tests.Integration
             });
         }
 
-        [ClassCleanup]
+        [OneTimeTearDown]
         public static void TearDown()
         {
             DisposeTestServer();

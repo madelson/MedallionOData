@@ -148,7 +148,7 @@ namespace Medallion.OData.Client
 
         private sealed class ExecuteResult : Tuple<object, int?>
         {
-            public ExecuteResult(object value, int? inlineCount) : base(value, inlineCount) {  }
+            public ExecuteResult(object value, int? inlineCount) : base(value, inlineCount) { }
 
             public object Value { get { return this.Item1; } }
             public int? InlineCount { get { return this.Item2; } }
@@ -158,24 +158,23 @@ namespace Medallion.OData.Client
         #region ---- IQueryable implementation ----
         private abstract class ODataQuery : IOrderedQueryable
         {
-            protected readonly ODataQueryContext _provider;
             private readonly Expression _expression;
-            private readonly Uri _url;
-
+            
             protected ODataQuery(ODataQueryContext provider, Expression expression)
             {
-                this._provider = provider;
+                this.Provider = provider;
                 this._expression = expression;
             }
 
             protected ODataQuery(ODataQueryContext provider, Uri url)
             {
-                this._provider = provider;
-                this._url = url;
+                this.Provider = provider;
+                this.Url = url;
                 this._expression = Expression.Constant(this);
             }
 
-            internal Uri Url { get { return this._url; } }
+            protected ODataQueryContext Provider { get; }
+            internal Uri Url { get; }
 
             System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
             {
@@ -201,7 +200,7 @@ namespace Medallion.OData.Client
             IQueryProvider IQueryable.Provider
             {
                 [DebuggerStepThrough]
-                get { return this._provider; }
+                get { return this.Provider; }
             }
         }
 
@@ -219,7 +218,7 @@ namespace Medallion.OData.Client
 
             IEnumerator<TElement> IEnumerable<TElement>.GetEnumerator()
             {
-                var result = (IEnumerable<TElement>)this._provider.ExecutePipelineAsync(this.As<IQueryable>().Expression)
+                var result = (IEnumerable<TElement>)this.Provider.ExecutePipelineAsync(this.As<IQueryable>().Expression)
                     .GetResultWithOriginalException().Value;
                 foreach (var element in result)
                 {
@@ -236,7 +235,7 @@ namespace Medallion.OData.Client
 
             async Task<IODataResult<TElement>> IODataQueryable<TElement>.ExecuteQueryAsync(ODataQueryOptions options)
             {
-                var result = await this._provider.ExecutePipelineAsync(this.As<IQueryable>().Expression, options).ConfigureAwait(false);
+                var result = await this.Provider.ExecutePipelineAsync(this.As<IQueryable>().Expression, options).ConfigureAwait(false);
                 return new ODataResult<TElement>(((IEnumerable<TElement>)result.Value).ToArray(), result.InlineCount);
             }
 
@@ -254,7 +253,7 @@ namespace Medallion.OData.Client
 
                 var replacer = new ParameterReplacer(executeExpression.Parameters[0], this.As<IQueryable>().Expression);
                 var replaced = replacer.Visit(executeExpression.Body);
-                var result = await this._provider.ExecutePipelineAsync(replaced).ConfigureAwait(false);
+                var result = await this.Provider.ExecutePipelineAsync(replaced).ConfigureAwait(false);
                 return (TResult)result.Value;
             }
         }

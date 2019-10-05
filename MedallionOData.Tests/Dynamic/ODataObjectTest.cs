@@ -1,19 +1,18 @@
-﻿using Medallion.OData.Client;
-using Medallion.OData.Dynamic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Client;
+using Medallion.OData.Dynamic;
+using Newtonsoft.Json;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Dynamic
 {
-    [TestClass]
     public class ODataObjectTest
     {
-        [TestMethod]
+        [Test]
         public void TestFromObject()
         {
             var v1 = ODataValue.FromObject(1);
@@ -29,7 +28,7 @@ namespace Medallion.OData.Tests.Dynamic
             UnitTestHelpers.AssertThrows<ArgumentException>(() => ODataValue.FromObject(new ODataEntity(Enumerable.Empty<KeyValuePair<string, object>>())));
         }
 
-        [TestMethod]
+        [Test]
         public void TestGetValuesFromODataEntity()
         {
             var entity = new ODataEntity(new Dictionary<string, object>
@@ -53,7 +52,7 @@ namespace Medallion.OData.Tests.Dynamic
             UnitTestHelpers.AssertThrows<InvalidCastException>(() => entity.Get<long>("F"));
         }
 
-        [TestMethod]
+        [Test]
         public void TestSerialization()
         {
             var serializedODataEntity = @"{ a: 2, b: 'abc', c: { x: 2 } }";

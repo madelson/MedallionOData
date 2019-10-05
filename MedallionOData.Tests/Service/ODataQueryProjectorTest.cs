@@ -1,32 +1,31 @@
-﻿using Medallion.OData.Service;
-using Medallion.OData.Trees;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Service;
+using Medallion.OData.Trees;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Service
 {
-    [TestClass]
     public class ODataQueryProjectorTest
     {
-        [TestMethod]
+        [Test]
         public void TestSelectId()
         {
             this.TestProjection(Select(a => a.Id));
         }
 
-        [TestMethod]
+        [Test]
         public void TestSelectNested()
         {
             this.TestProjection(Select(a => a.B.C.Name), Select(a => a.C.Id));
         }
 
-        [TestMethod]
+        [Test]
         public void TestSelectMany()
         {
             this.TestProjection(
@@ -87,17 +86,16 @@ namespace Medallion.OData.Tests.Service
 
         internal static ODataSelectColumnExpression ToODataExpression(MemberExpression selection)
         {
-            Func<Expression, ODataMemberAccessExpression> translate = null;
-            translate = exp => (exp as MemberExpression) == null ? null : ODataExpression.MemberAccess(translate(((MemberExpression)exp).Expression), (PropertyInfo)((MemberExpression)exp).Member);
+            ODataMemberAccessExpression Translate(Expression exp) => (exp as MemberExpression) == null ? null : ODataExpression.MemberAccess(Translate(((MemberExpression)exp).Expression), (PropertyInfo)((MemberExpression)exp).Member);
 
-            var memberAccess = translate(selection);
+            var memberAccess = Translate(selection);
             return ODataExpression.SelectColumn(memberAccess, allColumns: memberAccess == null || memberAccess.Type == ODataExpressionType.Complex);
         }
 
         #region ---- Data Classes ----
         internal abstract class Base
         {
-            public static int Counter;
+            public static int Counter { get; set; }
 
             protected Base() 
             {
@@ -110,7 +108,7 @@ namespace Medallion.OData.Tests.Service
 
             public override string ToString()
             {
- 	             return "{"
+                 return "{"
                      + this.GetType().GetProperties().Select(p => p.Name + ": " + p.GetValue(this)).ToDelimitedString(", ")
                      + "}";
             }

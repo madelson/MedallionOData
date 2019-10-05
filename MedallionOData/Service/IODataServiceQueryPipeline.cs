@@ -1,12 +1,12 @@
-﻿using Medallion.OData.Parser;
-using Medallion.OData.Trees;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Parser;
+using Medallion.OData.Trees;
 
 namespace Medallion.OData.Service
 {
@@ -164,7 +164,8 @@ namespace Medallion.OData.Service
             private readonly IQueryable<TElement> _resultQuery, _inlineCountQuery;
             private readonly ODataQueryExpression _oDataQuery;
 
-            public Result(ODataQueryExpression oDataQuery, 
+            public Result(
+                ODataQueryExpression oDataQuery, 
                 IQueryable<TElement> resultQuery = null, 
                 IQueryable<TElement> inlineCountQuery = null,
                 IReadOnlyDictionary<ODataSelectColumnExpression, IReadOnlyList<PropertyInfo>> projectMapping = null,

@@ -1,7 +1,4 @@
-﻿using Medallion.OData.Trees;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -11,6 +8,9 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Trees;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Medallion.OData.Client
 {
@@ -92,9 +92,7 @@ namespace Medallion.OData.Client
             Throw.IfNull(options, "options");
 
             var translator = new LinqToODataTranslator();
-            IQueryable rootQuery;
-            LinqToODataTranslator.ResultTranslator postProcessor;
-            var oDataQuery = translator.Translate(expression, out rootQuery, out postProcessor);
+            var oDataQuery = translator.Translate(expression, out var rootQuery, out var postProcessor);
             Throw.If(oDataQuery.Kind != ODataExpressionKind.Query, "expression: did not translate to a query expression");
 
             var oDataQueryWithOptions = ((ODataQueryExpression)oDataQuery).Update(format: options.Format, inlineCount: options.InlineCount ?? ((ODataQueryExpression)oDataQuery).InlineCount);
@@ -162,10 +160,9 @@ namespace Medallion.OData.Client
             {
                 var json = await reader.ReadToEndAsync().ConfigureAwait(false);
                 var result = JsonConvert.DeserializeObject<JObject>(json);
-
-                JToken inlineCountToken;
+                
                 int? inlineCount;
-                if (result.TryGetValue("odata.count", out inlineCountToken))
+                if (result.TryGetValue("odata.count", out var inlineCountToken))
                 {
                     inlineCount = inlineCountToken.Value<int?>();
                 }

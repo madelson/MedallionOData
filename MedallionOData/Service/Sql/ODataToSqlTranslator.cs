@@ -1,9 +1,9 @@
-﻿using Medallion.OData.Trees;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Trees;
 
 namespace Medallion.OData.Service.Sql
 {
@@ -443,7 +443,7 @@ namespace Medallion.OData.Service.Sql
             return this;
         }
 
-        private readonly Dictionary<ODataConstantExpression, Parameter> parameters = new Dictionary<ODataConstantExpression,Parameter>();
+        private readonly Dictionary<ODataConstantExpression, Parameter> parameters = new Dictionary<ODataConstantExpression, Parameter>();
         private Parameter CreateParameter(ODataConstantExpression expression)
         {
             Parameter existing;

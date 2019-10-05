@@ -1,5 +1,4 @@
-﻿using Medallion.OData.Trees;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -7,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Trees;
 
 namespace Medallion.OData.Service.Sql
 {
@@ -190,7 +190,7 @@ namespace Medallion.OData.Service.Sql
         protected internal virtual PaginationSyntax Pagination { get { return PaginationSyntax.OffsetFetch; } }
 
         /// <summary>
-        /// If true, then the syntax is assumed to support a "first-class" boolean type similar to .NET's <see cref="System.Boolean"/>.
+        /// If true, then the syntax is assumed to support a "first-class" boolean type similar to .NET's <see cref="bool"/>.
         /// When the syntax does not support this, an expression like "BoolColumn eq (A and B)" must be translated by so that both haves
         /// of the eq operator evaluate to 1 or 0. Conversely, an expression like "$filter=BoolColumn" must be translated like "$filter=BoolColumn eq 1".
         /// 

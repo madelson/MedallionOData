@@ -9,11 +9,11 @@ namespace Medallion.OData.Parser
     /// <summary>
     /// Represents an error during the parsing of an OData url
     /// </summary>
-#if !NETCORE
+#if !NETSTANDARD1_5
     [SerializableAttribute]
 #endif
     public sealed class ODataParseException : Exception
-	{
+    {
         /// <summary>
         /// Default constructor
         /// </summary>
@@ -31,7 +31,7 @@ namespace Medallion.OData.Parser
         public ODataParseException(string message, Exception inner)
             : base(message, inner) { }
 
-#if !NETCORE
+#if !NETSTANDARD1_5
         internal ODataParseException(System.Runtime.Serialization.SerializationInfo info, System.Runtime.Serialization.StreamingContext context)
             : base(info, context) { }
 #endif

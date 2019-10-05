@@ -1,16 +1,15 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests
 {
-    [TestClass]
     public class HelpersTest
     {
-        [TestMethod]
+        [Test]
         public void TestGenericArguments()
         {
             this.TestGenericArguments(typeof(IQueryable<int>), typeof(IEnumerable<>), typeof(int));

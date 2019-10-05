@@ -1,29 +1,28 @@
-﻿using Medallion.OData.Client;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Client;
+using Moq;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Client
 {
-    [TestClass]
     public class ODataQueryContextTest
     {
-        [TestMethod]
+        [Test]
         public void TestPassedPipelineIsUsed()
         {
             var mock = new Mock<IODataClientQueryPipeline>(MockBehavior.Strict);
             var context = new ODataQueryContext(mock.Object);
             var agg = UnitTestHelpers.AssertThrows<AggregateException>(() => context.Query(new Uri("http://localhost:80")).ToArray());            
             var innerMost = Traverse.Along(agg.As<Exception>(), e => e.InnerException).Last();
-            Assert.IsInstanceOfType(innerMost, typeof(MockException));
+            Assert.That(innerMost, Is.InstanceOf<MockException>());
         }
 
-        [TestMethod]
+        [Test]
         public void TestCreateRequestUri()
         {
             var builder = new UriBuilder("http://localhost:1/foo");
@@ -35,8 +34,7 @@ namespace Medallion.OData.Tests.Client
             var uri2 = ODataQueryContext.CreateRequestUri(builder.Uri, new NameValueCollection());
             uri2.ToString().ShouldEqual("http://localhost:1/foo?a=2");
 
-            var oDataParams = new NameValueCollection();
-            oDataParams["$format"] = "json";
+            var oDataParams = new NameValueCollection { ["$format"] = "json" };
             var uri3 = ODataQueryContext.CreateRequestUri(builder.Uri, oDataParams);
             uri3.ToString().ShouldEqual("http://localhost:1/foo?a=2&%24format=json");
 

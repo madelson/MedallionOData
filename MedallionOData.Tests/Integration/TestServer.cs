@@ -11,9 +11,9 @@ namespace Medallion.OData.Tests.Integration
     public class TestServer : IDisposable
     {
         private readonly string _prefix = "http://localhost:2020/" + Guid.NewGuid() + "/";
-        private volatile HttpListener _listener;
         private readonly Func<Uri, string> _handler;
-
+        private volatile HttpListener _listener;
+        
         public TestServer(Func<Uri, string> handler)
         {
             this._handler = handler; 

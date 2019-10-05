@@ -1,6 +1,4 @@
-﻿using Medallion.OData.Client;
-using Medallion.OData.Trees;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -10,6 +8,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Client;
+using Medallion.OData.Trees;
 
 namespace Medallion.OData.Service.Sql
 {
@@ -122,11 +122,7 @@ namespace Medallion.OData.Service.Sql
         protected object ExecuteCommon(Expression expression)
         {
             // translate
-            ODataInlineCountOption inlineCount;
-            List<Parameter> parameters;
-            Type rootElementType;
-            LinqToODataTranslator.ResultTranslator resultTranslator;
-            var sql = this.ToSql(expression, out inlineCount, out parameters, out rootElementType, out resultTranslator);
+            var sql = this.ToSql(expression, out var inlineCount, out var parameters, out var rootElementType, out var resultTranslator);
 
             // execute
             object result;
@@ -152,8 +148,7 @@ namespace Medallion.OData.Service.Sql
             // translate LINQ expression to OData
             var translator = new LinqToODataTranslator();
 
-            IQueryable rootQuery;
-            var oDataExpression = translator.Translate(expression, out rootQuery, out resultTranslator);
+            var oDataExpression = translator.Translate(expression, out var rootQuery, out resultTranslator);
             rootElementType = rootQuery.ElementType;
 
             var queryExpression = oDataExpression as ODataQueryExpression;
@@ -179,11 +174,7 @@ namespace Medallion.OData.Service.Sql
             var builder = new StringBuilder();
             try
             {
-                ODataInlineCountOption inlineCount;
-                List<Parameter> parameters;
-                Type rootElementType;
-                LinqToODataTranslator.ResultTranslator resultTranslator;
-                var sql = this.ToSql(this.As<IQueryable>().Expression, out inlineCount, out parameters, out rootElementType, out resultTranslator);
+                var sql = this.ToSql(this.As<IQueryable>().Expression, out var inlineCount, out var parameters, out var rootElementType, out var resultTranslator);
                 builder.AppendLine("/*")
                     .AppendFormat(" * Materialize as {0}", rootElementType).AppendLine();
                 parameters.ForEach(p => builder.AppendFormat(" * {0} = {1}", p.Name, p.Value).AppendLine());

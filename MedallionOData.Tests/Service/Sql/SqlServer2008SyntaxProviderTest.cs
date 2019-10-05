@@ -1,16 +1,15 @@
-﻿using Medallion.OData.Service.Sql;
-using Medallion.OData.Tests.Integration;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Medallion.OData.Service.Sql;
+using Medallion.OData.Tests.Integration;
+using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Service.Sql
 {
-    [TestClass]
     public class SqlServer2008SyntaxProviderTest : SqlTestBase
     {
         private readonly Lazy<ODataSqlContext> context = new Lazy<ODataSqlContext>(
