@@ -1,6 +1,6 @@
 # MedallionOData
 
-MedallionOData is a lightweight, zero-setup .NET library for creating and querying [OData](http://msdn.microsoft.com/en-us/library/ff478141.aspx) and OData-like services. MedallionOData is available for download as a [NuGet package](https://www.nuget.org/packages/MedallionOData). For a more detailed introduction, check out [my tutorial on Code Ducky](http://www.codeducky.org/introducing-medallionodata/).
+MedallionOData is a lightweight, zero-setup .NET library for creating and querying [OData](http://msdn.microsoft.com/en-us/library/ff478141.aspx) and OData-like services. MedallionOData is available for download as a [NuGet package](https://www.nuget.org/packages/MedallionOData). For a more detailed introduction, check out [my tutorial](https://github.com/steaks/codeducky/blob/master/blogs/IntroducingMedallionOData.md).
 
 ## Querying a service
 
@@ -27,6 +27,18 @@ var foodCategoryId2 = categories2.Where(c => c.Name == "Food")
 	.Single(); // 0
 ```
 
+In many cases, you might need to inject custom logic in order to authenticate yourself with a service or otherwise customize the underlying HTTP request. To do this, pass a custom request function to the `ODataQueryContext`:
+
+```C#
+var client = new HttpClient();
+// customize client
+var context = new ODataQueryContext(async url =>
+{
+	var response = await client.GetAsync(url);
+});
+	return await response.Content.ReadAsStreamAsync();
+```
+
 ## Creating a service
 
 The example uses EntityFramework and .NET MVC, but the MedallionOData library doesn't depend on either.
@@ -45,6 +57,8 @@ public ActionResult Categories()
 	}
 }
 ```
+
+While the typical use-case for OData is to have the shape of the data known at compile time, it is sometimes helpful to be able to build services in a way that allows the schema to be dynamic. MedallionOData supports this use-case. See [this walkthrough](https://github.com/steaks/codeducky/blob/master/blogs/MedallionODataDynamicDataTables.md) for more details.
 
 ## Release notes
 - 1.5.0 adds support for .NET Core via .NET Standard 1.5. Dynamic ODataEntity queries are not supported in the .NET Standard build

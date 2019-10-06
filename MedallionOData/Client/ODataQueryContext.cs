@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -24,6 +25,18 @@ namespace Medallion.OData.Client
         public ODataQueryContext(IODataClientQueryPipeline pipeline = null)
         {
             this._pipeline = pipeline ?? new DefaultODataClientQueryPipeline();
+        }
+
+        /// <summary>
+        /// Creates a query context which uses the provided <paramref name="performWebRequest"/> function
+        /// to perform the underlying web requests.
+        /// 
+        /// This is useful for injecting custom authentication or error handling steps into the pipeline without
+        /// constructing an entire custom <see cref="IODataClientQueryPipeline"/>
+        /// </summary>
+        public ODataQueryContext(Func<Uri, Task<Stream>> performWebRequest)
+            : this(new DefaultODataClientQueryPipeline(performWebRequest ?? throw new ArgumentNullException(nameof(performWebRequest))))
+        {
         }
 
         #region ---- Query factory methods ----
@@ -119,8 +132,8 @@ namespace Medallion.OData.Client
             var requestUri = CreateRequestUri(rootQuery.Url, translationResult.ODataQuery.ToNameValueCollection());
 
             using (var response = await this._pipeline.ReadAsync(requestUri).ConfigureAwait(false))
+            using (var responseStream = await response.GetResponseStreamAsync().ConfigureAwait(false))
             {
-                var responseStream = await response.GetResponseStreamAsync().ConfigureAwait(false);
                 var deserialized = await this._pipeline.DeserializeAsync(translationResult, responseStream).ConfigureAwait(false);
                 var result = translationResult.PostProcessor(deserialized);
                 return new ExecuteResult(result, deserialized.InlineCount);

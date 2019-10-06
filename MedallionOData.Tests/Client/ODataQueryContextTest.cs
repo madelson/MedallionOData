@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Medallion.OData.Client;
 using Moq;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Medallion.OData.Tests.Client
@@ -55,6 +57,56 @@ namespace Medallion.OData.Tests.Client
 
             var uri8 = ODataQueryContext.CreateRequestUri(relativeUriWithQuery, oDataParams);
             uri8.ToString().ShouldEqual("/categories?x=1&%24format=json");
+        }
+
+        [Test]
+        public void TestPassedInWebRequestFunctionIsUsed()
+        {
+            var context = new ODataQueryContext(PerformWebRequest);
+
+            var query = context.Query<Pig>("/pigs").Where(p => false).ToArray();
+
+            query[0].Weight.ShouldEqual(120);
+            query[0].Name.ShouldEqual("Babe");
+            query[1].Weight.ShouldEqual(1);
+            query[1].Name.ShouldEqual("Piglet");
+            query.Length.ShouldEqual(2);
+
+            Task<Stream> PerformWebRequest(Uri url)
+            {
+                var stream = new MemoryStream();
+                var writer = new StreamWriter(stream);
+                writer.Write(JsonConvert.SerializeObject(new
+                {
+                    value = new[] { new Pig { Weight = 120, Name = "Babe" }, new Pig { Weight = 1, Name = "Piglet" } },
+                }));
+                writer.Flush();
+                stream.Position = 0;
+                return Task.FromResult<Stream>(stream);
+            }
+        }
+
+        [Test]
+        public void TestPassedInWebRequestFunctionIsValidated()
+        {
+            Assert.Throws<ArgumentNullException>(() => new ODataQueryContext(default(Func<Uri, Task<Stream>>)));
+
+            var nullTaskContext = new ODataQueryContext(ReturnsNullTask);
+            var ex = Assert.Throws<InvalidOperationException>(() => nullTaskContext.Query<Pig>("/pigs").ToArray());
+            Assert.That(ex.ToString(), Does.Contain("must not return a null Task"));
+
+            var nullStreamContext = new ODataQueryContext(ReturnsNullStream);
+            ex = Assert.Throws<InvalidOperationException>(() => nullStreamContext.Query<Pig>("/pigs").ToArray());
+            Assert.That(ex.ToString(), Does.Contain("must not return a null Stream"));
+
+            Task<Stream> ReturnsNullTask(Uri url) => null;
+            Task<Stream> ReturnsNullStream(Uri url) => Task.FromResult<Stream>(null);
+        }
+
+        private class Pig
+        {
+            public double Weight { get; set; }
+            public string Name { get; set; }
         }
     }
 }

@@ -86,6 +86,21 @@ namespace Medallion.OData.Client
     /// </summary>
     public sealed class DefaultODataClientQueryPipeline : IODataClientQueryPipeline
     {
+        private readonly Func<Uri, Task<IODataWebResponse>> _getResponse;
+
+        /// <summary>
+        /// Constructs an instance of <see cref="DefaultODataClientQueryPipeline"/>
+        /// </summary>
+        public DefaultODataClientQueryPipeline()
+        {
+            this._getResponse = HttpClientWebResponse.CreateAsync;
+        }
+
+        internal DefaultODataClientQueryPipeline(Func<Uri, Task<Stream>> performWebRequest)
+        {
+            this._getResponse = url => Task.FromResult<IODataWebResponse>(new FuncWebResponse(performWebRequest, url));
+        }
+
         IODataTranslationResult IODataClientQueryPipeline.Translate(Expression expression, ODataQueryOptions options)
         {
             Throw.IfNull(expression, "expression");
@@ -116,7 +131,7 @@ namespace Medallion.OData.Client
         {
             Throw.IfNull(url, nameof(url));
 
-            return HttpClientWebResponse.CreateAsync(url);
+            return this._getResponse(url);
         }
 
         private sealed class HttpClientWebResponse : IODataWebResponse
@@ -144,6 +159,29 @@ namespace Medallion.OData.Client
             Task<Stream> IODataWebResponse.GetResponseStreamAsync()
             {
                 return this._response.Content.ReadAsStreamAsync();
+            }
+        }
+
+        private sealed class FuncWebResponse : IODataWebResponse
+        {
+            private readonly Func<Uri, Task<Stream>> _requestFunc;
+            private readonly Uri _url;
+
+            public FuncWebResponse(Func<Uri, Task<Stream>> requestFunc, Uri url)
+            {
+                this._requestFunc = requestFunc;
+                this._url = url;
+            }
+
+            void IDisposable.Dispose() { }
+
+            async Task<Stream> IODataWebResponse.GetResponseStreamAsync()
+            {
+                var task = this._requestFunc(this._url);
+                if (task == null) { throw new InvalidOperationException("web request function must not return a null " + nameof(Task)); }
+                var stream = await task.ConfigureAwait(false);
+                if (stream == null) { throw new InvalidOperationException("web request function must not return a null " + nameof(Stream)); }
+                return stream;
             }
         }
 
