@@ -65,7 +65,7 @@ public ActionResult Categories()
 While the typical use-case for OData is to have the shape of the data known at compile time, it is sometimes helpful to be able to build services in a way that allows the schema to be dynamic. MedallionOData supports this use-case. See [this walkthrough](https://github.com/steaks/codeducky/blob/master/blogs/MedallionODataDynamicDataTables.md) for more details.
 
 ## Release notes
-- 1.6.0 adds support for .NET Standard 2.0 (supports dynamic ODataEntity queries) and makes it easier to customize the HTTP request layer (#13)
+- 1.6.0 makes it easier to customize the HTTP request layer ([#13](https://github.com/madelson/MedallionOData/issues/13)) and adds a target for .NET Standard 2.0 (supports dynamic ODataEntity queries) 
 - 1.5.0 adds support for .NET Core via .NET Standard 1.5. Dynamic ODataEntity queries are not supported in the .NET Standard build
 - 1.4.3 fixes parsing bug for empty OData query parameters
 - 1.4.2 optimizes server-side pagination and improves ODataEntity error messages
