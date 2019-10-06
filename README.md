@@ -1,6 +1,10 @@
 # MedallionOData
 
-MedallionOData is a lightweight, zero-setup .NET library for creating and querying [OData](http://msdn.microsoft.com/en-us/library/ff478141.aspx) and OData-like services. MedallionOData is available for download as a [NuGet package](https://www.nuget.org/packages/MedallionOData). For a more detailed introduction, check out [my tutorial](https://github.com/steaks/codeducky/blob/master/blogs/IntroducingMedallionOData.md).
+MedallionOData is a lightweight, zero-setup .NET library for creating and querying [OData](http://msdn.microsoft.com/en-us/library/ff478141.aspx) and OData-like services. 
+
+[Download the NuGet package](https://www.nuget.org/packages/medallionodata) [![NuGet Status](http://img.shields.io/nuget/v/MedallionOData.svg?style=flat)](https://www.nuget.org/packages/MedallionOData/) ([Release notes](#release-notes))
+
+Keep reading for a quick introduction to the library. For a more detailed walkthrough, check out [this tutorial](https://github.com/steaks/codeducky/blob/master/blogs/IntroducingMedallionOData.md).
 
 ## Querying a service
 
@@ -61,6 +65,7 @@ public ActionResult Categories()
 While the typical use-case for OData is to have the shape of the data known at compile time, it is sometimes helpful to be able to build services in a way that allows the schema to be dynamic. MedallionOData supports this use-case. See [this walkthrough](https://github.com/steaks/codeducky/blob/master/blogs/MedallionODataDynamicDataTables.md) for more details.
 
 ## Release notes
+- 1.6.0 adds support for .NET Standard 2.0 (supports dynamic ODataEntity queries) and makes it easier to customize the HTTP request layer (#13)
 - 1.5.0 adds support for .NET Core via .NET Standard 1.5. Dynamic ODataEntity queries are not supported in the .NET Standard build
 - 1.4.3 fixes parsing bug for empty OData query parameters
 - 1.4.2 optimizes server-side pagination and improves ODataEntity error messages
