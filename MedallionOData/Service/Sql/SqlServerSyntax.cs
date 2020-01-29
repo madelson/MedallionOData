@@ -44,9 +44,14 @@ namespace Medallion.OData.Service.Sql
         /// <summary>
         /// Determines the <see cref="Version"/> based on the given <paramref name="connection"/>
         /// </summary>
-        public static Version GetVersion(SqlConnection connection)
+        public static Version GetVersion(SqlConnection connection) => GetVersion(connection.As<IDbConnection>());
+
+        /// <summary>
+        /// Determines the <see cref="Version"/> based on the given <paramref name="connection"/>
+        /// </summary>
+        public static Version GetVersion(IDbConnection connection)
         {
-            Throw.IfNull(connection, "connection");
+            Throw.IfNull(connection, nameof(connection));
 
             if (connection.State != ConnectionState.Open)
             {

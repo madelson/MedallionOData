@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
@@ -29,12 +30,14 @@ namespace Medallion.OData.Tests.Service.Sql
         }
 
         [Test]
-        public void SqlGetVersion()
+        public void SqlGetVersion([Values] bool useSystemDataSqlClient)
         {
             using (var efContext = new CustomersContext())
             {
                 efContext.Database.Initialize(force: false);
-                using (var connection = new SqlConnection(efContext.Database.Connection.ConnectionString))
+                using (var connection = useSystemDataSqlClient
+                    ? new SqlConnection(efContext.Database.Connection.ConnectionString).As<IDbConnection>()
+                    : new Microsoft.Data.SqlClient.SqlConnection(efContext.Database.Connection.ConnectionString))
                 {
                     SqlServerSyntax.GetVersion(connection).ShouldEqual(SqlServerSyntax.Version.Sql2012);
                 }

@@ -6,9 +6,9 @@
 
   <PropertyGroup>
     <RootNamespace>Medallion.OData</RootNamespace>
-    <Version>1.6.0</Version>
-    <AssemblyVersion>1.6.0.0</AssemblyVersion>
-    <FileVersion>1.6.0.0</FileVersion>
+    <Version>1.7.0</Version>
+    <AssemblyVersion>1.7.0.0</AssemblyVersion>
+    <FileVersion>1.7.0.0</FileVersion>
     <Authors>Michael Adelson</Authors>
     <Description>MedallionOData is a lightweight, zero-setup .NET library for creating and querying OData and OData-like services.</Description>
     <Copyright>Copyright © 2019 Michael Adelson</Copyright>

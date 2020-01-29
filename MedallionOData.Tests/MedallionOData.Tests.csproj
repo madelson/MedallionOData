@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net46</TargetFrameworks>
+    <TargetFrameworks>net461</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <LangVersion>7.2</LangVersion>
 	<GenerateDocumentationFile>True</GenerateDocumentationFile>
@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
 	<PackageReference Include="Moq" Version="4.7.63" />
 	<PackageReference Include="EntityFramework" Version="6.3.0" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="1.1.0" />
 	<PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
